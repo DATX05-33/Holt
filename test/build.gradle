@@ -1,0 +1,9 @@
+plugins {
+    id 'Holt.java-application-conventions'
+}
+
+dependencies {
+    implementation project(':core')
+    implementation project(':processor')
+    annotationProcessor project(':processor')
+}
