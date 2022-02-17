@@ -5,8 +5,11 @@ package Holt.graph;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,8 +30,8 @@ public class GraphParserCSV {
      * @param csvPath The path for the csv file that represents a PA-DFD.
      * @return The nodes that have the node type external entity
      */
-    public static List<Node> readGraph(Path csvPath) {
-        return generatePADFD(readCSV(csvPath));
+    public static List<Node> readGraph(InputStream inputStream) {
+        return generatePADFD(readCSV(inputStream));
     }
 
     private record CSV(List<Row> data) {
@@ -98,11 +101,11 @@ public class GraphParserCSV {
         return externalEntityNodes;
     }
 
-    public static CSV readCSV(Path csvPath) {
+    public static CSV readCSV(InputStream inputStream) {
         ArrayList<CSV.Row> allData = new ArrayList<>();
 
         // create a reader
-        try (Reader reader = Files.newBufferedReader(csvPath)) {
+        try (Reader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
             // read library.csv file
             Iterable<CSVRecord> records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
