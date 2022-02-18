@@ -1,6 +1,12 @@
-package Holt.graph;
+package Holt.processor;
 
-import Holt.codeGeneration.interfaces.*;
+import Holt.processor.annotation.PADFD;
+import Holt.processor.generation.interfaces.CustomProcess;
+import Holt.processor.generation.interfaces.ExternalEntity;
+import Holt.processor.generation.interfaces.Limit;
+import Holt.processor.generation.interfaces.Log;
+import Holt.processor.generation.interfaces.Reason;
+import Holt.processor.generation.interfaces.Request;
 import com.squareup.javapoet.JavaFile;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -14,7 +20,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 
-import static Holt.codeGeneration.CodeGeneration.*;
+import static Holt.processor.generation.CodeGeneration.*;
 
 public class PADFDProcessor extends AbstractProcessor {
 
@@ -94,15 +100,12 @@ public class PADFDProcessor extends AbstractProcessor {
         return GraphParserCSV.readGraph(inputStream);
     }
 
-    //TODO: This is an ugly hack to access the resource folder.
-    /*
-     * A more permanent solution is to have a gradle script that copies the
-     * resource files to target/classes so they can more "natively" access the .csv files.
-     * Right now this method is going upwards until they reach the top of the build folder,
-     * so it then can go down into the resources files and thus find our padfd.
+    /**
+     * This works since gradle copies csv files to class output.
      */
     private InputStream getPADFDFile(String padfdFile) {
         try {
+
             return processingEnv.getFiler().getResource(
                     StandardLocation.CLASS_OUTPUT,
                     "",

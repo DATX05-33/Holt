@@ -1,4 +1,4 @@
-package Holt.graph;
+package Holt.processor;
 
 
 
@@ -6,28 +6,25 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GraphParserCSV {
+
+public final class GraphParserCSV {
 
     private GraphParserCSV() {}
 
     /**
-     * Reads the CSV file and generates a graph from it.
+     * Reads the CSV file from the given input stream and generates a graph from it.
      * Returns the external entities as they can be used as entry points
      * for the program.
-     * @param csvPath The path for the csv file that represents a PA-DFD.
+     * @param inputStream The stream from which the csv comes from
      * @return The nodes that have the node type external entity
      */
     public static List<Node> readGraph(InputStream inputStream) {
@@ -47,22 +44,12 @@ public class GraphParserCSV {
         ) { }
     }
 
-    private static class NodeDraft {
-        CSV.Row row;
-        List<NodeDraft> outputs;
-
-        public NodeDraft(CSV.Row row) {
-            this.row = row;
-            this.outputs = new ArrayList<>();
-        }
-    }
-
     private static List<Node> generatePADFD(CSV csv) {
         List<Node> externalEntityNodes = new ArrayList<>();
         Map<Integer, Node> nodes = new HashMap<>();
         Map<String, CSV.Row> nodeToRow = new HashMap<>();
 
-        //First, all node rows
+        //First, all node rows. Go through the csv once and add them to nodes and external entity nodes
         for (CSV.Row row : csv.data()) {
             //If there's no source, then it's a node
             if (row.source().equals("null")) {
@@ -76,16 +63,12 @@ public class GraphParserCSV {
             }
         }
 
+        // Go through the csv again, this time connecting the nodes by adding outputs
         for (CSV.Row row : csv.data()) {
-            // data flows
+            // data flows, if source is not null then target is not either.
             if (!row.source().equals("null")) {
                 Node node = nodes.get(Integer.valueOf(row.source()));
-
-                try {
-                    node.addOutput(nodes.get(Integer.valueOf(row.target())));
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                }
+                node.addOutput(nodes.get(Integer.valueOf(row.target())));
             }
         }
 

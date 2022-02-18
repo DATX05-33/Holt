@@ -1,9 +1,8 @@
-package Holt.graph;
+package Holt.processor;
 
 import org.junit.jupiter.api.Test;
 
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
+import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -12,9 +11,9 @@ import static org.assertj.core.api.Assertions.*;
 public class ReadGraphTest {
 
     @Test
-    public void Given_AmazonPADFD_Expect_readGraph_To_Work() throws URISyntaxException {
+    public void Given_AmazonPADFD_Expect_readGraph_To_Work() throws IOException {
         List<Node> nodes = GraphParserCSV.readGraph(
-                Paths.get(ClassLoader.getSystemResource("amazon-padfd.csv").toURI())
+                ClassLoader.getSystemResource("amazon-padfd.csv").openStream()
         );
         assertThat(nodes).hasSize(1);
 

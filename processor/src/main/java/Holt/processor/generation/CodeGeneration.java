@@ -1,4 +1,4 @@
-package Holt.codeGeneration;
+package Holt.processor.generation;
 
 import com.squareup.javapoet.*;
 
@@ -8,9 +8,9 @@ import java.util.Map;
 
 public class CodeGeneration {
 
-    static JavaFile generateInterface(String name) {
-        String pkgInterface = "Holt.codeGeneration.interfaces";
+    private static final String PACKAGE_NAME = "Holt.processor.generation.interfaces";
 
+    static JavaFile generateInterface(String name) {
         ParameterizedTypeName map = ParameterizedTypeName.get(ClassName.get(Map.class),
                 ClassName.get(String.class),
                 ClassName.get(Object.class));
@@ -29,14 +29,13 @@ public class CodeGeneration {
                 .addMethod(process)
                 .build();
 
-        JavaFile javaFile = JavaFile.builder(pkgInterface, interfaceGen)
+        JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, interfaceGen)
                 .build();
 
         return javaFile;
     }
 
     public static JavaFile generateProcessExt(String name, String extensionName) {
-        String pkgInterface = "Holt.codeGeneration.interfaces";
         ParameterizedTypeName map = ParameterizedTypeName.get(ClassName.get(Map.class),
                 ClassName.get(String.class),
                 ClassName.get(Object.class));
@@ -49,7 +48,7 @@ public class CodeGeneration {
                 .addStatement("return $L", "input")
                 .build();
 
-        TypeName extensionClass = ClassName.get(pkgInterface, extensionName);
+        TypeName extensionClass = ClassName.get(PACKAGE_NAME, extensionName);
 
         TypeSpec classGen = TypeSpec.classBuilder(name)
                 .superclass(extensionClass)
@@ -61,7 +60,6 @@ public class CodeGeneration {
     }
 
     public static JavaFile generateProcessImpl(String name, String interfaceName) {
-        String pkgInterface = "Holt.codeGeneration.interfaces";
         ParameterizedTypeName map = ParameterizedTypeName.get(ClassName.get(Map.class),
                 ClassName.get(String.class),
                 ClassName.get(Object.class));
@@ -74,7 +72,7 @@ public class CodeGeneration {
                 .addStatement("return $L", "input")
                 .build();
 
-        TypeName interfaceTypeName = ClassName.get(pkgInterface, interfaceName);
+        TypeName interfaceTypeName = ClassName.get(PACKAGE_NAME, interfaceName);
 
         TypeSpec classGen = TypeSpec.classBuilder(name)
                 .addSuperinterface(interfaceTypeName)

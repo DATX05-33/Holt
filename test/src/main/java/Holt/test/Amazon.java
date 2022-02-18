@@ -1,6 +1,6 @@
 package Holt.test;
 
-import Holt.graph.PADFD;
+import Holt.processor.annotation.PADFD;
 
 @PADFD(name = "amazon", file = "amazon-padfd.csv")
 public class Amazon {

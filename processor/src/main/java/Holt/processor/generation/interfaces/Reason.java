@@ -1,4 +1,4 @@
-package Holt.codeGeneration.interfaces;
+package Holt.processor.generation.interfaces;
 
 import java.util.Map;
 
