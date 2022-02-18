@@ -1,5 +1,8 @@
 package Holt.graph;
 
+import Holt.codeGeneration.interfaces.*;
+import com.squareup.javapoet.JavaFile;
+
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
@@ -8,10 +11,10 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+
+import static Holt.codeGeneration.CodeGeneration.*;
 
 public class PADFDProcessor extends AbstractProcessor {
 
@@ -39,6 +42,45 @@ public class PADFDProcessor extends AbstractProcessor {
                 if (inputStream != null) {
                     List<Node> nodes = getNodes(inputStream);
                     System.out.println(nodes);
+
+                    for (Node n : nodes) {
+                        System.out.println("Node: " + n.name());
+                        JavaFile javaFile = null;
+                        switch (n.nodeType()) {
+                            case EXTERNAL_ENTITY -> {
+                                javaFile = generateExternalEntity(n.name(), ExternalEntity.class.getSimpleName());
+                            }
+                            case CUSTOM_PROCESS -> {
+                                javaFile = generateCustomProcess(n.name(), CustomProcess.class.getSimpleName());
+                            }
+                            case REASON -> {
+                                javaFile = generateReasonProcess(n.name(), Reason.class.getSimpleName());
+                            }
+                            case REQUEST -> {
+                                javaFile = generateRequestProcess(n.name(), Request.class.getSimpleName());
+                            }
+                            case LIMIT -> {
+                                javaFile = generateLimitProcess(n.name(), Limit.class.getSimpleName());
+                            }
+                            case LOG -> {
+                                javaFile = generateLogProcess(n.name(), Log.class.getSimpleName());
+                            }
+                            case DB_LOG -> {
+                                // TODO
+                                javaFile = generateLogDBProcess(n.name(), Log.class.getSimpleName());
+                            }
+                            case DATA_FLOW -> {
+                                // nothing?
+                            }
+                        }
+                        try {
+                            if (javaFile != null) {
+                                javaFile.writeTo(processingEnv.getFiler());
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             }
 
