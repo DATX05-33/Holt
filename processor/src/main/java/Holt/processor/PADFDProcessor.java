@@ -1,12 +1,7 @@
 package Holt.processor;
 
 import Holt.processor.annotation.PADFD;
-import Holt.processor.generation.interfaces.CustomProcess;
-import Holt.processor.generation.interfaces.ExternalEntity;
-import Holt.processor.generation.interfaces.Limit;
-import Holt.processor.generation.interfaces.Log;
-import Holt.processor.generation.interfaces.Reason;
-import Holt.processor.generation.interfaces.Request;
+import Holt.processor.generation.interfaces.*;
 import com.squareup.javapoet.JavaFile;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -40,60 +35,63 @@ public class PADFDProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
         if (!env.processingOver()) {
             for (Element typeElement : env.getElementsAnnotatedWith(PADFD.class)) {
-                // Get the annotation object from the type element
-                PADFD padfd = typeElement.getAnnotation(PADFD.class);
-
-                InputStream inputStream = getPADFDFile(padfd.file());
-
-                if (inputStream != null) {
-                    List<Node> nodes = getNodes(inputStream);
-                    System.out.println(nodes);
-
-                    for (Node n : nodes) {
-                        System.out.println("Node: " + n.name());
-                        JavaFile javaFile = null;
-                        switch (n.nodeType()) {
-                            case EXTERNAL_ENTITY -> {
-                                javaFile = generateExternalEntity(n.name(), ExternalEntity.class.getSimpleName());
-                            }
-                            case CUSTOM_PROCESS -> {
-                                javaFile = generateCustomProcess(n.name(), CustomProcess.class.getSimpleName());
-                            }
-                            case REASON -> {
-                                javaFile = generateReasonProcess(n.name(), Reason.class.getSimpleName());
-                            }
-                            case REQUEST -> {
-                                javaFile = generateRequestProcess(n.name(), Request.class.getSimpleName());
-                            }
-                            case LIMIT -> {
-                                javaFile = generateLimitProcess(n.name(), Limit.class.getSimpleName());
-                            }
-                            case LOG -> {
-                                javaFile = generateLogProcess(n.name(), Log.class.getSimpleName());
-                            }
-                            case DB_LOG -> {
-                                // TODO
-                                javaFile = generateLogDBProcess(n.name(), Log.class.getSimpleName());
-                            }
-                            case DATA_FLOW -> {
-                                // nothing?
-                            }
-                        }
-                        try {
-                            if (javaFile != null) {
-                                javaFile.writeTo(processingEnv.getFiler());
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
+                padfd(typeElement);
             }
-
         }
 
         //TODO What does the return mean?
         return true;
+    }
+
+    private void padfd(Element typeElement) {
+        // Get the annotation object from the type element
+        PADFD padfd = typeElement.getAnnotation(PADFD.class);
+
+        InputStream inputStream = getPADFDFile(padfd.file());
+
+        if (inputStream != null) {
+            List<Node> nodes = getNodes(inputStream);
+            System.out.println(nodes);
+
+            for (Node n : nodes) {
+                System.out.println("Node: " + n.name());
+                JavaFile javaFile = null;
+                switch (n.nodeType()) {
+                    case EXTERNAL_ENTITY -> {
+                        javaFile = generateExternalEntity(n.name(), ExternalEntity.class.getSimpleName());
+                    }
+                    case CUSTOM_PROCESS -> {
+                        javaFile = generateCustomProcess(n.name(), CustomProcess.class.getSimpleName());
+                    }
+                    case REASON -> {
+                        javaFile = generateReasonProcess(n.name(), Reason.class.getSimpleName());
+                    }
+                    case REQUEST -> {
+                        javaFile = generateRequestProcess(n.name(), Request.class.getSimpleName());
+                    }
+                    case LIMIT -> {
+                        javaFile = generateLimitProcess(n.name(), Limit.class.getSimpleName());
+                    }
+                    case LOG -> {
+                        javaFile = generateLogProcess(n.name(), Log.class.getSimpleName());
+                    }
+                    case DB_LOG -> {
+                        // TODO
+                        javaFile = generateLogDBProcess(n.name(), Log.class.getSimpleName());
+                    }
+                    case DATA_FLOW -> {
+                        // nothing?
+                    }
+                }
+                try {
+                    if (javaFile != null) {
+                        javaFile.writeTo(processingEnv.getFiler());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     private List<Node> getNodes(InputStream inputStream) {
