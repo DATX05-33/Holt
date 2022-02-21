@@ -56,14 +56,10 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
     private void activatorProcess(Element typeElement) throws ClassNotFoundException {
         ActivatorProcess annotation = typeElement.getAnnotation(ActivatorProcess.class);
 
-
-        System.out.println("one");
-        var a = getMyValue(typeElement, annotation, "input");
+        TypeMirror a = getMyValue(typeElement, annotation, "input");
         TypeElement input = asTypeElement(a);
-
-        System.out.println("two");
-
-        var b = getMyValue(typeElement, annotation, "output");
+        
+        TypeMirror b = getMyValue(typeElement, annotation, "output");
         TypeElement output = asTypeElement(b);
 
         JavaFile javaFile = CodeGeneration.generateMethodFromAnnotation(
@@ -104,7 +100,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
         }
         return null;
     }
-    
+
     public TypeMirror getMyValue(Element foo, Annotation annotation, String key) {
         AnnotationMirror am = getAnnotationMirror(foo, annotation.annotationType());
         if (am == null) {
