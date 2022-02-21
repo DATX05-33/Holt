@@ -106,7 +106,6 @@ public class CodeGeneration {
         return javaFile;
     }
 
-
     public static JavaFile generateAnnotation(String annotationName) {
         MethodSpec input = MethodSpec.methodBuilder("input")
                 .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
@@ -137,44 +136,43 @@ public class CodeGeneration {
         return javaFile;
     }
 
-    public static JavaFile generateCustomProcess(String name, String interfaceName) {
-        JavaFile javaFile = generateProcessImpl(name, interfaceName);
+    public static JavaFile generateCustomProcess(String name) {
+        JavaFile javaFile = generateInterface(name);
+        return javaFile;
+    }
+
+    public static JavaFile generateExternalEntity(String name) {
+        JavaFile javaFile = generateInterface(name);
         print(javaFile);
         return javaFile;
     }
 
-    public static JavaFile generateExternalEntity(String name, String interfaceName) {
-        JavaFile javaFile = generateProcessExt(name, interfaceName);
+    public static JavaFile generateReasonProcess(String name) {
+        JavaFile javaFile = generateInterface(name);
         print(javaFile);
         return javaFile;
     }
 
-    public static JavaFile generateReasonProcess(String name, String interfaceName) {
-        JavaFile javaFile = generateProcessExt(name, interfaceName);
+    public static JavaFile generateRequestProcess(String name) {
+        JavaFile javaFile = generateInterface(name);
         print(javaFile);
         return javaFile;
     }
 
-    public static JavaFile generateRequestProcess(String name, String interfaceName) {
-        JavaFile javaFile = generateProcessExt(name, interfaceName);
+    public static JavaFile generateLimitProcess(String name) {
+        JavaFile javaFile = generateInterface(name);
         print(javaFile);
         return javaFile;
     }
 
-    public static JavaFile generateLimitProcess(String name, String interfaceName) {
-        JavaFile javaFile = generateProcessExt(name, interfaceName);
+    public static JavaFile generateLogProcess(String name) {
+        JavaFile javaFile = generateInterface(name);
         print(javaFile);
         return javaFile;
     }
 
-    public static JavaFile generateLogProcess(String name, String interfaceName) {
-        JavaFile javaFile = generateProcessExt(name, interfaceName);
-        print(javaFile);
-        return javaFile;
-    }
-
-    public static JavaFile generateLogDBProcess(String name, String interfaceName) {
-        JavaFile javaFile = generateProcessExt(name, interfaceName);
+    public static JavaFile generateLogDBProcess(String name) {
+        JavaFile javaFile = generateInterface(name);
         print(javaFile);
         return javaFile;
     }
