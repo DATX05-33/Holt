@@ -58,26 +58,26 @@ public class PADFDProcessor extends AbstractProcessor {
                 JavaFile javaFile = null;
                 switch (n.nodeType()) {
                     case EXTERNAL_ENTITY -> {
-                        javaFile = generateExternalEntity(n.name(), ExternalEntity.class.getSimpleName());
+                        javaFile = generateExternalEntity(n.name());
                     }
                     case CUSTOM_PROCESS -> {
-                        javaFile = generateCustomProcess(n.name(), CustomProcess.class.getSimpleName());
+                        javaFile = generateCustomProcess(n.name());
                     }
                     case REASON -> {
-                        javaFile = generateReasonProcess(n.name(), Reason.class.getSimpleName());
+                        javaFile = generateReasonProcess(n.name());
                     }
                     case REQUEST -> {
-                        javaFile = generateRequestProcess(n.name(), Request.class.getSimpleName());
+                        javaFile = generateRequestProcess(n.name());
                     }
                     case LIMIT -> {
-                        javaFile = generateLimitProcess(n.name(), Limit.class.getSimpleName());
+                        javaFile = generateLimitProcess(n.name());
                     }
                     case LOG -> {
-                        javaFile = generateLogProcess(n.name(), Log.class.getSimpleName());
+                        javaFile = generateLogProcess(n.name());
                     }
                     case DB_LOG -> {
                         // TODO
-                        javaFile = generateLogDBProcess(n.name(), Log.class.getSimpleName());
+                        javaFile = generateLogDBProcess(n.name());
                     }
                     case DATA_FLOW -> {
                         // nothing?
