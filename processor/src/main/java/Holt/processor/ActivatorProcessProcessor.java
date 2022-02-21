@@ -7,12 +7,12 @@ import com.squareup.javapoet.JavaFile;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.Map;
 import java.util.Set;
 
 public class ActivatorProcessProcessor extends AbstractProcessor {
@@ -48,22 +48,29 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
 
     /**
      * Add methods to be implemented in interface with the same name as the class
-     *
+     * <p>
      * https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation/10167558#10167558
      *
      * @param typeElement class
      */
     private void activatorProcess(Element typeElement) throws ClassNotFoundException {
-        ActivatorProcess a = typeElement.getAnnotation(ActivatorProcess.class);
+        ActivatorProcess annotation = typeElement.getAnnotation(ActivatorProcess.class);
 
-        TypeElement input = asTypeElement(getInput(a));
-        TypeElement output = asTypeElement(getOutput(a));
 
-        JavaFile javaFile = CodeGeneration.genereateMethodFromAnnotation(
+        System.out.println("one");
+        var a = getMyValue(typeElement, annotation, "input");
+        TypeElement input = asTypeElement(a);
+
+        System.out.println("two");
+
+        var b = getMyValue(typeElement, annotation, "output");
+        TypeElement output = asTypeElement(b);
+
+        JavaFile javaFile = CodeGeneration.generateMethodFromAnnotation(
                 typeElement,
                 Class.forName(String.valueOf(input.getQualifiedName())),
                 Class.forName(String.valueOf(output.getQualifiedName())),
-                a.methodName()
+                annotation.methodName()
         );
 
         try {
@@ -75,42 +82,39 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
 
     private TypeElement asTypeElement(TypeMirror typeMirror) {
         Types TypeUtils = this.processingEnv.getTypeUtils();
-        return (TypeElement)TypeUtils.asElement(typeMirror);
+        return (TypeElement) TypeUtils.asElement(typeMirror);
     }
 
-    private static TypeMirror getInput(ActivatorProcess annotation) {
-        try
-        {
-            annotation.input(); // this should throw
+    private static AnnotationMirror getAnnotationMirror(Element typeElement, Class<?> clazz) {
+        String clazzName = clazz.getName();
+        for (AnnotationMirror m : typeElement.getAnnotationMirrors()) {
+            var a = m.getAnnotationType().toString();
+            if (m.getAnnotationType().toString().equals(clazzName)) {
+                return m;
+            }
         }
-        catch( MirroredTypeException mte )
-        {
-            return mte.getTypeMirror();
-        }
-        return null; // can this ever happen ??
+        return null;
     }
 
-    private static TypeMirror getOutput(ActivatorProcess annotation) {
-        try
-        {
-            annotation.output(); // this should throw
+    private static AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror, String key) {
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationMirror.getElementValues().entrySet()) {
+            if (entry.getKey().getSimpleName().toString().equals(key)) {
+                return entry.getValue();
+            }
         }
-        catch( MirroredTypeException mte )
-        {
-            return mte.getTypeMirror();
-        }
-        return null; // can this ever happen ??
+        return null;
     }
-
-    private static TypeMirror getMethodName(ActivatorProcess annotation) {
-        try
-        {
-            annotation.methodName(); // this should throw
+    
+    public TypeMirror getMyValue(Element foo, Annotation annotation, String key) {
+        AnnotationMirror am = getAnnotationMirror(foo, annotation.annotationType());
+        if (am == null) {
+            return null;
         }
-        catch( MirroredTypeException mte )
-        {
-            return mte.getTypeMirror();
+        AnnotationValue av = getAnnotationValue(am, key);
+        if (av == null) {
+            return null;
+        } else {
+            return (TypeMirror) av.getValue();
         }
-        return null; // can this ever happen ??
     }
 }

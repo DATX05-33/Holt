@@ -84,7 +84,7 @@ public class CodeGeneration {
         return JavaFile.builder("Holt.codeGeneration.custom", classGen).build();
     }
 
-    public static JavaFile genereateMethodFromAnnotation(Element element, Class input, Class output, String methodName) {
+    public static JavaFile generateMethodFromAnnotation(Element element, Class input, Class output, String methodName) {
         // TODO: What about multiple inputs?
         // Maybe have input be a List<Class> inputs, alternatively with names as well
         MethodSpec method = MethodSpec.methodBuilder(methodName)
@@ -101,6 +101,37 @@ public class CodeGeneration {
         JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, interfaceGen)
                 .build();
 
+        print(javaFile);
+
+        return javaFile;
+    }
+
+
+    public static JavaFile generateAnnotation(String annotationName) {
+        MethodSpec input = MethodSpec.methodBuilder("input")
+                .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
+                .returns(Class.class)
+                .build();
+
+        MethodSpec output = MethodSpec.methodBuilder("output")
+                .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
+                .returns(Class.class)
+                .build();
+
+        MethodSpec methodName = MethodSpec.methodBuilder("methodName")
+                .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
+                .returns(String.class)
+                .build();
+
+
+        TypeSpec annotation = TypeSpec.annotationBuilder(annotationName)
+                .addModifiers(Modifier.PUBLIC)
+                .addMethod(input)
+                .addMethod(output)
+                .addMethod(methodName)
+                .build();
+
+        JavaFile javaFile = JavaFile.builder("Holt.codeGeneration.annotation", annotation).build();
         print(javaFile);
 
         return javaFile;
