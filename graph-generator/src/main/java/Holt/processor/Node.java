@@ -8,12 +8,12 @@ import java.util.Objects;
 public final class Node {
     private final String name;
     private final NodeType nodeType;
-    private final List<Node> outputs;
+    private final List<Dataflow> dataflows;
 
     public Node(String name, NodeType nodeType) {
         this.name = name;
         this.nodeType = nodeType;
-        this.outputs = new ArrayList<>();
+        this.dataflows = new ArrayList<>();
     }
 
     public String name() {
@@ -25,11 +25,31 @@ public final class Node {
     }
 
     public List<Node> outputs() {
+        List<Node> outputs = new ArrayList<>();
+        for (Dataflow d : dataflows) {
+            if (d.source == this) {
+                outputs.add(d.target);
+            }
+        }
         return outputs;
     }
 
-    void addOutput(Node node) {
-        this.outputs.add(node);
+    public List<Node> inputs() {
+        List<Node> inputs = new ArrayList<>();
+        for (Dataflow d : dataflows) {
+            if (d.target == this) {
+                inputs.add(d.source);
+            }
+        }
+        return inputs;
+    }
+
+    public void addDataflow(Dataflow dataflow) {
+        this.dataflows.add(dataflow);
+    }
+
+    public List<Dataflow> dataflows() {
+        return this.dataflows;
     }
 
     @Override
@@ -39,12 +59,12 @@ public final class Node {
         var that = (Node) obj;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.nodeType, that.nodeType) &&
-                Objects.equals(this.outputs, that.outputs);
+                Objects.equals(this.outputs(), that.outputs());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, nodeType, outputs);
+        return Objects.hash(name, nodeType, outputs());
     }
 
     @Override
@@ -52,8 +72,6 @@ public final class Node {
         return "Node[" +
                 "name=" + name + ", " +
                 "nodeType=" + nodeType + ", " +
-                "outputs=" + outputs + ']';
+                "outputs=" + outputs() + ']';
     }
-
-
 }

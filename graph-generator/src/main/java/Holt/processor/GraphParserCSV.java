@@ -67,19 +67,25 @@ public final class GraphParserCSV {
         for (CSV.Row row : csv.data()) {
             // data flows, if source is not null then target is not either.
             if (!row.source().equals("null")) {
-                Node node = nodes.get(Integer.valueOf(row.source()));
-                node.addOutput(nodes.get(Integer.valueOf(row.target())));
+                String name = row.value().replace(" ","").replace("?","");
+                Node source = nodes.get(Integer.valueOf(row.source()));
+                Node target = nodes.get(Integer.valueOf(row.target()));
+                Dataflow dataflow = new Dataflow(name, source, target);
+
+                source.addDataflow(dataflow);
+                target.addDataflow(dataflow);
             }
         }
 
+        // TODO: Remove this
         //Go through the proc
-        for(Node node : nodes.values()) {
+        /*for(Node node : nodes.values()) {
             if (node.nodeType().equals(NodeType.REASON)) {
                 // Custom Process basically, adds a data flow between.
                 Node processNode = nodes.get(nodeToRow.get(node.name()).for_process);
                 processNode.addOutput(node);
             }
-        }
+        }*/
 
         return externalEntityNodes;
     }
