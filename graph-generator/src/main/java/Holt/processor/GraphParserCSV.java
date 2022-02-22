@@ -63,6 +63,8 @@ public final class GraphParserCSV {
             }
         }
 
+        Map<String, Dataflow> dataflowMap = new HashMap<>();
+
         // Go through the csv again, this time connecting the nodes by adding outputs
         for (CSV.Row row : csv.data()) {
             // data flows, if source is not null then target is not either.
@@ -71,13 +73,18 @@ public final class GraphParserCSV {
                 Node source = nodes.get(Integer.valueOf(row.source()));
                 Node target = nodes.get(Integer.valueOf(row.target()));
 
-                // TODO: check if the dataflow already exists.
-                //  Right now it's created twice, once from the source and once from the target
-                Dataflow dataflow = new Dataflow(name, source, target);;
-                
+                Dataflow dataflow = dataflowMap.get(name);
+                if (dataflow == null) {
+                    dataflow = new Dataflow(name, source, target);
+                    dataflowMap.put(name, dataflow);
+                }
 
-                source.addDataflow(dataflow);
-                target.addDataflow(dataflow);
+                if (!source.dataflows().contains(dataflow)) {
+                    source.addDataflow(dataflow);
+                }
+                if (!target.dataflows().contains(dataflow)) {
+                    target.addDataflow(dataflow);
+                }
             }
         }
 
