@@ -4,6 +4,7 @@ import com.squareup.javapoet.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,13 +13,13 @@ import java.util.Map;
 
 public class CodeGenerator {
 
-    private final Map<Class<?>, List<Class<?>>> inputTypes = new HashMap<>();
-    private final Map<Class<?>, Class<?>> outputTypes = new HashMap<>();
-    private final Map<Class<?>, String> functionNames = new HashMap<>();
+    private final Map<TypeMirror, List<TypeMirror>> inputTypes = new HashMap<>();
+    private final Map<TypeMirror, TypeMirror> outputTypes = new HashMap<>();
+    private final Map<TypeMirror, String> functionNames = new HashMap<>();
 
     private final String PACKAGE_NAME = "Holt.processor.generation.interfaces";
 
-    public void addOutputTypeAndFunctionName(Class<?> source, Class<?> outputType, Class<?> target, String functionName) {
+    public void addOutputTypeAndFunctionName(TypeMirror source, TypeMirror outputType, TypeMirror target, String functionName) {
         outputTypes.put(source, outputType);
         functionNames.put(source, functionName);
 
@@ -26,9 +27,9 @@ public class CodeGenerator {
         addInputTypes(outputType, target);
     }
 
-    public void addInputTypes(Class<?> inputType, Class<?> source) {
+    public void addInputTypes(TypeMirror inputType, TypeMirror source) {
         if (inputTypes.get(source) == null || inputTypes.get(source).isEmpty()) {
-            List<Class<?>> TargetsInputs = new ArrayList<>();
+            List<TypeMirror> TargetsInputs = new ArrayList<>();
             TargetsInputs.add(inputType);
             inputTypes.put(source, TargetsInputs);
         } else {
@@ -36,26 +37,31 @@ public class CodeGenerator {
         }
     }
 
-    public void generateInterfaces() {
-        for (Class<?> name : inputTypes.keySet()) {
+    public void generateInterfaces() throws ClassNotFoundException {
+        for (TypeMirror name : outputTypes.keySet()) {
 
             MethodSpec.Builder methodSpecBuilder = MethodSpec
                     .methodBuilder(functionNames.get(name))
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
             // add inputs
-            for (int i = 0; i < inputTypes.get(name).size(); i++) {
-                methodSpecBuilder.addParameter(
-                        inputTypes.get(name).get(i),
-                        "input" + i
-                );
+            if (inputTypes.get(name) != null) {
+                for (int i = 0; i < inputTypes.get(name).size(); i++) {
+                    //String full = inputTypes.get(name).get(i).toString();
+                    //String simple = inputTypes.get(name).get(i).toString();
+                    //var b = ClassName.get(,"");
+                    methodSpecBuilder.addParameter(
+                            Class.forName(inputTypes.get(name).get(i).toString()),
+                            "input" + i
+                    );
+                }
             }
 
-            methodSpecBuilder.returns(outputTypes.get(name));
+            methodSpecBuilder.returns(Class.forName(outputTypes.get(name).toString()));
             MethodSpec methodSpec = methodSpecBuilder.build();
 
             TypeSpec anInterface = TypeSpec
-                    .interfaceBuilder("I" + name.getSimpleName())
+                    .interfaceBuilder("I" + name.toString())
                     .addMethod(methodSpec)
                     .addModifiers(Modifier.PUBLIC)
                     .build();

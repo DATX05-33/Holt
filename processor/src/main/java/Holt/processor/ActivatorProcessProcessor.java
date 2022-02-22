@@ -68,19 +68,21 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
         String sourceString = String.valueOf(element.getQualifiedName());
         String outputString = String.valueOf(output.getQualifiedName());
 
+
         // TODO: Can't load that class.
         //  Can we load the interface, which is what matters?
         //  It's this method that generates it, maybe need to generate a stub before?
-        Class<?> source = Class.forName(sourceString);
+        //Class<?> source = Class.forName(sourceString);
 
         // TODO: How do we know if the type has an interface that we've made or not? Maybe try to load the class and catch the ClassNotFound and load our interface
-        Class<?> outputType = Class.forName(outputString);
+        //Class<?> outputType = Class.forName(outputString);
 
         // TODO: Find via graph. How do we get the actual class from the node name? The name should be unique and found in the interface package
         Class<?> target = null;
         String methodName = annotation.methodName();
 
-        codeGenerator.addOutputTypeAndFunctionName(source, outputType, target, methodName);
+        codeGenerator.addOutputTypeAndFunctionName(element.asType(), output.asType(), /*target*/ output.asType(), methodName);
+        codeGenerator.generateInterfaces();
     }
 
     private TypeElement asTypeElement(TypeMirror typeMirror) {
