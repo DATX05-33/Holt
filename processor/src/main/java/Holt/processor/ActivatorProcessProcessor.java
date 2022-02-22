@@ -1,8 +1,7 @@
 package Holt.processor;
 
-import Holt.processor.annotation.ActivatorProcess;
+import Holt.processor.annotation.Activator;
 import Holt.processor.generation.CodeGenerator;
-import com.squareup.javapoet.JavaFile;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -10,16 +9,15 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Set;
 
 public class ActivatorProcessProcessor extends AbstractProcessor {
 
-    private static final String annotationName = ActivatorProcess.class.getName();
+    private static final String annotationName = Activator.class.getName();
 
-    private CodeGenerator codeGenerator = new CodeGenerator();
+    private final CodeGenerator codeGenerator = new CodeGenerator();
 
 
     @Override
@@ -35,12 +33,17 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
+
         if (!env.processingOver()) {
-            for (Element typeElement : env.getElementsAnnotatedWith(ActivatorProcess.class)) {
-                try {
-                    activatorProcess(typeElement);
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+            for (Element element : env.getElementsAnnotatedWith(Activator.class)) {
+                if (element instanceof TypeElement typeElement) {
+                    try {
+                        activatorProcess(typeElement);
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.out.println("Element was not TypeElement");
                 }
             }
         }
@@ -53,31 +56,31 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
      * <p>
      * https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation/10167558#10167558
      *
-     * @param typeElement class
+     * @param element class
      */
-    private void activatorProcess(Element typeElement) throws ClassNotFoundException {
-        ActivatorProcess annotation = typeElement.getAnnotation(ActivatorProcess.class);
+    private void activatorProcess(TypeElement element) throws ClassNotFoundException {
+        Activator annotation = element.getAnnotation(Activator.class);
 
-        TypeElement input = asTypeElement(
-                getMyValue(typeElement, annotation,"input")
-        );
-        
         TypeElement output = asTypeElement(
-                getMyValue(typeElement, annotation,"output")
+                getMyValue(element, annotation,"outputType")
         );
 
-        JavaFile javaFile = codeGenerator.generateMethodFromAnnotation(
-                typeElement,
-                Class.forName(String.valueOf(input.getQualifiedName())),
-                Class.forName(String.valueOf(output.getQualifiedName())),
-                annotation.methodName()
-        );
+        String sourceString = String.valueOf(element.getQualifiedName());
+        String outputString = String.valueOf(output.getQualifiedName());
 
-        try {
-            javaFile.writeTo(processingEnv.getFiler());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // TODO: Can't load that class.
+        //  Can we load the interface, which is what matters?
+        //  It's this method that generates it, maybe need to generate a stub before?
+        Class<?> source = Class.forName(sourceString);
+
+        // TODO: How do we know if the type has an interface that we've made or not? Maybe try to load the class and catch the ClassNotFound and load our interface
+        Class<?> outputType = Class.forName(outputString);
+
+        // TODO: Find via graph. How do we get the actual class from the node name? The name should be unique and found in the interface package
+        Class<?> target = null;
+        String methodName = annotation.methodName();
+
+        codeGenerator.addOutputTypeAndFunctionName(source, outputType, target, methodName);
     }
 
     private TypeElement asTypeElement(TypeMirror typeMirror) {
@@ -85,7 +88,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
 
-    private static AnnotationMirror getAnnotationMirror(Element typeElement, Class<?> clazz) {
+    private static AnnotationMirror getAnnotationMirror(TypeElement typeElement, Class<?> clazz) {
         String clazzName = clazz.getName();
         for (AnnotationMirror m : typeElement.getAnnotationMirrors()) {
             var a = m.getAnnotationType().toString();
@@ -105,7 +108,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
         return null;
     }
 
-    public TypeMirror getMyValue(Element foo, Annotation annotation, String key) {
+    public TypeMirror getMyValue(TypeElement foo, Annotation annotation, String key) {
         AnnotationMirror am = getAnnotationMirror(foo, annotation.annotationType());
         if (am == null) {
             return null;
