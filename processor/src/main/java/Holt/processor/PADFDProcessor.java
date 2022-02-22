@@ -1,7 +1,7 @@
 package Holt.processor;
 
 import Holt.processor.annotation.PADFD;
-import Holt.processor.generation.interfaces.*;
+import Holt.processor.generation.CodeGenerator;
 import com.squareup.javapoet.JavaFile;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -51,6 +51,8 @@ public class PADFDProcessor extends AbstractProcessor {
         if (inputStream != null) {
             List<Node> nodes = getNodes(inputStream);
 
+            saveJavaFile(codeGenerator.createEnum(nodes.stream().map(Node::name).toList()));
+
             for (Node n : nodes) {
                 JavaFile javaFile = null;
 
@@ -61,16 +63,22 @@ public class PADFDProcessor extends AbstractProcessor {
                     case DATA_FLOW -> {
                     }
                 }
-                try {
-                    if (javaFile != null) {
-                        javaFile.writeTo(processingEnv.getFiler());
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                saveJavaFile(javaFile);
+
             }
         }
     }
+
+    private void saveJavaFile(JavaFile javaFile) {
+        try {
+            if (javaFile != null) {
+                javaFile.writeTo(processingEnv.getFiler());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private List<Node> getNodes(InputStream inputStream) {
         return GraphParserCSV.readGraph(inputStream);
