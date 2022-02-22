@@ -70,7 +70,11 @@ public final class GraphParserCSV {
                 String name = row.value().replace(" ","").replace("?","");
                 Node source = nodes.get(Integer.valueOf(row.source()));
                 Node target = nodes.get(Integer.valueOf(row.target()));
-                Dataflow dataflow = new Dataflow(name, source, target);
+
+                // TODO: check if the dataflow already exists.
+                //  Right now it's created twice, once from the source and once from the target
+                Dataflow dataflow = new Dataflow(name, source, target);;
+                
 
                 source.addDataflow(dataflow);
                 target.addDataflow(dataflow);

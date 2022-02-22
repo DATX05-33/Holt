@@ -39,7 +39,6 @@ public class PADFDProcessor extends AbstractProcessor {
             }
         }
 
-        //TODO What does the return mean?
         return true;
     }
 
@@ -51,36 +50,14 @@ public class PADFDProcessor extends AbstractProcessor {
 
         if (inputStream != null) {
             List<Node> nodes = getNodes(inputStream);
-            System.out.println(nodes);
 
             for (Node n : nodes) {
-                System.out.println("Node: " + n.name());
                 JavaFile javaFile = null;
                 switch (n.nodeType()) {
-                    case EXTERNAL_ENTITY -> {
-                        javaFile = generateExternalEntity(n.name());
-                    }
-                    case CUSTOM_PROCESS -> {
-                        javaFile = generateCustomProcess(n.name());
-                    }
-                    case REASON -> {
-                        javaFile = generateReasonProcess(n.name());
-                    }
-                    case REQUEST -> {
-                        javaFile = generateRequestProcess(n.name());
-                    }
-                    case LIMIT -> {
-                        javaFile = generateLimitProcess(n.name());
-                    }
-                    case LOG -> {
-                        javaFile = generateLogProcess(n.name());
-                    }
-                    case DB_LOG -> {
-                        // TODO
-                        javaFile = generateLogDBProcess(n.name());
+                    case EXTERNAL_ENTITY, CUSTOM_PROCESS, REASON, REQUEST, LIMIT, LOG, DB_LOG -> {
+                        javaFile = generateInterface(n.name());
                     }
                     case DATA_FLOW -> {
-                        // nothing?
                     }
                 }
                 try {
