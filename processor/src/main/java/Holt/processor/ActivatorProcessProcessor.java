@@ -1,7 +1,7 @@
 package Holt.processor;
 
 import Holt.processor.annotation.ActivatorProcess;
-import Holt.processor.generation.CodeGeneration;
+import Holt.processor.generation.CodeGenerator;
 import com.squareup.javapoet.JavaFile;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -18,6 +18,8 @@ import java.util.Set;
 public class ActivatorProcessProcessor extends AbstractProcessor {
 
     private static final String annotationName = ActivatorProcess.class.getName();
+
+    private CodeGenerator codeGenerator = new CodeGenerator();
 
 
     @Override
@@ -64,7 +66,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
                 getMyValue(typeElement, annotation,"output")
         );
 
-        JavaFile javaFile = CodeGeneration.generateMethodFromAnnotation(
+        JavaFile javaFile = codeGenerator.generateMethodFromAnnotation(
                 typeElement,
                 Class.forName(String.valueOf(input.getQualifiedName())),
                 Class.forName(String.valueOf(output.getQualifiedName())),

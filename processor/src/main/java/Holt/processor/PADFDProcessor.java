@@ -15,11 +15,11 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 
-import static Holt.processor.generation.CodeGeneration.*;
-
 public class PADFDProcessor extends AbstractProcessor {
 
     private static final String PADFD_NAME = PADFD.class.getName();
+
+    private CodeGenerator codeGenerator = new CodeGenerator();
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -53,9 +53,10 @@ public class PADFDProcessor extends AbstractProcessor {
 
             for (Node n : nodes) {
                 JavaFile javaFile = null;
+
                 switch (n.nodeType()) {
                     case EXTERNAL_ENTITY, CUSTOM_PROCESS, REASON, REQUEST, LIMIT, LOG, DB_LOG -> {
-                        javaFile = generateInterface(n.name());
+                        javaFile = codeGenerator.generateInterface(n.name());
                     }
                     case DATA_FLOW -> {
                     }
