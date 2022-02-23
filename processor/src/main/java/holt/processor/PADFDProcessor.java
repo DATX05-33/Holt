@@ -17,6 +17,7 @@ import java.util.Set;
 
 public class PADFDProcessor extends AbstractProcessor {
 
+
     private static final String PADFD_NAME = PADFD.class.getName();
 
     private CodeGenerator codeGenerator = new CodeGenerator();
@@ -51,16 +52,15 @@ public class PADFDProcessor extends AbstractProcessor {
         if (inputStream != null) {
             List<Node> nodes = getNodes(inputStream);
 
-            //saveJavaFile(codeGenerator.createEnum(nodes.stream().map(Node::name).toList()));
-
             for (Node n : nodes) {
                 JavaFile javaFile = null;
 
                 switch (n.nodeType()) {
-                    case EXTERNAL_ENTITY, CUSTOM_PROCESS, REASON, REQUEST, LIMIT, LOG, DB_LOG -> {
+                    case EXTERNAL_ENTITY, CUSTOM_PROCESS, REASON, REQUEST, LIMIT, LOG, DB_LOG, DATA_BASE -> {
                         javaFile = codeGenerator.generateInterface(n.name());
                     }
-                    case DATA_FLOW -> {
+                    case POLICY_DB, DATA_FLOW -> {
+                        // What happens here?
                     }
                 }
                 saveJavaFile(javaFile);
