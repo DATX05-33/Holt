@@ -10,6 +10,8 @@ public enum NodeType {
     LIMIT("limit"),
     LOG("log"),
     DB_LOG("DB_log"),
+    DATA_BASE("data_base"),
+    POLICY_DB("pol_DB"),
     DATA_FLOW(null);
 
     NodeType(String name) {

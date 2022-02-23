@@ -124,7 +124,7 @@ public final class GraphParserCSV {
                                 record.get("target"),
                                 NodeType.get(record.get("type")),
                                 "".equals(record.get("for_process")) ? null : Integer.valueOf(record.get("for_process")),
-                                "".equals(record.get("for_DB")) ? null : Integer.valueOf(record.get("get_DB"))
+                                "".equals(record.get("for_DB")) ? null : Integer.valueOf(record.get("for_DB"))
                         )
                 );
             }
