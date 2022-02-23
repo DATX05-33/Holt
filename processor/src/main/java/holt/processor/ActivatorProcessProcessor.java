@@ -43,11 +43,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
         if (!env.processingOver()) {
             for (Element element : env.getElementsAnnotatedWith(Activator.class)) {
                 if (element instanceof TypeElement typeElement) {
-                    try {
-                        activatorProcess(typeElement);
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
+                    activatorProcess(typeElement);
                 } else {
                     System.out.println("Element was not TypeElement");
                 }
@@ -64,7 +60,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
      *
      * @param element class
      */
-    private void activatorProcess(TypeElement element) throws ClassNotFoundException {
+    private void activatorProcess(TypeElement element)  {
         Activator annotation = element.getAnnotation(Activator.class);
 
         TypeElement output = asTypeElement(

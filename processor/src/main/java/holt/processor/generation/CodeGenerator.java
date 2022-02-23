@@ -54,7 +54,7 @@ public class CodeGenerator {
         }
     }
 
-    public List<JavaFile> generateInterfaces() throws ClassNotFoundException {
+    public List<JavaFile> generateInterfaces() {
         List<JavaFile> interfaces = new ArrayList<>();
         for (TypeMirror name : outputTypes.keySet()) {
 
@@ -67,7 +67,6 @@ public class CodeGenerator {
                 for (int i = 0; i < inputTypes.get(name).size(); i++) {
                     ClassName parameterClassName = ClassName.bestGuess(inputTypes.get(name).get(i).toString());
                     methodSpecBuilder.addParameter(
-                            //Class.forName(inputTypes.get(name).get(i).toString()),
                             parameterClassName,
                             "input" + i
                     );
