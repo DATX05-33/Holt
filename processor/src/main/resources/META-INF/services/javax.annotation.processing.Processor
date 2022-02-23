@@ -1,2 +1,3 @@
-Holt.processor.PADFDProcessor
-Holt.processor.ActivatorProcessProcessor
+holt.processor.PADFDProcessor
+holt.processor.ActivatorProcessProcessor
+holt.processor.QueryProcessor
