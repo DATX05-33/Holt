@@ -133,7 +133,7 @@ public class CodeGenerator {
     }
 
     public JavaFile generateInterface(String name) {
-        TypeSpec interfaceGen = TypeSpec.interfaceBuilder(name)
+        TypeSpec interfaceGen = TypeSpec.interfaceBuilder("I" + name)
                 .addModifiers(Modifier.PUBLIC)
                 .build();
 
