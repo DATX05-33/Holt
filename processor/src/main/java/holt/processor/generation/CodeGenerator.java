@@ -90,7 +90,6 @@ public class CodeGenerator {
             System.out.println("----------------------------");
             print(javaFile);
             System.out.println("----------------------------");
-            // TODO: Save javafile
             interfaces.add(javaFile);
         }
 
@@ -99,22 +98,8 @@ public class CodeGenerator {
 
 
     public JavaFile generateInterface(String name) {
-        ParameterizedTypeName map = ParameterizedTypeName.get(ClassName.get(Map.class),
-                ClassName.get(String.class),
-                ClassName.get(Object.class));
-
-        ParameterSpec input = ParameterSpec.builder(map, "input")
-                .build();
-
-        MethodSpec process = MethodSpec.methodBuilder("process")
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .returns(map)
-                .addParameter(map, "input")
-                .build();
-
         TypeSpec interfaceGen = TypeSpec.interfaceBuilder(name)
                 .addModifiers(Modifier.PUBLIC)
-                .addMethod(process)
                 .build();
 
         JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, interfaceGen)
