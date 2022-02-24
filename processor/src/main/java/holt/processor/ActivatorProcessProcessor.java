@@ -46,6 +46,12 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
             }
         }
 
+        List<JavaFile> interfaces = codeGenerator.generateInterfaces();
+
+        for (JavaFile j : interfaces) {
+            saveJavaFile(j);
+        }
+
         return false;
     }
 
@@ -65,12 +71,13 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
 
         String methodName = annotation.methodName();
 
-        codeGenerator.addOutputTypeAndFunctionName(element.asType(), output.asType(), /* TODO target*/ output.asType(), methodName);
-        List<JavaFile> interfaces = codeGenerator.generateInterfaces();
 
-        for (JavaFile j : interfaces) {
-            saveJavaFile(j);
-        }
+        List<TypeMirror> inputNodes = codeGenerator.findInputNodesWithType(element.asType(), NodeType.CUSTOM_PROCESS);
+
+        // Assuming only two possible inputs. One Custom and one database
+        TypeMirror target = inputNodes.get(0);
+
+        codeGenerator.addOutputTypeAndFunctionName(element.asType(), output.asType(), target, methodName);
     }
 
     private TypeElement asTypeElement(TypeMirror typeMirror) {
