@@ -19,6 +19,8 @@ public class CodeGenerator {
 
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
+    private List<Node> nodes;
+    private Map<String, Node> nodeMap;
 
     private static CodeGenerator instance = null;
 
@@ -34,6 +36,11 @@ public class CodeGenerator {
     private CodeGenerator() {
     }
 
+    public void setNodes(List<Node> nodes) {
+        for (Node n : nodes) {
+            nodeMap.put(n.name(), n);
+        }
+        this.nodes = nodes;
     }
 
     public void addOutputTypeAndFunctionName(TypeMirror source, TypeMirror outputType, TypeMirror target, String functionName) {

@@ -20,7 +20,7 @@ public class PADFDProcessor extends AbstractProcessor {
 
     private static final String PADFD_NAME = PADFD.class.getName();
 
-    private final CodeGenerator codeGenerator = new CodeGenerator();
+    private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -51,6 +51,7 @@ public class PADFDProcessor extends AbstractProcessor {
 
         if (inputStream != null) {
             List<Node> nodes = getNodes(inputStream);
+            codeGenerator.setNodes(nodes);
 
             for (Node n : nodes) {
                 JavaFile javaFile = null;
@@ -104,6 +105,5 @@ public class PADFDProcessor extends AbstractProcessor {
 
         return null;
     }
-
 }
 
