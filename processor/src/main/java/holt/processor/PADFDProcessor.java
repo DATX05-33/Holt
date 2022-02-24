@@ -20,7 +20,7 @@ public class PADFDProcessor extends AbstractProcessor {
 
     private static final String PADFD_NAME = PADFD.class.getName();
 
-    private CodeGenerator codeGenerator = new CodeGenerator();
+    private final CodeGenerator codeGenerator = new CodeGenerator();
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -64,7 +64,6 @@ public class PADFDProcessor extends AbstractProcessor {
                     }
                 }
                 saveJavaFile(javaFile);
-
             }
         }
     }
@@ -80,8 +79,12 @@ public class PADFDProcessor extends AbstractProcessor {
     }
 
 
+    private List<Node> getExternalEntityNodes(InputStream inputStream) {
+        return GraphParserCSV.readGraphExternalEntity(inputStream);
+    }
+
     private List<Node> getNodes(InputStream inputStream) {
-        return GraphParserCSV.readGraph(inputStream);
+        return GraphParserCSV.readGraphAll(inputStream);
     }
 
     /**

@@ -13,7 +13,7 @@ public class ReadGraphTest {
 
     @Test
     public void Given_AmazonPADFD_Expect_readGraph_To_Work() throws IOException {
-        List<Node> nodes = GraphParserCSV.readGraph(
+        List<Node> nodes = GraphParserCSV.readGraphExternalEntity(
                 ClassLoader.getSystemResource("amazon-padfd.csv").openStream()
         );
         Assertions.assertThat(nodes).hasSize(1);

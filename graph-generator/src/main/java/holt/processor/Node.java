@@ -2,6 +2,7 @@ package holt.processor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 //TODO: Make this into a record
@@ -11,7 +12,12 @@ public final class Node {
     private final List<Dataflow> dataflows;
 
     public Node(String name, NodeType nodeType) {
-        this.name = name;
+        this.name = name
+                .substring(0,1)
+                .toUpperCase() + name
+                .substring(1)
+                .replace(" ", "")
+                .replace("?", "");
         this.nodeType = nodeType;
         this.dataflows = new ArrayList<>();
     }

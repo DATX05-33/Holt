@@ -27,8 +27,12 @@ public final class GraphParserCSV {
      * @param inputStream The stream from which the csv comes from
      * @return The nodes that have the node type external entity
      */
-    public static List<Node> readGraph(InputStream inputStream) {
-        return generatePADFD(readCSV(inputStream));
+    public static List<Node> readGraphExternalEntity(InputStream inputStream) {
+        return generatePADFD(readCSV(inputStream), true);
+    }
+
+    public static List<Node> readGraphAll(InputStream inputStream) {
+        return generatePADFD(readCSV(inputStream), false);
     }
 
     private record CSV(List<Row> data) {
@@ -44,7 +48,7 @@ public final class GraphParserCSV {
         ) { }
     }
 
-    private static List<Node> generatePADFD(CSV csv) {
+    private static List<Node> generatePADFD(CSV csv, boolean externalEntities) {
         List<Node> externalEntityNodes = new ArrayList<>();
         Map<Integer, Node> nodes = new HashMap<>();
         Map<String, CSV.Row> nodeToRow = new HashMap<>();
@@ -98,7 +102,11 @@ public final class GraphParserCSV {
             }
         }*/
 
-        return externalEntityNodes;
+        if (externalEntities) {
+            return externalEntityNodes;
+        } else {
+            return nodes.values().stream().toList();
+        }
     }
 
     public static CSV readCSV(InputStream inputStream) {
