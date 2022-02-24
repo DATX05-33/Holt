@@ -83,8 +83,18 @@ public class CodeGenerator {
                 }
             }
 
-            ClassName returnClassName = ClassName.bestGuess(outputTypes.get(name).toString());
+            // add database connection
+            if (nodeMap.get(currentSimpleName).nodeType().equals(NodeType.CUSTOM_PROCESS)) {
+                // TODO: How do you find this? The TypeMirror/ClassName for the Database that's connected to this processor
+                List<TypeMirror> dbTypes = findDBNodes(name);
 
+                for (TypeMirror t : dbTypes) {
+                    JavaFile DBQuery = generateDBQueryInterface(t, name /*for example FormatFriend*/);
+                    // TODO: Add the query methodSpec
+                }
+            }
+
+            ClassName returnClassName = ClassName.bestGuess(outputTypes.get(name).toString());
             methodSpecBuilder.returns(returnClassName);
 
             MethodSpec methodSpec = methodSpecBuilder.build();
