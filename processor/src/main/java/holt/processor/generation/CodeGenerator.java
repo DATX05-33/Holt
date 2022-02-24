@@ -107,6 +107,27 @@ public class CodeGenerator {
         return interfaces;
     }
 
+    private List<TypeMirror> findDBNodes(TypeMirror process) {
+        List<TypeMirror> dbs = new ArrayList<>();
+
+        for (TypeMirror l : inputTypes.get(process)) {
+            // l should all be Limit
+            String lName = fullyQualifiedNameToSimpleName(l);
+            System.out.println("Limit: " + lName);
+
+            for (TypeMirror t : inputTypes.get(l)) {
+                // t can be a database
+                String tName = fullyQualifiedNameToSimpleName(l);
+                if (nodeMap.get(tName).nodeType().equals(NodeType.DATA_BASE)) {
+                    // t is database
+                    dbs.add(t);
+                }
+            }
+        }
+
+        return dbs;
+    }
+
     private String fullyQualifiedNameToSimpleName(TypeMirror typeMirror) {
         return typeMirror.toString().substring(typeMirror.toString().lastIndexOf('.') + 1);
     }
