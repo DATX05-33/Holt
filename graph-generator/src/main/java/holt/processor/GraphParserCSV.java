@@ -77,6 +77,7 @@ public final class GraphParserCSV {
                 Node source = nodes.get(Integer.valueOf(row.source()));
                 Node target = nodes.get(Integer.valueOf(row.target()));
 
+                // TODO: This is not working correctly. Does not always add outputs
                 Dataflow dataflow = dataflowMap.get(name);
                 if (dataflow == null) {
                     dataflow = new Dataflow(name, source, target);
