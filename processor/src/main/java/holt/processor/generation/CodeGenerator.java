@@ -22,7 +22,7 @@ public class CodeGenerator {
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
     private List<Node> nodes;
-    private Map<String, Node> nodeMap;
+    private Map<String, Node> nodeMap = new HashMap<>();
 
     private static CodeGenerator instance = null;
 
@@ -85,12 +85,19 @@ public class CodeGenerator {
 
             // add database connection
             if (nodeMap.get(currentSimpleName).nodeType().equals(NodeType.CUSTOM_PROCESS)) {
-                // TODO: How do you find this? The TypeMirror/ClassName for the Database that's connected to this processor
-                List<TypeMirror> dbTypes = findDBNodes(name);
+                List<TypeMirror> dbTypes = findInputNodesWithType(name, NodeType.DATA_BASE);
 
                 for (TypeMirror t : dbTypes) {
                     JavaFile DBQuery = generateDBQueryInterface(t, name /*for example FormatFriend*/);
-                    // TODO: Add the query methodSpec
+                    interfaces.add(DBQuery);
+
+                    ClassName returnType = ClassName.bestGuess(t.toString());
+                    MethodSpec methodSpec = MethodSpec
+                            .methodBuilder("query")
+                            .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                            .addParameter(Object.class, "input")    // TODO: How do we find the parameter?
+                            .returns(returnType)
+                            .build();
                 }
             }
 
