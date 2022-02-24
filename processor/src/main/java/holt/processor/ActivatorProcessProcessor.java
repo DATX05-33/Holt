@@ -20,7 +20,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
 
     private static final String annotationName = Activator.class.getName();
 
-    private final CodeGenerator codeGenerator = new CodeGenerator();
+    private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
 
     @Override
@@ -36,10 +36,6 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
-
-
-
-        System.out.println("yoo");
         if (!env.processingOver()) {
             for (Element element : env.getElementsAnnotatedWith(Activator.class)) {
                 if (element instanceof TypeElement typeElement) {

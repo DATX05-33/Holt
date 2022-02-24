@@ -19,7 +19,7 @@ public class QueryProcessor extends AbstractProcessor {
 
     private static final String annotationName = Query.class.getName();
 
-    private final CodeGenerator codeGenerator = new CodeGenerator();
+    private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -35,7 +35,6 @@ public class QueryProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment env) {
-        System.out.println("hello");
         if (!env.processingOver()) {
             for (Element element : env.getElementsAnnotatedWith(Query.class)) {
                 queryProcess(element);

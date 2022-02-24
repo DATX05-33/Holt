@@ -1,6 +1,8 @@
 package holt.processor.generation;
 
 import com.squareup.javapoet.*;
+import holt.processor.Node;
+import holt.processor.NodeType;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
