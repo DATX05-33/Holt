@@ -66,6 +66,7 @@ public class CodeGenerator {
     public List<JavaFile> generateInterfaces() {
         List<JavaFile> interfaces = new ArrayList<>();
         for (TypeMirror name : outputTypes.keySet()) {
+            String currentSimpleName = fullyQualifiedNameToSimpleName(name);
 
             MethodSpec.Builder methodSpecBuilder = MethodSpec
                     .methodBuilder(functionNames.get(name))
@@ -85,10 +86,11 @@ public class CodeGenerator {
             ClassName returnClassName = ClassName.bestGuess(outputTypes.get(name).toString());
 
             methodSpecBuilder.returns(returnClassName);
+
             MethodSpec methodSpec = methodSpecBuilder.build();
 
             TypeSpec anInterface = TypeSpec
-                    .interfaceBuilder(name.toString().substring(name.toString().lastIndexOf('.') + 1))
+                    .interfaceBuilder("I" + currentSimpleName)
                     .addMethod(methodSpec)
                     .addModifiers(Modifier.PUBLIC)
                     .build();
@@ -105,6 +107,9 @@ public class CodeGenerator {
         return interfaces;
     }
 
+    private String fullyQualifiedNameToSimpleName(TypeMirror typeMirror) {
+        return typeMirror.toString().substring(typeMirror.toString().lastIndexOf('.') + 1);
+    }
 
     public JavaFile generateInterface(String name) {
         TypeSpec interfaceGen = TypeSpec.interfaceBuilder(name)
