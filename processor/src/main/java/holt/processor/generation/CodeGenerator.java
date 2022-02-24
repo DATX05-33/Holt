@@ -117,8 +117,12 @@ public class CodeGenerator {
         return interfaces;
     }
 
-    private List<TypeMirror> findDBNodes(TypeMirror process) {
-        List<TypeMirror> dbs = new ArrayList<>();
+    public List<TypeMirror> findInputNodesWithType(TypeMirror process, NodeType nodeType) {
+        List<TypeMirror> nodes = new ArrayList<>();
+
+        if (inputTypes.get(process) == null) {
+            throw new NullPointerException("No specified input type for " + process.toString());
+        }
 
         for (TypeMirror l : inputTypes.get(process)) {
             // l should all be Limit
@@ -128,14 +132,14 @@ public class CodeGenerator {
             for (TypeMirror t : inputTypes.get(l)) {
                 // t can be a database
                 String tName = fullyQualifiedNameToSimpleName(l);
-                if (nodeMap.get(tName).nodeType().equals(NodeType.DATA_BASE)) {
-                    // t is database
-                    dbs.add(t);
+                if (nodeMap.get(tName).nodeType().equals(nodeType)) {
+                    // t is nodeType
+                    nodes.add(t);
                 }
             }
         }
 
-        return dbs;
+        return nodes;
     }
 
     private String fullyQualifiedNameToSimpleName(TypeMirror typeMirror) {
