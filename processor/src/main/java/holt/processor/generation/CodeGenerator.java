@@ -132,6 +132,34 @@ public class CodeGenerator {
         return typeMirror.toString().substring(typeMirror.toString().lastIndexOf('.') + 1);
     }
 
+    private JavaFile generateDBQueryInterface(TypeMirror dbType, TypeMirror processor) {
+        ClassName returnClassName = ClassName.bestGuess(outputTypes.get(dbType).toString());
+
+        MethodSpec methodSpec = MethodSpec
+                .methodBuilder("query")
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addParameter(returnClassName, "db")
+                .returns(Object.class) // This will change later with the Query annotation
+                .build();
+
+
+        String interfaceName = dbType.toString().substring(dbType.toString().lastIndexOf('.') + 1) +
+                "To" +
+                processor.toString().substring(processor.toString().lastIndexOf('.') + 1) +
+                "Query";
+
+        TypeSpec anInterface = TypeSpec
+                .interfaceBuilder("I" + interfaceName)
+                .addMethod(methodSpec)
+                .addModifiers(Modifier.PUBLIC)
+                .build();
+
+        JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, anInterface)
+                .build();
+
+        return javaFile;
+    }
+
     public JavaFile generateInterface(String name) {
         TypeSpec interfaceGen = TypeSpec.interfaceBuilder("I" + name)
                 .addModifiers(Modifier.PUBLIC)
