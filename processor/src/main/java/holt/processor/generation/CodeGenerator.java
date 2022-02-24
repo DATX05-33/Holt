@@ -19,20 +19,20 @@ public class CodeGenerator {
 
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
-    public static void main(String[] args) {
-        new CodeGenerator(1);
+
+    private static CodeGenerator instance = null;
+
+    public static CodeGenerator getInstance() {
+        if (instance == null) {
+            instance = new CodeGenerator();
+            return instance;
+        } else {
+            return instance;
+        }
     }
 
-    public CodeGenerator(int i) {
-        /*addOutputTypeAndFunctionName(Test1.class, String.class, Test3.class,"one");
-        addOutputTypeAndFunctionName(Test2.class, Integer.class, Test3.class, "two");
-        addOutputTypeAndFunctionName(Test3.class, String.class, Test1.class, "three");
-
-
-        generateInterfaces();*/
+    private CodeGenerator() {
     }
-
-    public CodeGenerator() {
 
     }
 
