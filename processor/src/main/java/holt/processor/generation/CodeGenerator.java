@@ -174,58 +174,8 @@ public class CodeGenerator {
         return javaFile;
     }
 
-    public JavaFile generateInterface(String name) {
-        TypeSpec interfaceGen = TypeSpec.interfaceBuilder("I" + name)
-                .addModifiers(Modifier.PUBLIC)
-                .build();
-
-        JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, interfaceGen)
-                .build();
-
-        return javaFile;
-    }
-
-    public JavaFile generateMethodFromAnnotation(Element element, Class<?> input, Class<?> output, String methodName) {
-        // TODO: What about multiple inputs?
-        // Maybe have input be a List<Class> inputs, alternatively with names as well
-        MethodSpec method = MethodSpec.methodBuilder(methodName)
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .returns(output)
-                .addParameter(input, "input")
-                .build();
-
-        TypeSpec interfaceGen = TypeSpec.interfaceBuilder(element.getSimpleName().toString())
-                .addModifiers(Modifier.PUBLIC)
-                .addMethod(method)
-                .build();
-
-        JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, interfaceGen)
-                .build();
-
-        print(javaFile);
-
-        return javaFile;
-    }
-
-    public JavaFile createEnum(List<String> strings) {
-        TypeSpec.Builder activatorEnum = TypeSpec.enumBuilder("Activator")
-                .addModifiers(Modifier.PUBLIC);
-
-        for (String s : strings) {
-            activatorEnum.addEnumConstant(s.toUpperCase());
-        }
-
-        JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, activatorEnum.build())
-                .build();
-
-        print(javaFile);
-
-        return javaFile;
-    }
-
     private void print(JavaFile javaFile) {
         try {
-            // print
             javaFile.writeTo(System.out);
         } catch (IOException e) {
             e.printStackTrace();
