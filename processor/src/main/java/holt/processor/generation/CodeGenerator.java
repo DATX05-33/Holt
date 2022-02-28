@@ -1,11 +1,14 @@
 package holt.processor.generation;
 
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
 import holt.processor.Node;
 import holt.processor.NodeType;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,14 +18,15 @@ import java.util.Map;
 
 public class CodeGenerator {
 
-    private final Map<TypeMirror, List<TypeMirror>> inputTypes = new HashMap<>();
+    private final Map<TypeMirror, List<TypeMirror>> inputTypes = new HashMap<>();       // have to use String
     private final Map<TypeMirror, TypeMirror> outputTypes = new HashMap<>();
     private final Map<TypeMirror, String> functionNames = new HashMap<>();
 
+    private final Map<String, TypeMirror> stringTypeMirrorMap = new HashMap<>();
+
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
-    private List<Node> nodes;
-    private Map<String, Node> nodeMap = new HashMap<>();
+    private final Map<String, Node> nodeMap = new HashMap<>();
 
     private static CodeGenerator instance = null;
 
@@ -42,7 +46,11 @@ public class CodeGenerator {
         for (Node n : nodes) {
             nodeMap.put(n.name(), n);
         }
-        this.nodes = nodes;
+    }
+
+    public void addTypeMirror(String name, TypeMirror typeMirror) {
+        System.out.println("addTypeMirror: adding " + name + " -> " + typeMirror.toString());
+        stringTypeMirrorMap.put(name, typeMirror);
     }
 
     public void addOutputTypeAndFunctionName(TypeMirror source, TypeMirror outputType, TypeMirror target, String functionName) {
@@ -54,11 +62,15 @@ public class CodeGenerator {
     }
 
     public void addInputTypes(TypeMirror inputType, TypeMirror source) {
+        System.out.println("Adding input types");
         if (inputTypes.get(source) == null || inputTypes.get(source).isEmpty()) {
+            System.out.println("InputTypes was null or empty");
+            System.out.println("Added " + inputType + " as input for " + source);
             List<TypeMirror> TargetsInputs = new ArrayList<>();
             TargetsInputs.add(inputType);
             inputTypes.put(source, TargetsInputs);
         } else {
+            System.out.println("Added " + inputType + " as input for " + source);
             inputTypes.get(source).add(inputType);
         }
     }
@@ -66,7 +78,7 @@ public class CodeGenerator {
     public List<JavaFile> generateInterfaces() {
         List<JavaFile> interfaces = new ArrayList<>();
         for (TypeMirror name : outputTypes.keySet()) {
-            String currentSimpleName = fullyQualifiedNameToSimpleName(name);
+            String currentSimpleName = simpleName(name);
 
             MethodSpec.Builder methodSpecBuilder = MethodSpec
                     .methodBuilder(functionNames.get(name))
@@ -88,7 +100,7 @@ public class CodeGenerator {
                 List<TypeMirror> dbTypes = findInputNodesWithType(name, NodeType.DATA_BASE);
 
                 for (TypeMirror t : dbTypes) {
-                    JavaFile DBQuery = generateDBQueryInterface(t, name /*for example FormatFriend*/);
+                    JavaFile DBQuery = generateDBQueryInterface(t /* for example FriendsDB */, name /*for example FormatFriend*/);
                     interfaces.add(DBQuery);
 
                     ClassName returnType = ClassName.bestGuess(t.toString());
@@ -100,6 +112,8 @@ public class CodeGenerator {
                             .build();
                 }
             }
+
+            System.out.println("database connection added");
 
             ClassName returnClassName = ClassName.bestGuess(outputTypes.get(name).toString());
             methodSpecBuilder.returns(returnClassName);
@@ -131,49 +145,56 @@ public class CodeGenerator {
             throw new NullPointerException("No specified input type for " + process.toString());
         }
 
-        for (TypeMirror l : inputTypes.get(process)) {
+        for (TypeMirror p : inputTypes.get(process)) {
             // l should all be Limit
-            String lName = fullyQualifiedNameToSimpleName(l);
-            System.out.println("Limit: " + lName);
-
-            for (TypeMirror t : inputTypes.get(l)) {
-                // t can be a database
-                String tName = fullyQualifiedNameToSimpleName(l);
-                if (nodeMap.get(tName).nodeType().equals(nodeType)) {
-                    // t is nodeType
-                    nodes.add(t);
-                }
+            String pName = simpleName(p);
+            System.out.println("Input: " + pName);
+            if (nodeMap.get(pName) != null && nodeMap.get(pName).nodeType().equals(NodeType.DATA_BASE)) {
+                nodes.add(stringTypeMirrorMap.get(pName));
             }
         }
+
+        System.out.println("findInputNodesWithType :: returning " + nodes);
 
         return nodes;
     }
 
-    private String fullyQualifiedNameToSimpleName(TypeMirror typeMirror) {
+    private String simpleName(TypeMirror typeMirror) {
         return typeMirror.toString().substring(typeMirror.toString().lastIndexOf('.') + 1);
     }
 
     private JavaFile generateDBQueryInterface(TypeMirror dbType, TypeMirror processor) {
-        ClassName returnClassName = ClassName.bestGuess(outputTypes.get(dbType).toString());
+        System.out.println("1");
+        System.out.println(dbType.toString());
+        System.out.println(processor.toString());
+
+        ClassName paramClassName = ClassName.bestGuess(outputTypes.get(dbType).toString());
+
+        System.out.println("2");
 
         MethodSpec methodSpec = MethodSpec
                 .methodBuilder("query")
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addParameter(returnClassName, "db")
+                .addParameter(paramClassName, "db")
                 .returns(Object.class) // This will change later with the Query annotation
                 .build();
 
+        System.out.println("3");
 
         String interfaceName = dbType.toString().substring(dbType.toString().lastIndexOf('.') + 1) +
                 "To" +
                 processor.toString().substring(processor.toString().lastIndexOf('.') + 1) +
                 "Query";
 
+        System.out.println("4");
+
         TypeSpec anInterface = TypeSpec
                 .interfaceBuilder("I" + interfaceName)
                 .addMethod(methodSpec)
                 .addModifiers(Modifier.PUBLIC)
                 .build();
+
+        System.out.println("5");
 
         JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, anInterface)
                 .build();
@@ -187,5 +208,24 @@ public class CodeGenerator {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public TypeMirror findTarget(TypeElement element) {
+        Node n = nodeMap.get(element.getSimpleName().toString());
+
+        System.out.println("findTarget: finding for " + element.getQualifiedName());
+
+        for (Node a : n.inputs()) {
+            System.out.println("    First loop: " + a.name());
+            // all a should be limits
+            for (Node b : a.inputs()) {
+                System.out.println("    Second loop: " + b.name());
+                return stringTypeMirrorMap.get(b.name());
+            }
+        }
+
+        System.out.println("    findTarget: returning null :( ");
+
+        return null;
     }
 }
