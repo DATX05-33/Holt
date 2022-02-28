@@ -73,11 +73,10 @@ public final class GraphParserCSV {
         for (CSV.Row row : csv.data()) {
             // data flows, if source is not null then target is not either.
             if (!row.source().equals("null")) {
-                String name = row.value().replace(" ","").replace("?","");
                 Node source = nodes.get(Integer.valueOf(row.source()));
                 Node target = nodes.get(Integer.valueOf(row.target()));
+                String name = source.name() + "To" + target.name();
 
-                // TODO: This is not working correctly. Does not always add outputs
                 Dataflow dataflow = dataflowMap.get(name);
                 if (dataflow == null) {
                     dataflow = new Dataflow(name, source, target);
