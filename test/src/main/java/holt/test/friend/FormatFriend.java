@@ -1,9 +1,9 @@
 package holt.test.friend;
 
-import holt.processor.annotation.Activator;
+import holt.processor.annotation.Processor;
 import holt.processor.annotation.PADFD;
 
-@Activator(
+@Processor(
         methodName = "formatFriend",
         outputType = Friend.class
 )

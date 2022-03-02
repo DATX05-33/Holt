@@ -1,7 +1,7 @@
 package holt.test.friend;
 
-import holt.processor.annotation.DBActivator;
+import holt.processor.annotation.Database;
 
-@DBActivator
+@Database
 public class FriendsDB {
 }

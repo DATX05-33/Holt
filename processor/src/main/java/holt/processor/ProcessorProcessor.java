@@ -1,8 +1,8 @@
 package holt.processor;
 
 import com.squareup.javapoet.JavaFile;
-import holt.processor.annotation.Activator;
-import holt.processor.annotation.DBActivator;
+import holt.processor.annotation.Processor;
+import holt.processor.annotation.Database;
 import holt.processor.generation.CodeGenerator;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -11,18 +11,16 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
-import javax.tools.JavaFileObject;
 import java.io.IOException;
-import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ActivatorProcessor extends AbstractProcessor {
+public class ProcessorProcessor extends AbstractProcessor {
 
-    private static final String activatorName = Activator.class.getName();
-    private static final String DBActivatorName = DBActivator.class.getName();
+    private static final String activatorName = Processor.class.getName();
+    private static final String DBActivatorName = Database.class.getName();
 
     private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
@@ -44,7 +42,7 @@ public class ActivatorProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
         if (!env.processingOver() && firstRun) {
             // first pass we map String to TypeMirrors
-            for (Element element : env.getElementsAnnotatedWith(Activator.class)) {
+            for (Element element : env.getElementsAnnotatedWith(Processor.class)) {
                 if (element instanceof TypeElement typeElement) {
                     // all SimpleNames have to be unique and same as the node name in the PADFD
                     addTypeMirrors(typeElement);
@@ -54,7 +52,7 @@ public class ActivatorProcessor extends AbstractProcessor {
                 }
             }
 
-            for (Element element : env.getElementsAnnotatedWith(DBActivator.class)) {
+            for (Element element : env.getElementsAnnotatedWith(Database.class)) {
                 if (element instanceof TypeElement typeElement) {
                     addDBTypeMirrors(typeElement);
                 } else {
@@ -63,7 +61,7 @@ public class ActivatorProcessor extends AbstractProcessor {
             }
 
             // then we map the outputs and inputs
-            for (Element element : env.getElementsAnnotatedWith(Activator.class)) {
+            for (Element element : env.getElementsAnnotatedWith(Processor.class)) {
                 if (element instanceof TypeElement typeElement) {
                     mapInputOutput(typeElement);
                 } else {
@@ -86,7 +84,7 @@ public class ActivatorProcessor extends AbstractProcessor {
     }
 
     private void addTypeMirrors(TypeElement typeElement) {
-        Activator annotation = typeElement.getAnnotation(Activator.class);
+        Processor annotation = typeElement.getAnnotation(Processor.class);
 
         TypeElement output = asTypeElement(
                 getMyValue(typeElement, annotation,"outputType")
@@ -108,7 +106,7 @@ public class ActivatorProcessor extends AbstractProcessor {
      * @param element class
      */
     private void mapInputOutput(TypeElement element)  {
-        Activator annotation = element.getAnnotation(Activator.class);
+        Processor annotation = element.getAnnotation(Processor.class);
 
         TypeElement output = asTypeElement(
                 getMyValue(element, annotation,"outputType")
