@@ -22,15 +22,10 @@ public final class GraphParserCSV {
 
     /**
      * Reads the CSV file from the given input stream and generates a graph from it.
-     * Returns the external entities as they can be used as entry points
-     * for the program.
+     *
      * @param inputStream The stream from which the csv comes from
-     * @return The nodes that have the node type external entity
+     * @return The nodes of the graph
      */
-    public static List<Node> readGraphExternalEntity(InputStream inputStream) {
-        return generatePADFD(readCSV(inputStream), true);
-    }
-
     public static List<Node> readGraphAll(InputStream inputStream) {
         return generatePADFD(readCSV(inputStream), false);
     }
@@ -91,16 +86,6 @@ public final class GraphParserCSV {
                 }
             }
         }
-
-        // TODO: Remove this
-        //Go through the proc
-        /*for(Node node : nodes.values()) {
-            if (node.nodeType().equals(NodeType.REASON)) {
-                // Custom Process basically, adds a data flow between.
-                Node processNode = nodes.get(nodeToRow.get(node.name()).for_process);
-                processNode.addOutput(node);
-            }
-        }*/
 
         if (externalEntities) {
             return externalEntityNodes;

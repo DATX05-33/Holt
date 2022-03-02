@@ -54,8 +54,7 @@ public class PADFDProcessor extends AbstractProcessor {
             codeGenerator.setNodes(nodes);
         }
     }
-
-
+    
     private List<Node> getNodes(InputStream inputStream) {
         return GraphParserCSV.readGraphAll(inputStream);
     }
