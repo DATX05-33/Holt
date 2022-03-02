@@ -12,7 +12,7 @@ public enum NodeType {
     DB_LOG("DB_log"),
     DATA_BASE("data_base"),
     POLICY_DB("pol_DB"),
-    DATA_FLOW(null);
+    DATAFLOW(null);
 
     NodeType(String name) {
         this.name = name;
@@ -22,7 +22,7 @@ public enum NodeType {
 
     public static NodeType get(String name) {
         return Arrays.stream(NodeType.values()).filter(nodeType -> name.equals(nodeType.name)).findAny()
-                .orElse(DATA_FLOW); // TODO: Possible type that is not a Data flow
+                .orElse(DATAFLOW); // TODO: Possible type that is not a Data flow
         //.orElseThrow(() -> new IllegalArgumentException("Cannot find NodeType for name " + name));
     }
 }
