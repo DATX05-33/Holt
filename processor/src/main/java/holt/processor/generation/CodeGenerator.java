@@ -19,7 +19,7 @@ public class CodeGenerator {
     private final Map<TypeMirror, TypeMirror> outputTypes = new HashMap<>();
     private final Map<TypeMirror, String> functionNames = new HashMap<>();
 
-    private final Map<String, TypeMirror> stringTypeMirrorMap = new HashMap<>();
+    private final Map<String, TypeMirror> nameToTypeMirrorMap = new HashMap<>();
 
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
@@ -46,7 +46,7 @@ public class CodeGenerator {
     }
 
     public void addTypeMirror(String name, TypeMirror typeMirror) {
-        stringTypeMirrorMap.put(name, typeMirror);
+        nameToTypeMirrorMap.put(name, typeMirror);
     }
 
     public void addOutputTypeAndFunctionName(TypeMirror source, TypeMirror outputType, TypeMirror target, String functionName) {
@@ -102,6 +102,7 @@ public class CodeGenerator {
                     );
                 }
 
+                // for each database that's connected to this process
                 for (TypeMirror db : dbTypes) {
                     JavaFile DBQuery = generateDBQueryInterface(db, currentProcess);
                     interfaces.add(DBQuery);
@@ -144,7 +145,7 @@ public class CodeGenerator {
             if (a.nodeType().equals(NodeType.LIMIT)) {
                 for (Node b : a.inputs()) {
                     if (b.nodeType().equals(NodeType.DATA_BASE)) {
-                        databases.add(stringTypeMirrorMap.get(b.name()));
+                        databases.add(nameToTypeMirrorMap.get(b.name()));
                     }
                 }
             }
@@ -158,7 +159,7 @@ public class CodeGenerator {
     }
 
     private JavaFile generateDBQueryInterface(TypeMirror dbType, TypeMirror processor) {
-        ClassName paramClassName = ClassName.bestGuess(stringTypeMirrorMap.get(simpleName(dbType)).toString());
+        ClassName paramClassName = ClassName.bestGuess(nameToTypeMirrorMap.get(simpleName(dbType)).toString());
 
         MethodSpec methodSpec = MethodSpec
                 .methodBuilder("query")
@@ -178,10 +179,8 @@ public class CodeGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .build();
 
-        JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, anInterface)
+        return JavaFile.builder(PACKAGE_NAME, anInterface)
                 .build();
-
-        return javaFile;
     }
 
     private void print(JavaFile javaFile) {
@@ -205,7 +204,7 @@ public class CodeGenerator {
             // TODO: Second loop is only relevant for Limits. Maybe add if statement
             List<Node> outputs2 = a.outputs();
             for (Node b : outputs2) {
-                TypeMirror outputTargetType = stringTypeMirrorMap.get(b.name());
+                TypeMirror outputTargetType = nameToTypeMirrorMap.get(b.name());
                 // if it is null, that means that it's a log, limit, reason, etc
                 if (outputTargetType != null) {
                     return outputTargetType;
