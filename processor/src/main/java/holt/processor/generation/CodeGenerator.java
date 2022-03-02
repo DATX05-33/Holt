@@ -76,18 +76,18 @@ public class CodeGenerator {
         System.out.println("generateInterfaces :: start");
         List<JavaFile> interfaces = new ArrayList<>();
 
-        for (TypeMirror name : outputTypes.keySet()) {
-            String currentSimpleName = simpleName(name);
+        for (TypeMirror currentProcess : outputTypes.keySet()) {
+            String currentSimpleName = simpleName(currentProcess);
             System.out.println("generateInterfaces :: generating for " + currentSimpleName);
 
             MethodSpec.Builder methodSpecBuilder = MethodSpec
-                    .methodBuilder(functionNames.get(name))
+                    .methodBuilder(functionNames.get(currentProcess))
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
             System.out.println("generateInterfaces :: adding inputs");
-            if (inputTypes.get(name) != null) {
-                for (int i = 0; i < inputTypes.get(name).size(); i++) {
-                    ClassName parameterClassName = ClassName.bestGuess(inputTypes.get(name).get(i).toString());
+            if (inputTypes.get(currentProcess) != null) {
+                for (int i = 0; i < inputTypes.get(currentProcess).size(); i++) {
+                    ClassName parameterClassName = ClassName.bestGuess(inputTypes.get(currentProcess).get(i).toString());
                     methodSpecBuilder.addParameter(
                             parameterClassName,
                             "input" + i
@@ -102,20 +102,26 @@ public class CodeGenerator {
 
             // add database connection
             if (nodeMap.get(currentSimpleName).nodeType().equals(NodeType.CUSTOM_PROCESS)) {
-                List<TypeMirror> dbTypes = findInputNodesWithType(name, NodeType.DATA_BASE);
+                List<TypeMirror> dbTypes = findDatabaseInput(currentProcess);
 
+                for (int i = 0; i < dbTypes.size(); i++) {
+                    methodSpecBuilder.addParameter(
+                            Object.class,
+                            "input" + (i+1)
+                    );
+                }
 
                 System.out.println("DBTypes: " + Arrays.toString(dbTypes.toArray()));
 
-                for (TypeMirror t : dbTypes) {
-                    JavaFile DBQuery = generateDBQueryInterface(t /* for example FriendsDB */, name /*for example FormatFriend*/);
+                for (TypeMirror db : dbTypes) {
+                    JavaFile DBQuery = generateDBQueryInterface(db, currentProcess);
                     interfaces.add(DBQuery);
 
-                    ClassName returnType = ClassName.bestGuess(t.toString());
+                    ClassName returnType = ClassName.bestGuess( PACKAGE_NAME + "." + DBQuery.typeSpec.name);
                     MethodSpec methodSpec = MethodSpec
-                            .methodBuilder("query")
+                            .methodBuilder("get" + simpleName(db) + "Query")
                             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                            .addParameter(Object.class, "input")    // TODO: How do we find the parameter? Is it FriendsRaw? That's in the inputTypes thingy
+                            .addParameter(Object.class, "input")    // TODO: How do we find the parameter? Should be FriendsID
                             .returns(returnType)
                             .build();
 
@@ -126,7 +132,7 @@ public class CodeGenerator {
 
             System.out.println("generateInterfaces :: database connections done");
 
-            ClassName returnClassName = ClassName.bestGuess(outputTypes.get(name).toString());
+            ClassName returnClassName = ClassName.bestGuess(outputTypes.get(currentProcess).toString());
             methodSpecBuilder.returns(returnClassName);
 
             MethodSpec methodSpec = methodSpecBuilder.build();
@@ -174,6 +180,24 @@ public class CodeGenerator {
         return nodes;
     }
 
+
+    private List<TypeMirror> findDatabaseInput(TypeMirror process) {
+        List<TypeMirror> databases = new ArrayList<>();
+        Node node = nodeMap.get(simpleName(process));
+
+        for (Node a : node.inputs()) {
+            if (a.nodeType().equals(NodeType.LIMIT)) {
+                for (Node b : a.inputs()) {
+                    if (b.nodeType().equals(NodeType.DATA_BASE)) {
+                        databases.add(stringTypeMirrorMap.get(b.name()));
+                    }
+                }
+            }
+        }
+
+        return databases;
+    }
+
     private String simpleName(TypeMirror typeMirror) {
         return typeMirror.toString().substring(typeMirror.toString().lastIndexOf('.') + 1);
     }
@@ -183,7 +207,7 @@ public class CodeGenerator {
         System.out.println(dbType.toString());
         System.out.println(processor.toString());
 
-        ClassName paramClassName = ClassName.bestGuess(outputTypes.get(dbType).toString());
+        ClassName paramClassName = ClassName.bestGuess(stringTypeMirrorMap.get(simpleName(dbType)).toString());
 
         System.out.println("2");
 
@@ -250,9 +274,7 @@ public class CodeGenerator {
             }
         }
 
-
         System.out.println("findTarget :: returning null :( ");
-
 
         return null;
     }
