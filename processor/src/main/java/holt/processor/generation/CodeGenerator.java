@@ -117,12 +117,14 @@ public class CodeGenerator {
                     JavaFile DBQuery = generateDBQueryInterface(db, currentProcess);
                     interfaces.add(DBQuery);
 
-                    ClassName returnType = ClassName.bestGuess( PACKAGE_NAME + "." + DBQuery.typeSpec.name);
+                    ClassName returnClass = ClassName.bestGuess( PACKAGE_NAME + "." + DBQuery.typeSpec.name);
+                    ClassName parameterClass = ClassName.bestGuess(inputTypes.get(currentProcess).get(0).toString());
+                    // TODO: parameterClass only works right now if currentProcess only has one input
                     MethodSpec methodSpec = MethodSpec
                             .methodBuilder("get" + simpleName(db) + "Query")
                             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                            .addParameter(Object.class, "input")    // TODO: How do we find the parameter? Should be FriendsID
-                            .returns(returnType)
+                            .addParameter(parameterClass, "input")
+                            .returns(returnClass)
                             .build();
 
                     anInterfaceBuilder.addMethod(methodSpec);
