@@ -46,7 +46,6 @@ public class CodeGenerator {
     }
 
     public void addTypeMirror(String name, TypeMirror typeMirror) {
-        System.out.println("addTypeMirror: adding " + name + " -> " + typeMirror.toString());
         stringTypeMirrorMap.put(name, typeMirror);
     }
 
@@ -59,32 +58,25 @@ public class CodeGenerator {
     }
 
     public void addInputTypes(TypeMirror inputType, TypeMirror source) {
-        System.out.println("Adding input types");
         if (inputTypes.get(source) == null || inputTypes.get(source).isEmpty()) {
-            System.out.println("InputTypes was null or empty");
-            System.out.println("Added " + inputType + " as input for " + source);
             List<TypeMirror> TargetsInputs = new ArrayList<>();
             TargetsInputs.add(inputType);
             inputTypes.put(source, TargetsInputs);
         } else {
-            System.out.println("Added " + inputType + " as input for " + source);
             inputTypes.get(source).add(inputType);
         }
     }
 
     public List<JavaFile> generateInterfaces() {
-        System.out.println("generateInterfaces :: start");
         List<JavaFile> interfaces = new ArrayList<>();
 
         for (TypeMirror currentProcess : outputTypes.keySet()) {
             String currentSimpleName = simpleName(currentProcess);
-            System.out.println("generateInterfaces :: generating for " + currentSimpleName);
 
             MethodSpec.Builder methodSpecBuilder = MethodSpec
                     .methodBuilder(functionNames.get(currentProcess))
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
-            System.out.println("generateInterfaces :: adding inputs");
             if (inputTypes.get(currentProcess) != null) {
                 for (int i = 0; i < inputTypes.get(currentProcess).size(); i++) {
                     ClassName parameterClassName = ClassName.bestGuess(inputTypes.get(currentProcess).get(i).toString());
@@ -94,7 +86,6 @@ public class CodeGenerator {
                     );
                 }
             }
-            System.out.println("generateInterfaces :: inputs added");
 
             TypeSpec.Builder anInterfaceBuilder = TypeSpec
                     .interfaceBuilder("I" + currentSimpleName)
@@ -111,8 +102,6 @@ public class CodeGenerator {
                     );
                 }
 
-                System.out.println("DBTypes: " + Arrays.toString(dbTypes.toArray()));
-
                 for (TypeMirror db : dbTypes) {
                     JavaFile DBQuery = generateDBQueryInterface(db, currentProcess);
                     interfaces.add(DBQuery);
@@ -128,11 +117,8 @@ public class CodeGenerator {
                             .build();
 
                     anInterfaceBuilder.addMethod(methodSpec);
-                    System.out.println("generateInterfaces :: database added");
                 }
             }
-
-            System.out.println("generateInterfaces :: database connections done");
 
             ClassName returnClassName = ClassName.bestGuess(outputTypes.get(currentProcess).toString());
             methodSpecBuilder.returns(returnClassName);
@@ -144,44 +130,11 @@ public class CodeGenerator {
             JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, anInterfaceBuilder.build())
                     .build();
 
-            // System.out.println("----------------------------");
-            // print(javaFile);
-            // System.out.println("----------------------------");
             interfaces.add(javaFile);
         }
 
-        System.out.println("generateInterfaces :: end");
         return interfaces;
     }
-
-    public List<TypeMirror> findInputNodesWithType(TypeMirror process, NodeType nodeType) {
-        List<TypeMirror> nodes = new ArrayList<>();
-
-        System.out.println("findInputNodesWithType :: " + process.toString());
-
-        if (inputTypes.get(process) == null) {
-            throw new NullPointerException("No specified input type for " + process);
-        }
-
-        for (TypeMirror p : inputTypes.get(process)) {
-            String pName = simpleName(p);
-            System.out.println("findInputNodesWithType ::   loop " + pName);
-            //System.out.println("Input: " + pName);
-            boolean a = nodeMap.get(pName) != null; //&& nodeMap.get(pName).nodeType().equals(nodeType);
-
-            System.out.println("findInputNodesWithType ::   loop bool " + a);
-            if (a) {
-                TypeMirror b = stringTypeMirrorMap.get(pName);
-                System.out.println("findInputNodesWithType ::   in if " + b);
-                nodes.add(b);
-            }
-        }
-
-        System.out.println("findInputNodesWithType :: returning " + nodes);
-
-        return nodes;
-    }
-
 
     private List<TypeMirror> findDatabaseInput(TypeMirror process) {
         List<TypeMirror> databases = new ArrayList<>();
@@ -205,13 +158,7 @@ public class CodeGenerator {
     }
 
     private JavaFile generateDBQueryInterface(TypeMirror dbType, TypeMirror processor) {
-        System.out.println("1");
-        System.out.println(dbType.toString());
-        System.out.println(processor.toString());
-
         ClassName paramClassName = ClassName.bestGuess(stringTypeMirrorMap.get(simpleName(dbType)).toString());
-
-        System.out.println("2");
 
         MethodSpec methodSpec = MethodSpec
                 .methodBuilder("query")
@@ -220,22 +167,16 @@ public class CodeGenerator {
                 .returns(Object.class) // This will change later with the Query annotation
                 .build();
 
-        System.out.println("3");
-
         String interfaceName = dbType.toString().substring(dbType.toString().lastIndexOf('.') + 1) +
                 "To" +
                 processor.toString().substring(processor.toString().lastIndexOf('.') + 1) +
                 "Query";
-
-        System.out.println("4");
 
         TypeSpec anInterface = TypeSpec
                 .interfaceBuilder("I" + interfaceName)
                 .addMethod(methodSpec)
                 .addModifiers(Modifier.PUBLIC)
                 .build();
-
-        System.out.println("5");
 
         JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, anInterface)
                 .build();
@@ -254,20 +195,16 @@ public class CodeGenerator {
     public TypeMirror findTarget(TypeElement element) {
         Node n = nodeMap.get(element.getSimpleName().toString());
 
-        System.out.println("findTarget :: finding for " + element.getQualifiedName());
-
         // TODO: Is stepping two steps forward a good thing?
         //  It's mentioned that the developers are supposed to be able to edit the PADFD. What happens then?
 
         List<Node> outputs1 = n.outputs();
 
         for (Node a : outputs1) {
-            System.out.println("    First loop: " + a.name());
             // all a should be limits or requests
             // TODO: Second loop is only relevant for Limits. Maybe add if statement
             List<Node> outputs2 = a.outputs();
             for (Node b : outputs2) {
-                System.out.println("        Second loop: " + b.name());
                 TypeMirror outputTargetType = stringTypeMirrorMap.get(b.name());
                 // if it is null, that means that it's a log, limit, reason, etc
                 if (outputTargetType != null) {
@@ -275,8 +212,6 @@ public class CodeGenerator {
                 }
             }
         }
-
-        System.out.println("findTarget :: returning null :( ");
 
         return null;
     }
