@@ -1,14 +1,5 @@
 package holt.processor;
 
-public class Dataflow {
+public record Dataflow(String name, Node source, Node target) {
 
-    final String name;
-    final Node source;
-    final Node target;
-
-    public Dataflow(String name, Node source, Node target) {
-        this.name = name;
-        this.source = source;
-        this.target = target;
-    }
 }

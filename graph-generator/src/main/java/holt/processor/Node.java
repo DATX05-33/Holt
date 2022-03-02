@@ -33,8 +33,8 @@ public final class Node {
     public List<Node> outputs() {
         List<Node> outputs = new ArrayList<>();
         for (Dataflow d : dataflows) {
-            if (d.source == this) {
-                outputs.add(d.target);
+            if (d.source() == this) {
+                outputs.add(d.target());
             }
         }
         return outputs;
@@ -43,8 +43,8 @@ public final class Node {
     public List<Node> inputs() {
         List<Node> inputs = new ArrayList<>();
         for (Dataflow d : dataflows) {
-            if (d.target == this) {
-                inputs.add(d.source);
+            if (d.target() == this) {
+                inputs.add(d.source());
             }
         }
         return inputs;
