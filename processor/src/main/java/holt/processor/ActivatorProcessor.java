@@ -97,8 +97,6 @@ public class ActivatorProcessor extends AbstractProcessor {
     }
 
     private void addDBTypeMirrors(TypeElement typeElement) {
-        DBActivator annotation = typeElement.getAnnotation(DBActivator.class);
-
         codeGenerator.addTypeMirror(typeElement.getSimpleName().toString(), typeElement.asType());
     }
 
@@ -117,9 +115,6 @@ public class ActivatorProcessor extends AbstractProcessor {
         );
 
         String methodName = annotation.methodName();
-
-        // TODO: Generate DBQuery interface.
-        //  interface FriendDBToFormatFriendDBQuery { Object query(FriendDB db);
 
         TypeMirror target = codeGenerator.findTarget(element);
 
@@ -167,17 +162,7 @@ public class ActivatorProcessor extends AbstractProcessor {
     private void saveJavaFile(JavaFile javaFile) {
         try {
             if (javaFile != null) {
-                String fullyQualifiedName = javaFile.packageName + "." + javaFile.typeSpec.name;
-                System.out.println("Trying to create " + fullyQualifiedName);
-                JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile(fullyQualifiedName);
-                if (sourceFile.delete()) {
-                    System.out.println("DELETED");
-                }
-                try (Writer writer = sourceFile.openWriter()) {
-                    writer.write(javaFile.toString());
-                }
-
-                //javaFile.writeTo(processingEnv.getFiler());
+                javaFile.writeTo(processingEnv.getFiler());
             }
         } catch (IOException e) {
             e.printStackTrace();
