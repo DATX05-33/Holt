@@ -49,6 +49,7 @@ public class ActivatorProcessor extends AbstractProcessor {
                     // all SimpleNames have to be unique and same as the node name in the PADFD
                     addTypeMirrors(typeElement);
                 } else {
+                    // TODO: use SLF4J together with Logback for logging instead
                     System.out.println("Element was not TypeElement");
                 }
             }
