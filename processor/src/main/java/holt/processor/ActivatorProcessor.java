@@ -21,8 +21,8 @@ import java.util.Set;
 
 public class ActivatorProcessor extends AbstractProcessor {
 
-    private static final String annotationName1 = Activator.class.getName();
-    private static final String annotationName2 = DBActivator.class.getName();
+    private static final String activatorName = Activator.class.getName();
+    private static final String DBActivatorName = DBActivator.class.getName();
 
     private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
@@ -30,7 +30,7 @@ public class ActivatorProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(annotationName1, annotationName2);
+        return Set.of(activatorName, DBActivatorName);
     }
 
     @Override
