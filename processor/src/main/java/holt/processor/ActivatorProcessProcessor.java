@@ -2,6 +2,7 @@ package holt.processor;
 
 import com.squareup.javapoet.JavaFile;
 import holt.processor.annotation.Activator;
+import holt.processor.annotation.DBActivator;
 import holt.processor.generation.CodeGenerator;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -20,7 +21,8 @@ import java.util.Set;
 
 public class ActivatorProcessProcessor extends AbstractProcessor {
 
-    private static final String annotationName = Activator.class.getName();
+    private static final String annotationName1 = Activator.class.getName();
+    private static final String annotationName2 = DBActivator.class.getName();
 
     private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
@@ -28,7 +30,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(annotationName);
+        return Set.of(annotationName1, annotationName2);
     }
 
     @Override
@@ -46,6 +48,14 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
                 if (element instanceof TypeElement typeElement) {
                     // all SimpleNames have to be unique and same as the node name in the PADFD
                     addTypeMirrors(typeElement);
+                } else {
+                    System.out.println("Element was not TypeElement");
+                }
+            }
+
+            for (Element element : env.getElementsAnnotatedWith(DBActivator.class)) {
+                if (element instanceof TypeElement typeElement) {
+                    addDBTypeMirrors(typeElement);
                 } else {
                     System.out.println("Element was not TypeElement");
                 }
@@ -83,6 +93,12 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
 
         codeGenerator.addTypeMirror(typeElement.getSimpleName().toString(), typeElement.asType());
         codeGenerator.addTypeMirror(output.getSimpleName().toString(), output.asType());
+    }
+
+    private void addDBTypeMirrors(TypeElement typeElement) {
+        DBActivator annotation = typeElement.getAnnotation(DBActivator.class);
+
+        codeGenerator.addTypeMirror(typeElement.getSimpleName().toString(), typeElement.asType());
     }
 
     /**

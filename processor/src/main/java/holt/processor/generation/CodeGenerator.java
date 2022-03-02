@@ -15,7 +15,7 @@ import java.util.*;
 
 public class CodeGenerator {
 
-    private final Map<TypeMirror, List<TypeMirror>> inputTypes = new HashMap<>();       // have to use String
+    private final Map<TypeMirror, List<TypeMirror>> inputTypes = new HashMap<>();
     private final Map<TypeMirror, TypeMirror> outputTypes = new HashMap<>();
     private final Map<TypeMirror, String> functionNames = new HashMap<>();
 
@@ -115,7 +115,7 @@ public class CodeGenerator {
                     MethodSpec methodSpec = MethodSpec
                             .methodBuilder("query")
                             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                            .addParameter(Object.class, "input")    // TODO: How do we find the parameter?
+                            .addParameter(Object.class, "input")    // TODO: How do we find the parameter? Is it FriendsRaw? That's in the inputTypes thingy
                             .returns(returnType)
                             .build();
 
@@ -149,16 +149,23 @@ public class CodeGenerator {
     public List<TypeMirror> findInputNodesWithType(TypeMirror process, NodeType nodeType) {
         List<TypeMirror> nodes = new ArrayList<>();
 
+        System.out.println("findInputNodesWithType :: " + process.toString());
+
         if (inputTypes.get(process) == null) {
-            throw new NullPointerException("No specified input type for " + process.toString());
+            throw new NullPointerException("No specified input type for " + process);
         }
 
         for (TypeMirror p : inputTypes.get(process)) {
-            // l should all be Limit
             String pName = simpleName(p);
+            System.out.println("findInputNodesWithType ::   loop " + pName);
             //System.out.println("Input: " + pName);
-            if (nodeMap.get(pName) != null && nodeMap.get(pName).nodeType().equals(nodeType)) {
-                nodes.add(stringTypeMirrorMap.get(pName));
+            boolean a = nodeMap.get(pName) != null; //&& nodeMap.get(pName).nodeType().equals(nodeType);
+
+            System.out.println("findInputNodesWithType ::   loop bool " + a);
+            if (a) {
+                TypeMirror b = stringTypeMirrorMap.get(pName);
+                System.out.println("findInputNodesWithType ::   in if " + b);
+                nodes.add(b);
             }
         }
 
