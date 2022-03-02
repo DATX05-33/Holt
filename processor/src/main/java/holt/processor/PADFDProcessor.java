@@ -52,37 +52,9 @@ public class PADFDProcessor extends AbstractProcessor {
         if (inputStream != null) {
             List<Node> nodes = getNodes(inputStream);
             codeGenerator.setNodes(nodes);
-
-            for (Node n : nodes) {
-                JavaFile javaFile = null;
-
-                switch (n.nodeType()) {
-                    case EXTERNAL_ENTITY, CUSTOM_PROCESS, REASON, REQUEST, LIMIT, LOG, DB_LOG, DATA_BASE -> {
-                        javaFile = codeGenerator.generateInterface(n.name());
-                    }
-                    case POLICY_DB, DATA_FLOW -> {
-                        // What happens here?
-                    }
-                }
-                saveJavaFile(javaFile);
-            }
         }
     }
 
-    private void saveJavaFile(JavaFile javaFile) {
-        try {
-            if (javaFile != null) {
-                javaFile.writeTo(processingEnv.getFiler());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private List<Node> getExternalEntityNodes(InputStream inputStream) {
-        return GraphParserCSV.readGraphExternalEntity(inputStream);
-    }
 
     private List<Node> getNodes(InputStream inputStream) {
         return GraphParserCSV.readGraphAll(inputStream);
@@ -93,7 +65,6 @@ public class PADFDProcessor extends AbstractProcessor {
      */
     private InputStream getPADFDFile(String padfdFile) {
         try {
-
             return processingEnv.getFiler().getResource(
                     StandardLocation.CLASS_OUTPUT,
                     "",

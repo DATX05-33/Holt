@@ -41,7 +41,7 @@ public class QueryProcessor extends AbstractProcessor {
             }
         }
 
-        return false;
+        return true;
     }
 
     private void queryProcess(Element element) {
