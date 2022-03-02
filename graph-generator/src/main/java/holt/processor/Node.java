@@ -65,12 +65,12 @@ public final class Node {
         var that = (Node) obj;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.nodeType, that.nodeType) &&
-                Objects.equals(this.outputs(), that.outputs());
+                Objects.equals(this.dataflows, that.dataflows);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, nodeType, outputs());
+        return Objects.hash(name, nodeType, dataflows);
     }
 
     @Override
@@ -78,6 +78,6 @@ public final class Node {
         return "Node[" +
                 "name=" + name + ", " +
                 "nodeType=" + nodeType + ", " +
-                "outputs=" + outputs() + ']';
+                "outputs=" + dataflows() + ']';
     }
 }
