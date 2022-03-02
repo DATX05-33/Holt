@@ -25,6 +25,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
     private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
 
+
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Set.of(annotationName);
@@ -35,10 +36,11 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
         return SourceVersion.latest();
     }
 
+    private boolean firstRun = true;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
-        if (!env.processingOver()) {
+        if (!env.processingOver() && firstRun) {
             // first pass we map String to TypeMirrors
             for (Element element : env.getElementsAnnotatedWith(Activator.class)) {
                 if (element instanceof TypeElement typeElement) {
@@ -57,15 +59,19 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
                     System.out.println("Element was not TypeElement");
                 }
             }
+
+            List<JavaFile> interfaces = codeGenerator.generateInterfaces();
+
+            for (JavaFile j : interfaces) {
+                saveJavaFile(j);
+            }
+
+            firstRun = false;   // processor runs in multiple runs. We only need the first one
+                                // TODO: Double check that all necessary processing happens in round one
+                                //  maybe somehow mark the elements as processed?
         }
 
-        List<JavaFile> interfaces = codeGenerator.generateInterfaces();
-
-        for (JavaFile j : interfaces) {
-            saveJavaFile(j);
-        }
-
-        return false;
+        return true;
     }
 
     private void addTypeMirrors(TypeElement typeElement) {
@@ -145,6 +151,7 @@ public class ActivatorProcessProcessor extends AbstractProcessor {
         try {
             if (javaFile != null) {
                 String fullyQualifiedName = javaFile.packageName + "." + javaFile.typeSpec.name;
+                System.out.println("Trying to create " + fullyQualifiedName);
                 JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile(fullyQualifiedName);
                 if (sourceFile.delete()) {
                     System.out.println("DELETED");
