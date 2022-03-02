@@ -11,10 +11,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CodeGenerator {
 
@@ -76,15 +73,18 @@ public class CodeGenerator {
     }
 
     public List<JavaFile> generateInterfaces() {
+        System.out.println("generateInterfaces :: start");
         List<JavaFile> interfaces = new ArrayList<>();
+
         for (TypeMirror name : outputTypes.keySet()) {
             String currentSimpleName = simpleName(name);
+            System.out.println("generateInterfaces :: generating for " + currentSimpleName);
 
             MethodSpec.Builder methodSpecBuilder = MethodSpec
                     .methodBuilder(functionNames.get(name))
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
-            // add inputs
+            System.out.println("generateInterfaces :: adding inputs");
             if (inputTypes.get(name) != null) {
                 for (int i = 0; i < inputTypes.get(name).size(); i++) {
                     ClassName parameterClassName = ClassName.bestGuess(inputTypes.get(name).get(i).toString());
@@ -94,10 +94,18 @@ public class CodeGenerator {
                     );
                 }
             }
+            System.out.println("generateInterfaces :: inputs added");
+
+            TypeSpec.Builder anInterfaceBuilder = TypeSpec
+                    .interfaceBuilder("I" + currentSimpleName)
+                    .addModifiers(Modifier.PUBLIC);
 
             // add database connection
             if (nodeMap.get(currentSimpleName).nodeType().equals(NodeType.CUSTOM_PROCESS)) {
                 List<TypeMirror> dbTypes = findInputNodesWithType(name, NodeType.DATA_BASE);
+
+
+                System.out.println("DBTypes: " + Arrays.toString(dbTypes.toArray()));
 
                 for (TypeMirror t : dbTypes) {
                     JavaFile DBQuery = generateDBQueryInterface(t /* for example FriendsDB */, name /*for example FormatFriend*/);
@@ -110,31 +118,31 @@ public class CodeGenerator {
                             .addParameter(Object.class, "input")    // TODO: How do we find the parameter?
                             .returns(returnType)
                             .build();
+
+                    anInterfaceBuilder.addMethod(methodSpec);
+                    System.out.println("generateInterfaces :: database added");
                 }
             }
 
-            System.out.println("database connection added");
+            System.out.println("generateInterfaces :: database connections done");
 
             ClassName returnClassName = ClassName.bestGuess(outputTypes.get(name).toString());
             methodSpecBuilder.returns(returnClassName);
 
             MethodSpec methodSpec = methodSpecBuilder.build();
 
-            TypeSpec anInterface = TypeSpec
-                    .interfaceBuilder("I" + currentSimpleName)
-                    .addMethod(methodSpec)
-                    .addModifiers(Modifier.PUBLIC)
+            anInterfaceBuilder.addMethod(methodSpec);
+
+            JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, anInterfaceBuilder.build())
                     .build();
 
-            JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, anInterface)
-                    .build();
-
-            System.out.println("----------------------------");
-            print(javaFile);
-            System.out.println("----------------------------");
+            // System.out.println("----------------------------");
+            // print(javaFile);
+            // System.out.println("----------------------------");
             interfaces.add(javaFile);
         }
 
+        System.out.println("generateInterfaces :: end");
         return interfaces;
     }
 
@@ -148,8 +156,8 @@ public class CodeGenerator {
         for (TypeMirror p : inputTypes.get(process)) {
             // l should all be Limit
             String pName = simpleName(p);
-            System.out.println("Input: " + pName);
-            if (nodeMap.get(pName) != null && nodeMap.get(pName).nodeType().equals(NodeType.DATA_BASE)) {
+            //System.out.println("Input: " + pName);
+            if (nodeMap.get(pName) != null && nodeMap.get(pName).nodeType().equals(nodeType)) {
                 nodes.add(stringTypeMirrorMap.get(pName));
             }
         }
@@ -213,18 +221,31 @@ public class CodeGenerator {
     public TypeMirror findTarget(TypeElement element) {
         Node n = nodeMap.get(element.getSimpleName().toString());
 
-        System.out.println("findTarget: finding for " + element.getQualifiedName());
+        System.out.println("findTarget :: finding for " + element.getQualifiedName());
 
-        for (Node a : n.inputs()) {
+        // TODO: Is stepping two steps forward a good thing?
+        //  It's mentioned that the developers are supposed to be able to edit the PADFD. What happens then?
+
+        List<Node> outputs1 = n.outputs();
+
+        for (Node a : outputs1) {
             System.out.println("    First loop: " + a.name());
-            // all a should be limits
-            for (Node b : a.inputs()) {
-                System.out.println("    Second loop: " + b.name());
-                return stringTypeMirrorMap.get(b.name());
+            // all a should be limits or requests
+            // TODO: Second loop is only relevant for Limits. Maybe add if statement
+            List<Node> outputs2 = a.outputs();
+            for (Node b : outputs2) {
+                System.out.println("        Second loop: " + b.name());
+                TypeMirror outputTargetType = stringTypeMirrorMap.get(b.name());
+                // if it is null, that means that it's a log, limit, reason, etc
+                if (outputTargetType != null) {
+                    return outputTargetType;
+                }
             }
         }
 
-        System.out.println("    findTarget: returning null :( ");
+
+        System.out.println("findTarget :: returning null :( ");
+
 
         return null;
     }
