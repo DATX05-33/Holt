@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ActivatorProcessProcessor extends AbstractProcessor {
+public class ActivatorProcessor extends AbstractProcessor {
 
     private static final String annotationName1 = Activator.class.getName();
     private static final String annotationName2 = DBActivator.class.getName();
