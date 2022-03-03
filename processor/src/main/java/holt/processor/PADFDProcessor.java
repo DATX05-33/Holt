@@ -2,7 +2,6 @@ package holt.processor;
 
 import holt.processor.annotation.PADFD;
 import holt.processor.generation.CodeGenerator;
-import com.squareup.javapoet.JavaFile;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;

@@ -11,7 +11,10 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class CodeGenerator {
 
@@ -20,6 +23,10 @@ public class CodeGenerator {
     private final Map<TypeMirror, String> functionNames = new HashMap<>();
 
     private final Map<String, TypeMirror> nameToTypeMirrorMap = new HashMap<>();
+
+    public String getPACKAGE_NAME() {
+        return PACKAGE_NAME;
+    }
 
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 

@@ -1,8 +1,8 @@
 package holt.processor;
 
 import com.squareup.javapoet.JavaFile;
-import holt.processor.annotation.Processor;
 import holt.processor.annotation.Database;
+import holt.processor.annotation.Processor;
 import holt.processor.generation.CodeGenerator;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -13,9 +13,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ProcessorProcessor extends AbstractProcessor {
 
@@ -24,7 +22,7 @@ public class ProcessorProcessor extends AbstractProcessor {
 
     private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
-
+    private final List<JavaFile> saved = new ArrayList<>();
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -36,12 +34,12 @@ public class ProcessorProcessor extends AbstractProcessor {
         return SourceVersion.latest();
     }
 
-    private boolean firstRun = true;
-
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
-        if (!env.processingOver() && firstRun) {
-            // first pass we map String to TypeMirrors
+
+        if (!env.processingOver()) {
+
+            // first pass we map String to TypeMirrors for later use
             for (Element element : env.getElementsAnnotatedWith(Processor.class)) {
                 if (element instanceof TypeElement typeElement) {
                     // all SimpleNames have to be unique and same as the node name in the PADFD
@@ -69,15 +67,12 @@ public class ProcessorProcessor extends AbstractProcessor {
                 }
             }
 
+            // and lastly generate the interfaces
             List<JavaFile> interfaces = codeGenerator.generateInterfaces();
-
+            
             for (JavaFile j : interfaces) {
                 saveJavaFile(j);
             }
-
-            firstRun = false;   // processor runs in multiple runs. We only need the first one
-                                // TODO: Double check that all necessary processing happens in round one
-                                //  maybe somehow mark the elements as processed?
         }
 
         return true;
@@ -103,20 +98,21 @@ public class ProcessorProcessor extends AbstractProcessor {
      * <p>
      * https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation/10167558#10167558
      *
-     * @param element class
+     * @param typeElement class
      */
-    private void mapInputOutput(TypeElement element)  {
-        Processor annotation = element.getAnnotation(Processor.class);
+    private void mapInputOutput(TypeElement typeElement)  {
+
+        Processor annotation = typeElement.getAnnotation(Processor.class);
 
         TypeElement output = asTypeElement(
-                getMyValue(element, annotation,"outputType")
+                getMyValue(typeElement, annotation,"outputType")
         );
 
         String methodName = annotation.methodName();
 
-        TypeMirror target = codeGenerator.findTarget(element);
+        TypeMirror target = codeGenerator.findTarget(typeElement);
 
-        codeGenerator.addOutputTypeAndFunctionName(element.asType(), output.asType(), target, methodName);
+        codeGenerator.addOutputTypeAndFunctionName(typeElement.asType(), output.asType(), target, methodName);
     }
 
     private TypeElement asTypeElement(TypeMirror typeMirror) {
@@ -160,7 +156,11 @@ public class ProcessorProcessor extends AbstractProcessor {
     private void saveJavaFile(JavaFile javaFile) {
         try {
             if (javaFile != null) {
-                javaFile.writeTo(processingEnv.getFiler());
+                // only save if it has not been saved before
+                if (saved.stream().filter(j -> j.typeSpec.name.equals(javaFile.typeSpec.name)).toList().isEmpty()) {
+                    javaFile.writeTo(processingEnv.getFiler());
+                }
+                saved.add(javaFile);
             }
         } catch (IOException e) {
             e.printStackTrace();
