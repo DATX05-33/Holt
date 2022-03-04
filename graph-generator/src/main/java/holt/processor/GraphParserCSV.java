@@ -26,7 +26,7 @@ public final class GraphParserCSV {
      * @param inputStream The stream from which the csv comes from
      * @return The nodes of the graph
      */
-    public static List<Node> readGraphAll(InputStream inputStream) {
+    public static List<OldNode> readGraphAll(InputStream inputStream) {
         return generatePADFD(readCSV(inputStream), false);
     }
 
@@ -43,16 +43,16 @@ public final class GraphParserCSV {
         ) { }
     }
 
-    private static List<Node> generatePADFD(CSV csv, boolean externalEntities) {
-        List<Node> externalEntityNodes = new ArrayList<>();
-        Map<Integer, Node> nodes = new HashMap<>();
+    private static List<OldNode> generatePADFD(CSV csv, boolean externalEntities) {
+        List<OldNode> externalEntityNodes = new ArrayList<>();
+        Map<Integer, OldNode> nodes = new HashMap<>();
         Map<String, CSV.Row> nodeToRow = new HashMap<>();
 
         //First, all node rows. Go through the csv once and add them to nodes and external entity nodes
         for (CSV.Row row : csv.data()) {
-            //If there's no source, then it's a node
+            //If there's no from, then it's a node
             if (row.source().equals("null")) {
-                Node node = new Node(row.value, row.type);
+                OldNode node = new OldNode(row.value, row.type);
                 nodes.put(row.id, node);
                 nodeToRow.put(row.value, row);
 
@@ -62,19 +62,19 @@ public final class GraphParserCSV {
             }
         }
 
-        Map<String, Dataflow> dataflowMap = new HashMap<>();
+        Map<String, OldDataflow> dataflowMap = new HashMap<>();
 
         // Go through the csv again, this time connecting the nodes by adding outputs
         for (CSV.Row row : csv.data()) {
-            // data flows, if source is not null then target is not either.
+            // data flows, if from is not null then to is not either.
             if (!row.source().equals("null")) {
-                Node source = nodes.get(Integer.valueOf(row.source()));
-                Node target = nodes.get(Integer.valueOf(row.target()));
+                OldNode source = nodes.get(Integer.valueOf(row.source()));
+                OldNode target = nodes.get(Integer.valueOf(row.target()));
                 String name = source.name() + "To" + target.name();
 
-                Dataflow dataflow = dataflowMap.get(name);
+                OldDataflow dataflow = dataflowMap.get(name);
                 if (dataflow == null) {
-                    dataflow = new Dataflow(name, source, target);
+                    dataflow = new OldDataflow(source, target);
                     dataflowMap.put(name, dataflow);
                 }
 
@@ -113,8 +113,8 @@ public final class GraphParserCSV {
                                 Integer.parseInt(record.get("id")),
                                 record.get("value"),
                                 record.get("style"),
-                                record.get("source"),
-                                record.get("target"),
+                                record.get("from"),
+                                record.get("to"),
                                 NodeType.get(record.get("type")),
                                 "".equals(record.get("for_process")) ? null : Integer.valueOf(record.get("for_process")),
                                 "".equals(record.get("for_DB")) ? null : Integer.valueOf(record.get("for_DB"))

@@ -49,12 +49,12 @@ public class PADFDProcessor extends AbstractProcessor {
         InputStream inputStream = getPADFDFile(padfd.file());
 
         if (inputStream != null) {
-            List<Node> nodes = getNodes(inputStream);
+            List<OldNode> nodes = getNodes(inputStream);
             codeGenerator.setNodes(nodes);
         }
     }
-    
-    private List<Node> getNodes(InputStream inputStream) {
+
+    private List<OldNode> getNodes(InputStream inputStream) {
         return GraphParserCSV.readGraphAll(inputStream);
     }
 

@@ -4,7 +4,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
-import holt.processor.Node;
+import holt.processor.OldNode;
 import holt.processor.NodeType;
 
 import javax.lang.model.element.Modifier;
@@ -30,7 +30,7 @@ public class CodeGenerator {
 
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
-    private final Map<String, Node> nodeMap = new HashMap<>();
+    private final Map<String, OldNode> nodeMap = new HashMap<>();
 
     private static CodeGenerator instance = null;
 
@@ -46,8 +46,8 @@ public class CodeGenerator {
     private CodeGenerator() {
     }
 
-    public void setNodes(List<Node> nodes) {
-        for (Node n : nodes) {
+    public void setNodes(List<OldNode> nodes) {
+        for (OldNode n : nodes) {
             nodeMap.put(n.name(), n);
         }
     }
@@ -60,7 +60,7 @@ public class CodeGenerator {
         outputTypes.put(source, outputType);
         functionNames.put(source, functionName);
 
-        // add the source's output as the input for the target
+        // add the from's output as the input for the to
         addInputTypes(outputType, target);
     }
 
@@ -99,7 +99,7 @@ public class CodeGenerator {
                     .addModifiers(Modifier.PUBLIC);
 
             // add database connection
-            if (nodeMap.get(currentSimpleName).nodeType().equals(NodeType.CUSTOM_PROCESS)) {
+            if (nodeMap.get(currentSimpleName).nodeType().equals(NodeType.PROCESS)) {
                 List<TypeMirror> dbTypes = findDatabaseInput(currentProcess);
 
                 for (int i = 0; i < dbTypes.size(); i++) {
@@ -146,19 +146,21 @@ public class CodeGenerator {
 
     private List<TypeMirror> findDatabaseInput(TypeMirror process) {
         List<TypeMirror> databases = new ArrayList<>();
-        Node node = nodeMap.get(simpleName(process));
+        OldNode node = nodeMap.get(simpleName(process));
 
-        for (Node a : node.inputs()) {
-            if (a.nodeType().equals(NodeType.LIMIT)) {
-                for (Node b : a.inputs()) {
-                    if (b.nodeType().equals(NodeType.DATA_BASE)) {
-                        databases.add(nameToTypeMirrorMap.get(b.name()));
-                    }
-                }
-            }
-        }
+        throw new UnsupportedOperationException();
 
-        return databases;
+//        for (OldNode a : node.inputs()) {
+//            if (a.nodeType().equals(NodeType.LIMIT)) {
+//                for (OldNode b : a.inputs()) {
+//                    if (b.nodeType().equals(NodeType.DATA_BASE)) {
+//                        databases.add(nameToTypeMirrorMap.get(b.name()));
+//                    }
+//                }
+//            }
+//        }
+
+//        return databases;
     }
 
     private String simpleName(TypeMirror typeMirror) {
@@ -199,18 +201,18 @@ public class CodeGenerator {
     }
 
     public TypeMirror findTarget(TypeElement element) {
-        Node n = nodeMap.get(element.getSimpleName().toString());
+        OldNode n = nodeMap.get(element.getSimpleName().toString());
 
         // TODO: Is stepping two steps forward a good thing?
         //  It's mentioned that the developers are supposed to be able to edit the PADFD. What happens then?
 
-        List<Node> outputs1 = n.outputs();
+        List<OldNode> outputs1 = n.outputs();
 
-        for (Node a : outputs1) {
+        for (OldNode a : outputs1) {
             // all a should be limits or requests
             // TODO: Second loop is only relevant for Limits. Maybe add if statement
-            List<Node> outputs2 = a.outputs();
-            for (Node b : outputs2) {
+            List<OldNode> outputs2 = a.outputs();
+            for (OldNode b : outputs2) {
                 TypeMirror outputTargetType = nameToTypeMirrorMap.get(b.name());
                 // if it is null, that means that it's a log, limit, reason, etc
                 if (outputTargetType != null) {

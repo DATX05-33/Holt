@@ -4,14 +4,8 @@ import java.util.Arrays;
 
 public enum NodeType {
     EXTERNAL_ENTITY("external_entity"),
-    CUSTOM_PROCESS("process"),
-    REASON("reason"),
-    REQUEST("request"),
-    LIMIT("limit"),
-    LOG("log"),
-    DB_LOG("DB_log"),
+    PROCESS("process"),
     DATA_BASE("data_base"),
-    POLICY_DB("pol_DB"),
     DATAFLOW(null);
 
     NodeType(String name) {
