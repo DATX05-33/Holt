@@ -24,10 +24,6 @@ public class CodeGenerator {
 
     private final Map<String, TypeMirror> nameToTypeMirrorMap = new HashMap<>();
 
-    public String getPACKAGE_NAME() {
-        return PACKAGE_NAME;
-    }
-
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
     private final Map<String, Node> nodeMap = new HashMap<>();
