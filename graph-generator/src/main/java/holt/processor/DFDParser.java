@@ -134,4 +134,28 @@ public final class DFDParser {
         return new DFDTable(allData);
     }
 
+    public static List<Node> nodeInputs(DFD dfd, String flow, Node node) {
+        List<Node> inputs = new ArrayList<>();
+
+        for (Dataflow d : dfd.flowsMap.get(flow)) {
+            if (d.to().equals(node)) {
+                inputs.add(d.from());
+            }
+        }
+
+        return inputs;
+    }
+
+    public static List<Node> nodeOutputs(DFD dfd, String flow, Node node) {
+        List<Node> outputs = new ArrayList<>();
+
+        for (Dataflow d : dfd.flowsMap.get(flow)) {
+            if (d.from().equals(node)) {
+                outputs.add(d.to());
+            }
+        }
+
+        return outputs;
+    }
+
 }

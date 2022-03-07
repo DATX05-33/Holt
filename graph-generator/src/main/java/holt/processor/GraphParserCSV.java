@@ -30,6 +30,7 @@ public final class GraphParserCSV {
         return generatePADFD(readCSV(inputStream), false);
     }
 
+
     private record CSV(List<Row> data) {
         private record Row(
                 int id,

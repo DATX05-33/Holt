@@ -1,11 +1,14 @@
 package holt.test.friend;
 
-import holt.processor.annotation.Processor;
-import holt.processor.generation.interfaces.AbstractExternalEntity;
+import holt.processor.annotation.FlowStart;
 
-@Processor(
-        methodName = "userMethod",
-        outputType = FriendID.class
+@FlowStart(
+        flow = "GF",
+        flowStartType = FriendID.class
 )
-public class User extends AbstractExternalEntity {
+@FlowStart(
+        flow = "AF",
+        flowStartType = FriendID.class
+)
+public class User {
 }

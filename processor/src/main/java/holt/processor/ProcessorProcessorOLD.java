@@ -2,6 +2,7 @@ package holt.processor;
 
 import com.squareup.javapoet.JavaFile;
 import holt.processor.annotation.Database;
+import holt.processor.annotation.ExternalEntity;
 import holt.processor.annotation.Processor;
 import holt.processor.generation.CodeGenerator;
 
@@ -15,10 +16,11 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
-public class ProcessorProcessor extends AbstractProcessor {
+public class ProcessorProcessorOLD extends AbstractProcessor {
 
     private static final String activatorName = Processor.class.getName();
     private static final String DBActivatorName = Database.class.getName();
+    private static final String externalEntityName = ExternalEntity.class.getName();
 
     private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
@@ -26,7 +28,11 @@ public class ProcessorProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(activatorName, DBActivatorName);
+        return Set.of(
+                //activatorName,
+                //DBActivatorName,
+                //externalEntityName
+        );
     }
 
     @Override
@@ -110,9 +116,9 @@ public class ProcessorProcessor extends AbstractProcessor {
 
         String methodName = annotation.methodName();
 
-        TypeMirror target = codeGenerator.findTarget(typeElement);
+        //TypeMirror target = codeGenerator.findTarget(typeElement);
 
-        codeGenerator.addOutputTypeAndFunctionName(typeElement.asType(), output.asType(), target, methodName);
+        //codeGenerator.addOutputTypeAndFunctionName(typeElement.asType(), output.asType(), target, methodName);
     }
 
     private TypeElement asTypeElement(TypeMirror typeMirror) {
