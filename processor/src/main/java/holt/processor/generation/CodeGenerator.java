@@ -1,10 +1,9 @@
 package holt.processor.generation;
 
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeSpec;
-import holt.processor.OldNode;
+import com.squareup.javapoet.*;
+import holt.processor.DFDParser;
+import holt.processor.Dataflow;
+import holt.processor.Node;
 import holt.processor.NodeType;
 
 import javax.lang.model.element.Modifier;
@@ -18,15 +17,22 @@ import java.util.Map;
 
 public class CodeGenerator {
 
-    private final Map<TypeMirror, List<TypeMirror>> inputTypes = new HashMap<>();
-    private final Map<TypeMirror, TypeMirror> outputTypes = new HashMap<>();
+    private final Map<String, Map<TypeMirror, List<TypeMirror>>> inputTypes = new HashMap<>();
+    private final Map<String, Map<TypeMirror, TypeMirror>> outputTypes = new HashMap<>();
     private final Map<TypeMirror, String> functionNames = new HashMap<>();
+    private final Map<String, List<Dataflow>> dataflowMap = new HashMap<>();
+
+    // list of interfaces
+    private final Map<String, TypeSpec.Builder> interfaces = new HashMap<>();
+    // List<TypeSpec.Builder> interfaces = new ArrayList<>();
 
     private final Map<String, TypeMirror> nameToTypeMirrorMap = new HashMap<>();
 
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
-    private final Map<String, OldNode> nodeMap = new HashMap<>();
+    private final Map<String, Node> nodeMap = new HashMap<>();
+
+    private DFDParser.DFD dfd;
 
     private static CodeGenerator instance = null;
 
@@ -42,8 +48,18 @@ public class CodeGenerator {
     private CodeGenerator() {
     }
 
-    public void setNodes(List<OldNode> nodes) {
-        for (OldNode n : nodes) {
+    public void setDFD(DFDParser.DFD dfd) {
+        this.dfd = dfd;
+
+        for (Node n : dfd.processes()) {
+            nodeMap.put(n.name(), n);
+        }
+
+        for (Node n : dfd.databases()) {
+            nodeMap.put(n.name(), n);
+        }
+
+        for (Node n : dfd.externalEntities()) {
             nodeMap.put(n.name(), n);
         }
     }
@@ -52,118 +68,197 @@ public class CodeGenerator {
         nameToTypeMirrorMap.put(name, typeMirror);
     }
 
-    public void addOutputTypeAndFunctionName(TypeMirror source, TypeMirror outputType, TypeMirror target, String functionName) {
-        outputTypes.put(source, outputType);
+    public void addOutputTypeAndFunctionName(String flow, TypeMirror source, TypeMirror outputType, TypeMirror target, String functionName) {
+        if (outputTypes.get(flow) == null) {
+            Map<TypeMirror, TypeMirror> map = new HashMap<>();
+            map.put(source, outputType);
+
+            outputTypes.put(flow, map);
+        } else {
+            outputTypes.get(flow).put(source, outputType);
+        }
+
         functionNames.put(source, functionName);
 
-        // add the from's output as the input for the to
-        addInputTypes(outputType, target);
+        // add the source's output as the input for the target
+        addInputTypes(flow, outputType, target);
     }
 
-    public void addInputTypes(TypeMirror inputType, TypeMirror source) {
-        if (inputTypes.get(source) == null || inputTypes.get(source).isEmpty()) {
-            List<TypeMirror> TargetsInputs = new ArrayList<>();
-            TargetsInputs.add(inputType);
-            inputTypes.put(source, TargetsInputs);
+    public void addOutputType(String flow, TypeMirror source, TypeMirror outputType, TypeMirror target) {
+        if (outputTypes.get(flow) == null) {
+            Map<TypeMirror, TypeMirror> map = new HashMap<>();
+            map.put(source, outputType);
+
+            outputTypes.put(flow, map);
         } else {
-            inputTypes.get(source).add(inputType);
+            outputTypes.get(flow).put(source, outputType);
+        }
+
+        // add the source's output as the input for the target
+        addInputTypes(flow, outputType, target);
+    }
+
+    public void addInputTypes(String flow, TypeMirror inputType, TypeMirror source) {
+        if (inputTypes.get(flow) == null) {
+            List<TypeMirror> list = new ArrayList<>();
+            list.add(inputType);
+            Map<TypeMirror, List<TypeMirror>> map = new HashMap<>();
+
+            map.put(source, list);
+            inputTypes.put(flow, map);
+        } else {
+            var a = inputTypes.get(flow);
+            var b = a.get(source);
+            if (b == null) {
+                List<TypeMirror> list = new ArrayList<>();
+                list.add(inputType);
+                inputTypes.get(flow).put(source, list);
+            }
+            //b.add(inputType);
+            //inputTypes.get(flow).get(source).add(inputType);
         }
     }
 
     public List<JavaFile> generateInterfaces() {
-        List<JavaFile> interfaces = new ArrayList<>();
 
-        for (TypeMirror currentProcess : outputTypes.keySet()) {
-            String currentSimpleName = simpleName(currentProcess);
+        for (String flow : outputTypes.keySet()) {
+            // for each flow
+            for (TypeMirror currentProcess : outputTypes.get(flow).keySet()) {
+                String currentSimpleName = simpleName(currentProcess);
+                Node currentNode = nodeMap.get(currentSimpleName);
 
-            MethodSpec.Builder methodSpecBuilder = MethodSpec
-                    .methodBuilder(functionNames.get(currentProcess))
-                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
-
-            if (inputTypes.get(currentProcess) != null) {
-                for (int i = 0; i < inputTypes.get(currentProcess).size(); i++) {
-                    ClassName parameterClassName = ClassName.bestGuess(inputTypes.get(currentProcess).get(i).toString());
-                    methodSpecBuilder.addParameter(
-                            parameterClassName,
-                            "input" + i
-                    );
+                // Check if currentNode is External, DB or process
+                switch (currentNode.nodeType()) {
+                    case EXTERNAL_ENTITY -> {
+                        interfaces.put(currentSimpleName, addAbstractExternalEntityFlow(flow, currentProcess));
+                    }
+                    case DATA_BASE -> {
+                        // TODO: Create interface? Or maybe do that during the creation of the normal process (like before)?
+                    }
+                    default -> {
+                        // TODO ?
+                        interfaces.put(currentSimpleName, addProcessFlow(flow, currentProcess));
+                    }
                 }
             }
-
-            TypeSpec.Builder anInterfaceBuilder = TypeSpec
-                    .interfaceBuilder("I" + currentSimpleName)
-                    .addModifiers(Modifier.PUBLIC);
-
-            // add database connection
-            if (nodeMap.get(currentSimpleName).nodeType().equals(NodeType.PROCESS)) {
-                List<TypeMirror> dbTypes = findDatabaseInput(currentProcess);
-
-                for (int i = 0; i < dbTypes.size(); i++) {
-                    methodSpecBuilder.addParameter(
-                            Object.class,
-                            "input" + (i+1)
-                    );
-                }
-
-                // for each database that's connected to this process
-                for (TypeMirror db : dbTypes) {
-                    JavaFile DBQuery = generateDBQueryInterface(db, currentProcess);
-                    interfaces.add(DBQuery);
-
-                    ClassName returnClass = ClassName.bestGuess( PACKAGE_NAME + "." + DBQuery.typeSpec.name);
-                    ClassName parameterClass = ClassName.bestGuess(inputTypes.get(currentProcess).get(0).toString());
-                    // TODO: parameterClass only works right now if currentProcess only has one input
-                    MethodSpec methodSpec = MethodSpec
-                            .methodBuilder("get" + simpleName(db) + "Query")
-                            .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                            .addParameter(parameterClass, "input")
-                            .returns(returnClass)
-                            .build();
-
-                    anInterfaceBuilder.addMethod(methodSpec);
-                }
-            }
-
-            ClassName returnClassName = ClassName.bestGuess(outputTypes.get(currentProcess).toString());
-            methodSpecBuilder.returns(returnClassName);
-
-            MethodSpec methodSpec = methodSpecBuilder.build();
-
-            anInterfaceBuilder.addMethod(methodSpec);
-
-            JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, anInterfaceBuilder.build())
-                    .build();
-
-            interfaces.add(javaFile);
         }
 
-        return interfaces;
+
+        // Build all the things!
+        return interfaces.values().stream().map(e -> JavaFile.builder(PACKAGE_NAME, e.build()).build()).toList();
     }
 
-    private List<TypeMirror> findDatabaseInput(TypeMirror process) {
+    private TypeSpec.Builder addProcessFlow(String flow, TypeMirror currentProcess) {
+        String currentSimpleName = simpleName(currentProcess);
+
+        TypeSpec.Builder anInterfaceBuilder = interfaces.get(currentSimpleName);
+
+        if (anInterfaceBuilder == null) {
+            anInterfaceBuilder = TypeSpec
+                    .interfaceBuilder("I" + currentSimpleName)
+                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+        }
+
+        MethodSpec.Builder methodSpecBuilder = MethodSpec
+                .methodBuilder(functionNames.get(currentProcess))
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+
+        // add input to the method
+        if (inputTypes.get(flow).get(currentProcess) != null) {
+            for (int i = 0; i < inputTypes.get(flow).get(currentProcess).size(); i++) {
+                ClassName parameterClassName = ClassName.bestGuess(inputTypes.get(flow).get(currentProcess).get(i).toString());
+                methodSpecBuilder.addParameter(
+                        parameterClassName,
+                        "input" + i
+                );
+            }
+        }
+
+        // add database connection
+        if (nodeMap.get(currentSimpleName).nodeType().equals(NodeType.PROCESS)) {
+            List<TypeMirror> dbTypes = findDatabaseInput(flow, currentProcess);
+
+            for (int i = 0; i < dbTypes.size(); i++) {
+                methodSpecBuilder.addParameter(
+                        Object.class,
+                        "input" + (i+1)
+                );
+            }
+
+            // for each database that's connected to this process
+            for (TypeMirror db : dbTypes) {
+                TypeSpec.Builder DBQuery = generateDBQueryInterface(db, currentProcess);
+                interfaces.put(DBQuery.build().name, DBQuery);
+
+                ClassName returnClass = ClassName.bestGuess( PACKAGE_NAME + "." + DBQuery.build().name);
+                ClassName parameterClass = ClassName.bestGuess(inputTypes.get(flow).get(currentProcess).get(0).toString());
+                // TODO: parameterClass only works right now if currentProcess only has one input
+                MethodSpec methodSpec = MethodSpec
+                        .methodBuilder("get" + simpleName(db) + "Query")
+                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                        .addParameter(parameterClass, "input")
+                        .returns(returnClass)
+                        .build();
+
+                anInterfaceBuilder.addMethod(methodSpec);
+            }
+        }
+
+        ClassName returnClassName = ClassName.bestGuess(outputTypes.get(flow).get(currentProcess).toString());
+        methodSpecBuilder.returns(returnClassName);
+
+        MethodSpec methodSpec = methodSpecBuilder.build();
+
+        anInterfaceBuilder
+                .addMethod(methodSpec);
+
+        return anInterfaceBuilder;
+    }
+
+    private TypeSpec.Builder addAbstractExternalEntityFlow(String flow, TypeMirror currentProcess) {
+        String currentSimpleName = simpleName(currentProcess);
+
+        TypeSpec.Builder anAbstractBuilder = interfaces.get(currentSimpleName);
+
+        if (anAbstractBuilder == null) {
+            anAbstractBuilder = TypeSpec
+                    .classBuilder(currentSimpleName)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addModifiers(Modifier.ABSTRACT);
+        }
+
+        CodeBlock comment = CodeBlock.builder().add("// TODO: Fill this in").build();
+
+        MethodSpec methodSpec = MethodSpec
+                .methodBuilder(flow)
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                //.addCode(comment)
+                .build();
+
+        anAbstractBuilder.addMethod(methodSpec);
+
+        return anAbstractBuilder;
+    }
+
+    private List<TypeMirror> findDatabaseInput(String flow, TypeMirror process) {
         List<TypeMirror> databases = new ArrayList<>();
-        OldNode node = nodeMap.get(simpleName(process));
+        Node node = nodeMap.get(simpleName(process));
+        List<Node> inputs = DFDParser.nodeInputs(dfd, flow, node);
 
-        throw new UnsupportedOperationException();
+        for (Node n : inputs) {
+            if (n.nodeType().equals(NodeType.DATA_BASE)) {
+                databases.add(nameToTypeMirrorMap.get(n.name()));
+            }
+        }
 
-//        for (OldNode a : node.inputs()) {
-//            if (a.nodeType().equals(NodeType.LIMIT)) {
-//                for (OldNode b : a.inputs()) {
-//                    if (b.nodeType().equals(NodeType.DATA_BASE)) {
-//                        databases.add(nameToTypeMirrorMap.get(b.name()));
-//                    }
-//                }
-//            }
-//        }
-
-//        return databases;
+        return databases;
     }
 
     private String simpleName(TypeMirror typeMirror) {
         return typeMirror.toString().substring(typeMirror.toString().lastIndexOf('.') + 1);
     }
 
-    private JavaFile generateDBQueryInterface(TypeMirror dbType, TypeMirror processor) {
+    private TypeSpec.Builder generateDBQueryInterface(TypeMirror dbType, TypeMirror processor) {
         ClassName paramClassName = ClassName.bestGuess(nameToTypeMirrorMap.get(simpleName(dbType)).toString());
 
         MethodSpec methodSpec = MethodSpec
@@ -178,14 +273,12 @@ public class CodeGenerator {
                 processor.toString().substring(processor.toString().lastIndexOf('.') + 1) +
                 "Query";
 
-        TypeSpec anInterface = TypeSpec
+        TypeSpec.Builder anInterface = TypeSpec
                 .interfaceBuilder("I" + interfaceName)
                 .addMethod(methodSpec)
-                .addModifiers(Modifier.PUBLIC)
-                .build();
+                .addModifiers(Modifier.PUBLIC);
 
-        return JavaFile.builder(PACKAGE_NAME, anInterface)
-                .build();
+        return anInterface;
     }
 
     private void print(JavaFile javaFile) {
@@ -196,27 +289,19 @@ public class CodeGenerator {
         }
     }
 
-    public TypeMirror findTarget(TypeElement element) {
-        OldNode n = nodeMap.get(element.getSimpleName().toString());
+    public TypeMirror findTarget(String flow, TypeElement element) {
+        Node n = nodeMap.get(element.getSimpleName().toString());
 
-        // TODO: Is stepping two steps forward a good thing?
-        //  It's mentioned that the developers are supposed to be able to edit the PADFD. What happens then?
+        List<Dataflow> dataflows = dfd.flowsMap().get(flow);
 
-        List<OldNode> outputs1 = n.outputs();
-
-        for (OldNode a : outputs1) {
-            // all a should be limits or requests
-            // TODO: Second loop is only relevant for Limits. Maybe add if statement
-            List<OldNode> outputs2 = a.outputs();
-            for (OldNode b : outputs2) {
-                TypeMirror outputTargetType = nameToTypeMirrorMap.get(b.name());
-                // if it is null, that means that it's a log, limit, reason, etc
-                if (outputTargetType != null) {
-                    return outputTargetType;
-                }
+        for (Dataflow d : dataflows) {
+            if (d.from().equals(n)) {
+                TypeMirror i = nameToTypeMirrorMap.get(d.to().name());
+                return i;
             }
         }
 
+        // TODO: throw error? This should not happen
         return null;
     }
 }

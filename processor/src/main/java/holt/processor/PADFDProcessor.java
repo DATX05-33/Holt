@@ -1,6 +1,6 @@
 package holt.processor;
 
-import holt.processor.annotation.PADFD;
+import holt.processor.annotation.DFD;
 import holt.processor.generation.CodeGenerator;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -11,19 +11,17 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Set;
 
 public class PADFDProcessor extends AbstractProcessor {
 
-
-    private static final String PADFD_NAME = PADFD.class.getName();
+    private static final String DFD_NAME = DFD.class.getName();
 
     private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(PADFD_NAME);
+        return Set.of(DFD_NAME);
     }
 
     @Override
@@ -33,29 +31,27 @@ public class PADFDProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
-        if (!env.processingOver()) {
-            for (Element typeElement : env.getElementsAnnotatedWith(PADFD.class)) {
-                padfd(typeElement);
-            }
+        if (!env.processingOver()) for (Element typeElement : env.getElementsAnnotatedWith(DFD.class)) {
+            dfd(typeElement);
         }
 
         return true;
     }
 
-    private void padfd(Element typeElement) {
+    private void dfd(Element typeElement) {
         // Get the annotation object from the type element
-        PADFD padfd = typeElement.getAnnotation(PADFD.class);
+        DFD padfd = typeElement.getAnnotation(DFD.class);
 
         InputStream inputStream = getPADFDFile(padfd.file());
 
         if (inputStream != null) {
-            List<OldNode> nodes = getNodes(inputStream);
-            codeGenerator.setNodes(nodes);
+            DFDParser.DFD dfd = getNodes(inputStream);
+            codeGenerator.setDFD(dfd);
         }
     }
 
-    private List<OldNode> getNodes(InputStream inputStream) {
-        return GraphParserCSV.readGraphAll(inputStream);
+    private DFDParser.DFD getNodes(InputStream inputStream) {
+        return DFDParser.tableToDfd(DFDParser.csvToTable(inputStream));
     }
 
     /**

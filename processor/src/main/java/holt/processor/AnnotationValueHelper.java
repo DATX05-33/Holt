@@ -6,29 +6,17 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public class AnnotationValueHelper {
 
     public static AnnotationMirror getAnnotationMirror(TypeElement typeElement, Class<?> clazz) {
-
-        /*var f = typeElement.getAnnotationMirrors();
-
-        var g = f.get(0).getElementValues();
-
-        for (var h : g.values()) {
-
-            var i = h.getValue().getClass();
-            if (h instanceof List j) {
-                var m = j.get(0);
-                System.out.println("nfwlkan");
-            }
-            System.out.println("yoo");
-        }*/
-
         String clazzName = clazz.getName();
         for (AnnotationMirror m : typeElement.getAnnotationMirrors()) {
             String a = m.getAnnotationType().toString();
@@ -37,6 +25,24 @@ public class AnnotationValueHelper {
             }
         }
         return null;
+    }
+
+    /**
+     * For Class attribute, if we invoke directly, it may throw {@link MirroredTypeException} because the class has not been
+     * compiled. Use this method to get the Class value safely.
+     *
+     * @param elements Elements for convert Class to TypeMirror
+     * @param anno annotation object
+     * @param func the invocation of get Class value
+     * @return the value's {@link TypeMirror}
+     */
+    public static <T extends Annotation> TypeMirror getAnnotationClassValue(Elements elements, T anno,
+                                                                            Function<T, Class<?>> func) {
+        try {
+            return elements.getTypeElement(func.apply(anno).getCanonicalName()).asType();
+        } catch (MirroredTypeException e) {
+            return e.getTypeMirror();
+        }
     }
 
     public static AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror, String key) {

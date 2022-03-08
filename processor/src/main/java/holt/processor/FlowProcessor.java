@@ -3,7 +3,6 @@ package holt.processor;
 import com.squareup.javapoet.JavaFile;
 import holt.processor.annotation.*;
 import holt.processor.generation.CodeGenerator;
-import holt.processor.generation.CodeGeneratorNew;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -11,17 +10,14 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
-import javax.tools.StandardLocation;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 public class FlowProcessor extends AbstractProcessor {
 
-    private final CodeGeneratorNew codeGenerator = CodeGeneratorNew.getInstance();
+    private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
     private final List<JavaFile> saved = new ArrayList<>();
 
@@ -45,6 +41,34 @@ public class FlowProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment env) {
         if (!env.processingOver()) {
+            for (Element element : env.getElementsAnnotatedWith(FlowStarts.class)) {
+                if (element instanceof TypeElement typeElement) {
+                    // all SimpleNames have to be unique and same as the node name in the PADFD
+                    addFlowStartsTypeMirror(typeElement);
+                } else {
+                    // TODO: use SLF4J together with Logback for logging instead
+                    System.out.println("Element was not TypeElement");
+                }
+
+            }
+            for (Element element : env.getElementsAnnotatedWith(FlowThroughs.class)) {
+
+                if (element instanceof TypeElement typeElement) {
+                    // all SimpleNames have to be unique and same as the node name in the PADFD
+                    addFlowThroughsTypeMirror(typeElement);
+                } else {
+                    // TODO: use SLF4J together with Logback for logging instead
+                    System.out.println("Element was not TypeElement");
+                }
+            }
+
+            for (Element element : env.getElementsAnnotatedWith(Database.class)) {
+                if (element instanceof TypeElement typeElement) {
+                    addDBTypeMirrors(typeElement);
+                } else {
+                    System.out.println("Element was not TypeElement");
+                }
+            }
 
             for (Element element : env.getElementsAnnotatedWith(FlowStarts.class)) {
                 if (element instanceof TypeElement typeElement) {
@@ -88,14 +112,6 @@ public class FlowProcessor extends AbstractProcessor {
                 }
             }
 
-            for (Element element : env.getElementsAnnotatedWith(Database.class)) {
-                if (element instanceof TypeElement typeElement) {
-                    addDBTypeMirrors(typeElement);
-                } else {
-                    System.out.println("Element was not TypeElement");
-                }
-            }
-
             // then we map the outputs and inputs
             for (Element element : env.getElementsAnnotatedWith(FlowStart.class)) {
                 if (element instanceof TypeElement typeElement) {
@@ -127,26 +143,49 @@ public class FlowProcessor extends AbstractProcessor {
         return true;
     }
 
+    private void addFlowThroughsTypeMirror(TypeElement typeElement) {
+        FlowThroughs annotation = typeElement.getAnnotation(FlowThroughs.class);
+
+        FlowThrough[] a = annotation.value();
+
+        for (FlowThrough f : a) {
+            TypeMirror output = AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), f, FlowThrough::outputType);
+            String outputName = output.toString().substring(output.toString().lastIndexOf('.') + 1);
+
+            codeGenerator.addTypeMirror(typeElement.getSimpleName().toString(), typeElement.asType());
+            codeGenerator.addTypeMirror(outputName, typeElement.asType());
+        }
+    }
+
+    private void addFlowStartsTypeMirror(TypeElement typeElement) {
+        FlowStarts annotation = typeElement.getAnnotation(FlowStarts.class);
+
+        FlowStart[] a = annotation.value();
+
+        for (FlowStart f : a) {
+            TypeMirror output = AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), f, FlowStart::flowStartType);
+            String outputName = output.toString().substring(output.toString().lastIndexOf('.') + 1);
+
+            codeGenerator.addTypeMirror(typeElement.getSimpleName().toString(), typeElement.asType());
+            codeGenerator.addTypeMirror(outputName, output);
+        }
+    }
+
     private void flowThroughs(TypeElement typeElement) {
         FlowThroughs annotation = typeElement.getAnnotation(FlowThroughs.class);
 
         FlowThrough[] a = annotation.value();
 
         for (FlowThrough f : a) {
-            //mapInputOutputThrough(element, f);
-            Class<?> output = Object.class; // TODO
+            TypeMirror output = AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), f, FlowThrough::outputType);
 
             String flow = f.flow();
+            String functionName = f.functionName();
 
             TypeMirror target = codeGenerator.findTarget(flow, typeElement);
 
-            codeGenerator.addOutputType(flow, typeElement.asType(), typeElement.asType() /* TODO */, target);
-
-            codeGenerator.addTypeMirror(typeElement.getSimpleName().toString(), typeElement.asType());
-            codeGenerator.addTypeMirror(output.getSimpleName(), typeElement.asType() /* TODO */);
+            codeGenerator.addOutputTypeAndFunctionName(flow, typeElement.asType(), output, target, functionName);
         }
-
-        //addThroughTypeMirror(typeElement);
     }
 
     private void flowStarts(TypeElement typeElement) {
@@ -154,22 +193,16 @@ public class FlowProcessor extends AbstractProcessor {
 
         FlowStart[] a = annotation.value();
         for (FlowStart f : a) {
-            //mapInputOutputStart(element, f);
-
-            Class<?> output = Object.class; // TODO
+            TypeMirror output = AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), f, FlowStart::flowStartType);
 
             String flow = f.flow();
 
             TypeMirror target = codeGenerator.findTarget(flow, typeElement);
 
-            codeGenerator.addOutputType(flow, typeElement.asType(), typeElement.asType() /* TODO */, target);
+            codeGenerator.addOutputType(flow, typeElement.asType(), output, target);
 
-            codeGenerator.addTypeMirror(typeElement.getSimpleName().toString(), typeElement.asType());
-            codeGenerator.addTypeMirror(output.getSimpleName(), typeElement.asType() /* TODO */);
+            codeGenerator.addOutputTypeAndFunctionName(flow, typeElement.asType(), output, target, flow);
         }
-
-        //addStartTypeMirror(typeElement);
-
     }
 
     private void mapInputOutputThrough(TypeElement typeElement, FlowThrough annotation) {
