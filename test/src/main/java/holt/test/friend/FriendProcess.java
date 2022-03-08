@@ -1,6 +1,5 @@
 package holt.test.friend;
 
-import holt.processor.annotation.DFD;
 import holt.processor.annotation.FlowThrough;
 
 @FlowThrough(
@@ -13,6 +12,5 @@ import holt.processor.annotation.FlowThrough;
         outputType = Friend.class,
         functionName = "formatFriendAddFriend"
 )
-@DFD(name = "friend", file = "friend.csv")
 public class FriendProcess {
 }
