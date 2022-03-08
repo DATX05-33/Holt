@@ -9,7 +9,6 @@ import holt.processor.NodeType;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,23 +16,28 @@ import java.util.Map;
 
 public class CodeGenerator {
 
+    // For each flow, keep track of the input types for every class (every class only has one method per flow)
     private final Map<String, Map<TypeMirror, List<TypeMirror>>> inputTypes = new HashMap<>();
+    // for each flow, keep track of the output type for each class (every class only has one method per flow)
     private final Map<String, Map<TypeMirror, TypeMirror>> outputTypes = new HashMap<>();
+    // i'm not really sure how this is working. Shouldn't it be one of these Maps for each flow?
+    // the function name for each class
     private final Map<TypeMirror, String> functionNames = new HashMap<>();
-    private final Map<String, List<Dataflow>> dataflowMap = new HashMap<>();
 
-    // list of interfaces
+    // list of interfaces, used for appending more methods when new flows are handled
     private final Map<String, TypeSpec.Builder> interfaces = new HashMap<>();
-    // List<TypeSpec.Builder> interfaces = new ArrayList<>();
 
+    // used to access the TypeMirror when only the name is available
     private final Map<String, TypeMirror> nameToTypeMirrorMap = new HashMap<>();
 
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
+    // used to get the Node when only the name is available
     private final Map<String, Node> nodeMap = new HashMap<>();
 
     private DFDParser.DFD dfd;
 
+    // singleton
     private static CodeGenerator instance = null;
 
     public static CodeGenerator getInstance() {
@@ -99,6 +103,7 @@ public class CodeGenerator {
     }
 
     public void addInputTypes(String flow, TypeMirror inputType, TypeMirror source) {
+        // this could probably be prettier. Code duplication?
         if (inputTypes.get(flow) == null) {
             List<TypeMirror> list = new ArrayList<>();
             list.add(inputType);
@@ -107,20 +112,17 @@ public class CodeGenerator {
             map.put(source, list);
             inputTypes.put(flow, map);
         } else {
-            var a = inputTypes.get(flow);
-            var b = a.get(source);
-            if (b == null) {
+            List<TypeMirror> a = inputTypes.get(flow).get(source);
+            if (a == null) {
                 List<TypeMirror> list = new ArrayList<>();
                 list.add(inputType);
                 inputTypes.get(flow).put(source, list);
             }
-            //b.add(inputType);
-            //inputTypes.get(flow).get(source).add(inputType);
         }
     }
 
     public List<JavaFile> generateInterfaces() {
-
+        // this is where the magic happens
         for (String flow : outputTypes.keySet()) {
             // for each flow
             for (TypeMirror currentProcess : outputTypes.get(flow).keySet()) {
@@ -132,27 +134,24 @@ public class CodeGenerator {
                     case EXTERNAL_ENTITY -> {
                         interfaces.put(currentSimpleName, addAbstractExternalEntityFlow(flow, currentProcess));
                     }
-                    case DATA_BASE -> {
-                        // TODO: Create interface? Or maybe do that during the creation of the normal process (like before)?
-                    }
                     default -> {
-                        // TODO ?
                         interfaces.put(currentSimpleName, addProcessFlow(flow, currentProcess));
                     }
                 }
             }
         }
 
-
         // Build all the things!
         return interfaces.values().stream().map(e -> JavaFile.builder(PACKAGE_NAME, e.build()).build()).toList();
     }
 
     private TypeSpec.Builder addProcessFlow(String flow, TypeMirror currentProcess) {
+        // this basically adds a method to the interface (might also create the interface if it does not exist)
+
         String currentSimpleName = simpleName(currentProcess);
 
+        // if the interface does not exist, create it
         TypeSpec.Builder anInterfaceBuilder = interfaces.get(currentSimpleName);
-
         if (anInterfaceBuilder == null) {
             anInterfaceBuilder = TypeSpec
                     .interfaceBuilder("I" + currentSimpleName)
@@ -218,8 +217,8 @@ public class CodeGenerator {
     private TypeSpec.Builder addAbstractExternalEntityFlow(String flow, TypeMirror currentProcess) {
         String currentSimpleName = simpleName(currentProcess);
 
+        // if the abstract class does not exist, create it
         TypeSpec.Builder anAbstractBuilder = interfaces.get(currentSimpleName);
-
         if (anAbstractBuilder == null) {
             anAbstractBuilder = TypeSpec
                     .classBuilder(currentSimpleName)
@@ -227,12 +226,12 @@ public class CodeGenerator {
                     .addModifiers(Modifier.ABSTRACT);
         }
 
-        CodeBlock comment = CodeBlock.builder().add("// TODO: Fill this in").build();
+        CodeBlock comment = CodeBlock.builder().add("// TODO: Call Holt?").build();
 
         MethodSpec methodSpec = MethodSpec
                 .methodBuilder(flow)
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                //.addCode(comment)
+                .addModifiers(Modifier.PUBLIC)
+                .addCode(comment)
                 .build();
 
         anAbstractBuilder.addMethod(methodSpec);
@@ -279,14 +278,6 @@ public class CodeGenerator {
                 .addModifiers(Modifier.PUBLIC);
 
         return anInterface;
-    }
-
-    private void print(JavaFile javaFile) {
-        try {
-            javaFile.writeTo(System.out);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public TypeMirror findTarget(String flow, TypeElement element) {
