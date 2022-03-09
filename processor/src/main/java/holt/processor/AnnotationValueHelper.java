@@ -1,7 +1,5 @@
 package holt.processor;
 
-import holt.processor.annotation.FlowStart;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
@@ -10,7 +8,6 @@ import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import java.lang.annotation.Annotation;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 

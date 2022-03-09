@@ -2,9 +2,9 @@ package holt.processor;
 
 import com.squareup.javapoet.JavaFile;
 import holt.processor.annotation.*;
-import holt.processor.generation.CodeGenerator;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
@@ -15,100 +15,63 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class FlowProcessor extends AbstractProcessor {
+public class FlowProcessor {
 
     private final CodeGenerator codeGenerator = CodeGenerator.getInstance();
 
     private final List<JavaFile> saved = new ArrayList<>();
 
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(
-                FlowStart.class.getName(),
-                FlowStarts.class.getName(),
-                FlowThrough.class.getName(),
-                FlowThroughs.class.getName(),
-                Database.class.getName()
-        );
-    }
+    private ProcessingEnvironment processingEnv;
 
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
-
-    @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment env) {
+        // first pass we map String to TypeMirrors for later use
         if (!env.processingOver()) {
             for (Element element : env.getElementsAnnotatedWith(FlowStarts.class)) {
                 if (element instanceof TypeElement typeElement) {
-                    // all SimpleNames have to be unique and same as the node name in the PADFD
+                    // all SimpleNames have to be unique and same as the node value in the PADFD
                     addFlowStartsTypeMirror(typeElement);
-                } else {
-                    // TODO: use SLF4J together with Logback for logging instead
-                    System.out.println("Element was not TypeElement");
                 }
-
             }
+
             for (Element element : env.getElementsAnnotatedWith(FlowThroughs.class)) {
-
                 if (element instanceof TypeElement typeElement) {
-                    // all SimpleNames have to be unique and same as the node name in the PADFD
+                    // all SimpleNames have to be unique and same as the node value in the PADFD
                     addFlowThroughsTypeMirror(typeElement);
-                } else {
-                    // TODO: use SLF4J together with Logback for logging instead
-                    System.out.println("Element was not TypeElement");
                 }
             }
 
-            for (Element element : env.getElementsAnnotatedWith(Database.class)) {
-                if (element instanceof TypeElement typeElement) {
-                    addDBTypeMirrors(typeElement);
-                } else {
-                    System.out.println("Element was not TypeElement");
-                }
-            }
+//            for (Element element : env.getElementsAnnotatedWith(Database.class)) {
+//                if (element instanceof TypeElement typeElement) {
+//                    addDBTypeMirrors(typeElement);
+//                }
+//            }
 
             for (Element element : env.getElementsAnnotatedWith(FlowStarts.class)) {
                 if (element instanceof TypeElement typeElement) {
-                    // all SimpleNames have to be unique and same as the node name in the PADFD
+                    // all SimpleNames have to be unique and same as the node value in the PADFD
                     flowStarts(typeElement);
-                } else {
-                    // TODO: use SLF4J together with Logback for logging instead
-                    System.out.println("Element was not TypeElement");
                 }
 
             }
+
             for (Element element : env.getElementsAnnotatedWith(FlowThroughs.class)) {
-
                 if (element instanceof TypeElement typeElement) {
-                    // all SimpleNames have to be unique and same as the node name in the PADFD
+                    // all SimpleNames have to be unique and same as the node value in the PADFD
                     flowThroughs(typeElement);
-                } else {
-                    // TODO: use SLF4J together with Logback for logging instead
-                    System.out.println("Element was not TypeElement");
                 }
             }
 
-            // first pass we map String to TypeMirrors for later use
             for (Element element : env.getElementsAnnotatedWith(FlowStart.class)) {
                 if (element instanceof TypeElement typeElement) {
-                    // all SimpleNames have to be unique and same as the node name in the PADFD
+                    // all SimpleNames have to be unique and same as the node value in the PADFD
                     addStartTypeMirror(typeElement);
-                } else {
-                    // TODO: use SLF4J together with Logback for logging instead
-                    System.out.println("Element was not TypeElement");
                 }
             }
 
             for (Element element : env.getElementsAnnotatedWith(FlowThrough.class)) {
                 if (element instanceof TypeElement typeElement) {
-                    // all SimpleNames have to be unique and same as the node name in the PADFD
+                    // all SimpleNames have to be unique and same as the node value in the PADFD
                     addThroughTypeMirror(typeElement);
-                } else {
-                    // TODO: use SLF4J together with Logback for logging instead
-                    System.out.println("Element was not TypeElement");
                 }
             }
 
@@ -117,8 +80,6 @@ public class FlowProcessor extends AbstractProcessor {
                 if (element instanceof TypeElement typeElement) {
                     FlowStart annotation = typeElement.getAnnotation(FlowStart.class);
                     mapInputOutputStart(typeElement, annotation);
-                } else {
-                    System.out.println("Element was not TypeElement");
                 }
             }
 
@@ -127,8 +88,6 @@ public class FlowProcessor extends AbstractProcessor {
                 if (element instanceof TypeElement typeElement) {
                     FlowThrough annotation = typeElement.getAnnotation(FlowThrough.class);
                     mapInputOutputThrough(typeElement, annotation);
-                } else {
-                    System.out.println("Element was not TypeElement");
                 }
             }
 
@@ -136,7 +95,7 @@ public class FlowProcessor extends AbstractProcessor {
             List<JavaFile> interfaces = codeGenerator.generateInterfaces();
 
             for (JavaFile j : interfaces) {
-                saveJavaFile(j);
+//                saveJavaFile(j);
             }
         }
 
@@ -261,17 +220,4 @@ public class FlowProcessor extends AbstractProcessor {
         return (TypeElement) TypeUtils.asElement(typeMirror);
     }
 
-    private void saveJavaFile(JavaFile javaFile) {
-        try {
-            if (javaFile != null) {
-                // only save if it has not been saved before
-                if (saved.stream().filter(j -> j.typeSpec.name.equals(javaFile.typeSpec.name)).toList().isEmpty()) {
-                    javaFile.writeTo(processingEnv.getFiler());
-                }
-                saved.add(javaFile);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }

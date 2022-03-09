@@ -62,29 +62,4 @@ public class DFDParserTest {
                 .isEqualTo(correctFriendDFDToString);
     }
 
-    @Test
-    public void Given_FriendDFD_Expect_SameNodeName_To_HaveTheSameReferenceInBothFlows() throws IOException {
-        DFDParser.DFDTable dfdTable = DFDParser.csvToTable(
-                ClassLoader.getSystemResource("friend.csv").openStream()
-        );
-
-        DFDParser.DFD dfd = DFDParser.tableToDfd(dfdTable);
-
-        // Gets all dataflows from "AF" and "GF"
-        // Then converts the dataflows to List<Node>
-        Map<String, List<Node>> nameToReferencesMap =
-                dfd.flowsMap().values()
-                        .stream()
-                        .flatMap(Collection::stream)
-                        .flatMap(dataflow -> Stream.of(dataflow.from(), dataflow.to()))
-                        .collect(groupingBy(Node::name, mapping(node -> node, toList())));
-
-        for (List<Node> nodesReferences : nameToReferencesMap.values()) {
-            Node base = nodesReferences.get(0);
-            for (int i = 1; i < nodesReferences.size(); i++) {
-                assertThat(base == nodesReferences.get(i))
-                        .isTrue();
-            }
-        }
-    }
 }

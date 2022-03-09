@@ -36,7 +36,7 @@ public final class DFDParser {
         for (DFDTable.Row row : table.data()) {
             //If there's no from, then it's a node
             if (row.fromId().equals("null")) {
-                Node node = new Node(row.name, row.type);
+                Node node = new Node(row.id, row.name, row.type);
                 idToNodeMap.put(row.id, node);
             }
         }

@@ -1,18 +1,16 @@
-package holt.processor.generation;
+package holt.processor;
 
 import com.squareup.javapoet.*;
-import holt.processor.DFDParser;
-import holt.processor.Dataflow;
-import holt.processor.Node;
-import holt.processor.NodeType;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class CodeGenerator {
 
@@ -21,18 +19,18 @@ public class CodeGenerator {
     // for each flow, keep track of the output type for each class (every class only has one method per flow)
     private final Map<String, Map<TypeMirror, TypeMirror>> outputTypes = new HashMap<>();
     // i'm not really sure how this is working. Shouldn't it be one of these Maps for each flow?
-    // the function name for each class
+    // the function value for each class
     private final Map<TypeMirror, String> functionNames = new HashMap<>();
 
     // list of interfaces, used for appending more methods when new flows are handled
     private final Map<String, TypeSpec.Builder> interfaces = new HashMap<>();
 
-    // used to access the TypeMirror when only the name is available
+    // used to access the TypeMirror when only the value is available
     private final Map<String, TypeMirror> nameToTypeMirrorMap = new HashMap<>();
 
     private final String PACKAGE_NAME = "holt.processor.generation.interfaces";
 
-    // used to get the Node when only the name is available
+    // used to get the Node when only the value is available
     private final Map<String, Node> nodeMap = new HashMap<>();
 
     private DFDParser.DFD dfd;
@@ -55,17 +53,9 @@ public class CodeGenerator {
     public void setDFD(DFDParser.DFD dfd) {
         this.dfd = dfd;
 
-        for (Node n : dfd.processes()) {
-            nodeMap.put(n.name(), n);
-        }
-
-        for (Node n : dfd.databases()) {
-            nodeMap.put(n.name(), n);
-        }
-
-        for (Node n : dfd.externalEntities()) {
-            nodeMap.put(n.name(), n);
-        }
+        Stream.of(dfd.processes(), dfd.databases(), dfd.externalEntities())
+                .flatMap(Collection::stream)
+                .forEach(node -> nodeMap.put(node.name(), node));
     }
 
     public void addTypeMirror(String name, TypeMirror typeMirror) {

@@ -5,5 +5,3 @@ id,value,style,source,target,type
 5,Friend Id;GF,endArrow=classic,2,3,endArrow=classic
 6,Friend In Raw;GF,endArrow=classic,4,3,endArrow=classic
 7,Friend;GF,endArrow=classic,3,2,endArrow=classic
-8,Friend;AF,endArrow=classic,2,3,endArrow=classic
-9,Friend;AF,endArrow=classic,3,4,endArrow=classic

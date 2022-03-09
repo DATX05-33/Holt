@@ -1,4 +1,0 @@
-id,value,style,source,target,type
-2,Advertising,rounded=0,null,null,external_entity
-3,Send ad,ellipse,null,null,process
-4,User id;SF,endArrow=classic,2,3,endArrow=classic
