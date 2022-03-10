@@ -130,7 +130,9 @@ public class DFDProcessor extends AbstractProcessor {
                 bondFlow.setOutput(output.asType());
 
                 for (Query query : flowThrough.queries()) {
-                    String db = query.db();
+                    TypeElement dbType = asTypeElement(
+                            AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), query, Query::db)
+                    );
                     TypeElement type = asTypeElement(
                             AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), query, Query::type)
                     );
@@ -138,7 +140,7 @@ public class DFDProcessor extends AbstractProcessor {
                     for (BondFlow inputBondFlow : bondFlow.inputs()) {
                         if (inputBondFlow instanceof QueryBondFlow queryBondFlow) {
                             DatabaseBond databaseBond = queryBondFlow.databaseBond();
-                            if (databaseBond.name().equals(db)) {
+                            if (("I" + databaseBond.name()).equals(dbType.getSimpleName().toString())) {
                                 queryBondFlow.setOutput(type.asType());
                             }
                         }
@@ -267,8 +269,6 @@ public class DFDProcessor extends AbstractProcessor {
 
                         externalEntityBond.end(flowName)
                                 .ifPresent(flow -> {
-                                    System.out.println("please");
-                                    System.out.println(flow);
                                     CodeBlock returnStatement = CodeBlock.builder().add("return null;").build();
                                     methodSpecBuilder.addCode(returnStatement);
                                     methodSpecBuilder.returns(ClassName.bestGuess(flow.output().toString()));
@@ -352,6 +352,10 @@ public class DFDProcessor extends AbstractProcessor {
                         }
 
                         ClassName returnClassName = ClassName.get(Object.class);
+                        if (bondFlow.output() != null) {
+                            returnClassName = ClassName.bestGuess(bondFlow.output().toString());
+                        }
+
                         methodSpecBuilder.returns(returnClassName);
 
                         interfaceBuilder.addMethod(methodSpecBuilder.build());
