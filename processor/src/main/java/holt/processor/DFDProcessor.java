@@ -31,13 +31,14 @@ import javax.lang.model.util.Types;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.ParameterizedType;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -99,58 +100,92 @@ public class DFDProcessor extends AbstractProcessor {
     }
 
     private void applyFlowStart(Map<DFDName, List<Bond>> dfdMap, RoundEnvironment environment) {
-        for (Element element : environment.getElementsAnnotatedWith(FlowStart.class)) {
-            if (element instanceof TypeElement typeElement) {
-                FlowStart flowStart = typeElement.getAnnotation(FlowStart.class);
+        for (var flowStartPair : getRepeatableAnnotations(environment, FlowStart.class, FlowStarts.class, FlowStarts::value)) {
+            FlowStart flowStart = flowStartPair.annotation;
+            TypeElement typeElement = flowStartPair.typeElement;
 
-                ExternalEntityBond externalEntityBond = (ExternalEntityBond) findRelatedBond(typeElement, dfdMap);
-                TypeElement output = asTypeElement(
-                        AnnotationValueHelper.getMyValue(typeElement, flowStart,"flowStartType")
-                );
-                externalEntityBond.setOutputType(new FlowName(flowStart.flow()), output.asType());
-            }
+            ExternalEntityBond externalEntityBond = (ExternalEntityBond) findRelatedBond(typeElement, dfdMap);
+            TypeElement output = asTypeElement(
+                    AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), flowStart, FlowStart::flowStartType)
+            );
+
+            externalEntityBond.setOutputType(new FlowName(flowStart.flow()), output.asType());
         }
     }
 
     private void applyFlowThrough(Map<DFDName, List<Bond>> dfdMap, RoundEnvironment environment) {
-        for (Element element : environment.getElementsAnnotatedWith(FlowThrough.class)) {
-            /*
-             * Finds the bond by going through the interfaces of the class that @FlowThrough annotates
-             */
-            if (element instanceof TypeElement typeElement) {
-                FlowThrough flowThrough = typeElement.getAnnotation(FlowThrough.class);
+        /*
+         * Finds the bond by going through the interfaces of the class that @FlowThrough annotates
+         */
+        for (var flowThroughPair : getRepeatableAnnotations(environment, FlowThrough.class, FlowThroughs.class, FlowThroughs::value)){
+            FlowThrough flowThrough = flowThroughPair.annotation;
+            TypeElement typeElement = flowThroughPair.typeElement;
 
-                ProcessBond processBond = (ProcessBond) findRelatedBond(typeElement, dfdMap);
-                BondFlow bondFlow = processBond.getFlow(new FlowName(flowThrough.flow()));
-                bondFlow.setName(flowThrough.functionName());
+            ProcessBond processBond = (ProcessBond) findRelatedBond(typeElement, dfdMap);
+            BondFlow bondFlow = processBond.getFlow(new FlowName(flowThrough.flow()));
+            bondFlow.setName(flowThrough.functionName());
 
-                TypeElement output = asTypeElement(
-                        AnnotationValueHelper.getMyValue(typeElement, flowThrough,"outputType")
+            TypeElement output = asTypeElement(
+                    AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), flowThrough, FlowThrough::outputType)
+            );
+            bondFlow.setOutput(output.asType());
+
+            for (Query query : flowThrough.queries()) {
+                TypeElement dbType = asTypeElement(
+                        AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), query, Query::db)
                 );
-                bondFlow.setOutput(output.asType());
+                TypeElement type = asTypeElement(
+                        AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), query, Query::type)
+                );
 
-                for (Query query : flowThrough.queries()) {
-                    TypeElement dbType = asTypeElement(
-                            AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), query, Query::db)
-                    );
-                    TypeElement type = asTypeElement(
-                            AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), query, Query::type)
-                    );
-
-                    for (BondFlow inputBondFlow : bondFlow.inputs()) {
-                        if (inputBondFlow instanceof QueryBondFlow queryBondFlow) {
-                            DatabaseBond databaseBond = queryBondFlow.databaseBond();
-                            if (("I" + databaseBond.name()).equals(dbType.getSimpleName().toString())) {
-                                queryBondFlow.setOutput(type.asType());
-                            }
+                for (BondFlow inputBondFlow : bondFlow.inputs()) {
+                    if (inputBondFlow instanceof QueryBondFlow queryBondFlow) {
+                        DatabaseBond databaseBond = queryBondFlow.databaseBond();
+                        if (("I" + databaseBond.name()).equals(dbType.getSimpleName().toString())) {
+                            queryBondFlow.setOutput(type.asType());
                         }
                     }
-
                 }
             }
         }
+
     }
 
+    private record AnnotationWithTypeElement<S extends Annotation>(S annotation, TypeElement typeElement) {
+        AnnotationWithTypeElement {
+            Objects.requireNonNull(annotation);
+            Objects.requireNonNull(typeElement);
+        }
+    }
+
+    private <S extends Annotation, R extends Annotation> List<AnnotationWithTypeElement<S>> getRepeatableAnnotations(RoundEnvironment environment, Class<S> singleClass, Class<R> repeatableClass, Function<R,S[]> getSingles) {
+        return Stream.of(environment.getElementsAnnotatedWith(singleClass), environment.getElementsAnnotatedWith(repeatableClass))
+                .flatMap(Collection::stream)
+                .filter(element -> element instanceof TypeElement)
+                .map(element -> (TypeElement) element)
+                .map(typeElement -> {
+                    Stream<S> toStream;
+
+                    R repeatableAnnotation = typeElement.getAnnotation(repeatableClass);
+                    if (repeatableAnnotation != null) {
+                        // Repeatable
+                        S[] singles = getSingles.apply(repeatableAnnotation);
+                        toStream = Stream.of(singles);
+                    } else {
+                        // Single
+                        S single = typeElement.getAnnotation(singleClass);
+                        toStream = Stream.of(single);
+                    }
+
+                    return toStream
+                            .filter(Objects::nonNull)
+                            .map(s -> new AnnotationWithTypeElement<>(s, typeElement))
+                            .toList();
+                })
+                .flatMap(Collection::stream)
+                .distinct()
+                .toList();
+    }
 
     /*
      * If it finds more than one, then it will throw an IllegalStateException
@@ -204,25 +239,6 @@ public class DFDProcessor extends AbstractProcessor {
         List<JavaFile> javaFiles = new ArrayList<>();
         Map<DatabaseBond, JavaFile> databaseMap = new HashMap<>();
 
-        dfdMap.forEach((dfdName, dfdBonds) -> {
-            String enumName = dfdName.value().substring(0, 1).toUpperCase() + dfdName.value().substring(1);
-            TypeSpec.Builder dfdFlowEnumBuilder = TypeSpec.enumBuilder(enumName);
-
-            dfdBonds
-                    .stream()
-                    .filter(bond -> bond instanceof ExternalEntityBond)
-                    .map(bond -> (ExternalEntityBond) bond)
-                    .<String>mapMulti((externalEntityBond, consumer) -> {
-                        externalEntityBond.starts().keySet().forEach(flowName -> {
-                            consumer.accept(flowName.value().toUpperCase());
-                        });
-                    })
-                    .distinct()
-                    .forEach(dfdFlowEnumBuilder::addEnumConstant);
-
-            javaFiles.add(JavaFile.builder(PACKAGE_NAME, dfdFlowEnumBuilder.build()).build());
-        });
-
         bonds
                 .stream()
                 .filter(bond -> bond instanceof DatabaseBond)
@@ -271,7 +287,15 @@ public class DFDProcessor extends AbstractProcessor {
                                 .ifPresent(flow -> {
                                     CodeBlock returnStatement = CodeBlock.builder().add("return null;").build();
                                     methodSpecBuilder.addCode(returnStatement);
-                                    methodSpecBuilder.returns(ClassName.bestGuess(flow.output().toString()));
+
+                                    ClassName returnClassType;
+                                    if (flow.output() != null) {
+                                        returnClassType = ClassName.bestGuess(flow.output().toString());
+                                    } else {
+                                        returnClassType = ClassName.get(Object.class);
+                                    }
+
+                                    methodSpecBuilder.returns(returnClassType);
                                 });
 
                         MethodSpec methodSpec = methodSpecBuilder.build();

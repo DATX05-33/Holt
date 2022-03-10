@@ -31,12 +31,12 @@ public class ExternalEntityBond implements Bond {
         return bondFlow;
     }
 
-    public void addEnd(FlowName flowName, BondFlow bondFlow) {
-        this.endBondFlows.put(flowName, bondFlow);
-    }
-
     public void setOutputType(FlowName flowName, TypeMirror typeMirror) {
         this.startBondFlows.get(flowName).setOutput(typeMirror);
+    }
+
+    public void addEnd(FlowName flowName, BondFlow bondFlow) {
+        this.endBondFlows.put(flowName, bondFlow);
     }
 
     public Map<FlowName, BondFlow> starts() {

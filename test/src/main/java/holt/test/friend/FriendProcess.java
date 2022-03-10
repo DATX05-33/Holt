@@ -3,16 +3,23 @@ package holt.test.friend;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Query;
 import holt.processor.generation.IFriendProcess;
-import holt.processor.generation.IFriendsDB;
-import holt.processor.generation.IFriendsDBToFriendProcessformatFriendGetFriendQuery;
+import holt.processor.generation.IFriendsDBToFriendProcessformatFriendQuery;
+
+import static holt.test.friend.Main.AF;
+import static holt.test.friend.Main.GF;
 
 @FlowThrough(
-        flow = "GF",
+        flow = AF,
+        outputType = NewFriend.class,
+        functionName = "addFriend"
+)
+@FlowThrough(
+        flow = GF,
         outputType = Friend.class,
-        functionName = "formatFriendGetFriend",
+        functionName = "formatFriend",
         queries = {
                 @Query(
-                        db = IFriendsDB.class,
+                        db = FriendsDB.class,
                         type = FriendRaw.class
                 )
         }
@@ -20,13 +27,17 @@ import holt.processor.generation.IFriendsDBToFriendProcessformatFriendGetFriendQ
 public class FriendProcess implements IFriendProcess {
 
     @Override
-    public IFriendsDBToFriendProcessformatFriendGetFriendQuery query_FriendsDB_formatFriendGetFriend(FriendID input) {
+    public NewFriend addFriend(Name input0) {
         return null;
     }
 
     @Override
-    public Friend formatFriendGetFriend(FriendID input0, FriendRaw dbInput1) {
+    public IFriendsDBToFriendProcessformatFriendQuery query_FriendsDB_formatFriend(FriendID input) {
         return null;
     }
 
+    @Override
+    public Friend formatFriend(FriendID input0, Object dbInput1) {
+        return null;
+    }
 }
