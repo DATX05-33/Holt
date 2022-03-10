@@ -128,7 +128,10 @@ public class DFDProcessor extends AbstractProcessor {
                 bondFlow.setOutput(output.asType());
 
                 for (Query query : flowThrough.queries()) {
-                    
+                    String db = query.db();
+                    TypeElement type = asTypeElement(
+                            AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), query, Query::type)
+                    );
                 }
             }
         }
