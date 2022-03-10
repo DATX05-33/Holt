@@ -1,4 +1,4 @@
-package holt.test.friend;
+package holt.test.friend.model;
 
 public record FriendID(String id) {
 }

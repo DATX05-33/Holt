@@ -4,6 +4,11 @@ import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Query;
 import holt.processor.generation.IFriendProcess;
 import holt.processor.generation.IFriendsDBToFriendProcessformatFriendQuery;
+import holt.test.friend.model.Friend;
+import holt.test.friend.model.FriendID;
+import holt.test.friend.model.FriendRaw;
+import holt.test.friend.model.Name;
+import holt.test.friend.model.NewFriend;
 
 import static holt.test.friend.Main.AF;
 import static holt.test.friend.Main.GF;
@@ -37,7 +42,8 @@ public class FriendProcess implements IFriendProcess {
     }
 
     @Override
-    public Friend formatFriend(FriendID input0, Object dbInput1) {
+    public Friend formatFriend(FriendID input0, FriendRaw dbInput1) {
         return null;
     }
+
 }

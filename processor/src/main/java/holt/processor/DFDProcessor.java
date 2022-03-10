@@ -141,7 +141,7 @@ public class DFDProcessor extends AbstractProcessor {
                 for (BondFlow inputBondFlow : bondFlow.inputs()) {
                     if (inputBondFlow instanceof QueryBondFlow queryBondFlow) {
                         DatabaseBond databaseBond = queryBondFlow.databaseBond();
-                        if (("I" + databaseBond.name()).equals(dbType.getSimpleName().toString())) {
+                        if ((databaseBond.name()).equals(dbType.getSimpleName().toString())) {
                             queryBondFlow.setOutput(type.asType());
                         }
                     }

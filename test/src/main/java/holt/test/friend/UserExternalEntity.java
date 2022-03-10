@@ -1,8 +1,9 @@
 package holt.test.friend;
 
 import holt.processor.annotation.FlowStart;
-import holt.processor.annotation.FlowThrough;
 import holt.processor.generation.AbstractUser;
+import holt.test.friend.model.FriendID;
+import holt.test.friend.model.Name;
 
 import static holt.test.friend.Main.AF;
 import static holt.test.friend.Main.GF;
@@ -15,6 +16,6 @@ import static holt.test.friend.Main.GF;
         flow = AF,
         flowStartType = Name.class
 )
-public class User extends AbstractUser {
+public class UserExternalEntity extends AbstractUser {
 
 }
