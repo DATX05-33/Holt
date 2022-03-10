@@ -1,5 +1,6 @@
 package holt.processor.annotation;
 
 public @interface Query {
-    Class<?> value() default Object.class;
+    String db();
+    Class<?> type() default Object.class;
 }

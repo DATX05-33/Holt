@@ -8,9 +8,17 @@ import holt.processor.generation.IFriendsDBToFriendProcessformatFriendGetFriendQ
 @FlowThrough(
         flow = "GF",
         outputType = Friend.class,
-        functionName = "formatFriendGetFriend"
+        functionName = "formatFriendGetFriend",
+        queries = {
+                @Query(
+                        db = FriendProcess.lmao,
+                        type = FriendRaw.class
+                )
+        }
 )
 public class FriendProcess implements IFriendProcess {
+
+    public static final String lmao = "FriendDB";
 
     @Override
     public IFriendsDBToFriendProcessformatFriendGetFriendQuery query_FriendsDB_formatFriendGetFriend(FriendID input) {

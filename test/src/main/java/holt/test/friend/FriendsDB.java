@@ -1,4 +1,6 @@
 package holt.test.friend;
 
-public class FriendsDB {
+import holt.processor.generation.IFriendsDB;
+
+public class FriendsDB implements IFriendsDB {
 }

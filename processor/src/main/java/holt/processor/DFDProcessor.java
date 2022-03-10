@@ -96,15 +96,6 @@ public class DFDProcessor extends AbstractProcessor {
         return dfdMap;
     }
 
-    private void applyQuery(Map<DFDName, List<Bond>> dfdMap, RoundEnvironment environment) {
-        for (Element element : environment.getElementsAnnotatedWith(Query.class)) {
-            if (element instanceof TypeElement typeElement) {
-                Query query = typeElement.getAnnotation(Query.class);
-
-            }
-        }
-    }
-
     private void applyFlowStart(Map<DFDName, List<Bond>> dfdMap, RoundEnvironment environment) {
         for (Element element : environment.getElementsAnnotatedWith(FlowStart.class)) {
             if (element instanceof TypeElement typeElement) {
@@ -125,19 +116,24 @@ public class DFDProcessor extends AbstractProcessor {
              * Finds the bond by going through the interfaces of the class that @FlowThrough annotates
              */
             if (element instanceof TypeElement typeElement) {
-                FlowThrough annotation = typeElement.getAnnotation(FlowThrough.class);
+                FlowThrough flowThrough = typeElement.getAnnotation(FlowThrough.class);
 
                 ProcessBond processBond = (ProcessBond) findRelatedBond(typeElement, dfdMap);
-                BondFlow bondFlow = processBond.getFlow(new FlowName(annotation.flow()));
-                bondFlow.setName(annotation.functionName());
+                BondFlow bondFlow = processBond.getFlow(new FlowName(flowThrough.flow()));
+                bondFlow.setName(flowThrough.functionName());
 
                 TypeElement output = asTypeElement(
-                        AnnotationValueHelper.getMyValue(typeElement, annotation,"outputType")
+                        AnnotationValueHelper.getMyValue(typeElement, flowThrough,"outputType")
                 );
                 bondFlow.setOutput(output.asType());
+
+                for (Query query : flowThrough.queries()) {
+                    
+                }
             }
         }
     }
+
 
     /*
      * If it finds more than one, then it will throw an IllegalStateException
@@ -293,7 +289,6 @@ public class DFDProcessor extends AbstractProcessor {
 
                                 // Then add method to create that interface
                                 ClassName returnClass = ClassName.bestGuess(PACKAGE_NAME + "." + queryInterfaceSpec.name);
-                                System.out.println(queryBondFlow);
                                 MethodSpec.Builder queryMethodSpecBuilder = MethodSpec
                                         .methodBuilder("query_" + queryBondFlow.databaseBond().name() + "_" + bondFlow.name())
                                         .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
