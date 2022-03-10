@@ -11,14 +11,12 @@ import holt.processor.generation.IFriendsDBToFriendProcessformatFriendGetFriendQ
         functionName = "formatFriendGetFriend",
         queries = {
                 @Query(
-                        db = FriendProcess.lmao,
+                        db = "FriendsDB",
                         type = FriendRaw.class
                 )
         }
 )
 public class FriendProcess implements IFriendProcess {
-
-    public static final String lmao = "FriendDB";
 
     @Override
     public IFriendsDBToFriendProcessformatFriendGetFriendQuery query_FriendsDB_formatFriendGetFriend(FriendID input) {
@@ -26,7 +24,7 @@ public class FriendProcess implements IFriendProcess {
     }
 
     @Override
-    public Object formatFriendGetFriend(FriendID input0, Object dbInput1) {
+    public Object formatFriendGetFriend(FriendID input0, FriendRaw dbInput1) {
         return null;
     }
 }

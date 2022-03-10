@@ -132,6 +132,16 @@ public class DFDProcessor extends AbstractProcessor {
                     TypeElement type = asTypeElement(
                             AnnotationValueHelper.getAnnotationClassValue(processingEnv.getElementUtils(), query, Query::type)
                     );
+
+                    for (BondFlow inputBondFlow : bondFlow.inputs()) {
+                        if (inputBondFlow instanceof QueryBondFlow queryBondFlow) {
+                            DatabaseBond databaseBond = queryBondFlow.databaseBond();
+                            if (databaseBond.name().equals(db)) {
+                                queryBondFlow.setOutput(type.asType());
+                            }
+                        }
+                    }
+
                 }
             }
         }
@@ -287,7 +297,7 @@ public class DFDProcessor extends AbstractProcessor {
                                 // First add query interface
                                 String databaseName = databaseMap.get(queryBondFlow.databaseBond()).typeSpec.name;
                                 ClassName databaseClassname = ClassName.bestGuess(PACKAGE_NAME + "." + databaseName);
-                                TypeSpec queryInterfaceSpec = createQueryInterface(databaseName + "To" + processBond.name() + bondFlow.name() + "Query", databaseClassname);
+                                TypeSpec queryInterfaceSpec = createQueryInterface(queryBondFlow, databaseName + "To" + processBond.name() + bondFlow.name() + "Query", databaseClassname);
                                 newFiles.add(JavaFile.builder(PACKAGE_NAME, queryInterfaceSpec).build());
 
                                 // Then add method to create that interface
@@ -333,12 +343,19 @@ public class DFDProcessor extends AbstractProcessor {
         return javaFiles;
     }
 
-    private TypeSpec createQueryInterface(String queryInterfaceName, ClassName databaseClassname) {
+    private TypeSpec createQueryInterface(QueryBondFlow queryBondFlow, String queryInterfaceName, ClassName databaseClassname) {
+        ClassName returnQueryType;
+        if (queryBondFlow.output() != null) {
+            returnQueryType = ClassName.bestGuess(queryBondFlow.output().toString());
+        } else {
+            returnQueryType = ClassName.get(Object.class);
+        }
+
         MethodSpec queryMethod = MethodSpec
                 .methodBuilder("createQuery")
                 .addParameter(databaseClassname, "db")
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .returns(Object.class)
+                .returns(returnQueryType)
                 .build();
 
         return TypeSpec
