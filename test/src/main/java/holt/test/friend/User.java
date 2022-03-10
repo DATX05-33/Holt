@@ -8,4 +8,5 @@ import holt.processor.generation.AbstractUser;
         flowStartType = FriendID.class
 )
 public class User extends AbstractUser {
+
 }

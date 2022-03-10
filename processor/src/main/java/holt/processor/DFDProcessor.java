@@ -4,6 +4,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
 import holt.processor.annotation.DFD;
 import holt.processor.annotation.FlowStart;
@@ -30,6 +31,7 @@ import javax.lang.model.util.Types;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -243,15 +245,36 @@ public class DFDProcessor extends AbstractProcessor {
                             .classBuilder("Abstract" + externalEntityBond.name())
                             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
-                    CodeBlock comment = CodeBlock.builder().add("// TODO: Call Holt?").build();
+                    CodeBlock comment = CodeBlock.builder().add("// TODO: Call Holt?\n").build();
 
                     externalEntityBond.starts().forEach((flowName, bondFlow) -> {
-                        MethodSpec methodSpec = MethodSpec
+                        ClassName parameterClassType;
+                        if (bondFlow.output() != null) {
+                            parameterClassType = ClassName.bestGuess(bondFlow.output().toString());
+                        } else {
+                            parameterClassType = ClassName.get(Object.class);
+                        }
+
+                        ParameterSpec dataParameterSpec = ParameterSpec.builder(parameterClassType, "d").build();
+                        ParameterSpec policyParameterSpec = ParameterSpec.builder(Object.class, "pol").build();
+
+                        MethodSpec.Builder methodSpecBuilder = MethodSpec
                                 .methodBuilder(flowName.value())
                                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                                 .addCode(comment)
-                                .build();
+                                .addParameter(dataParameterSpec)
+                                .addParameter(policyParameterSpec);
 
+                        externalEntityBond.end(flowName)
+                                .ifPresent(flow -> {
+                                    System.out.println("please");
+                                    System.out.println(flow);
+                                    CodeBlock returnStatement = CodeBlock.builder().add("return null;").build();
+                                    methodSpecBuilder.addCode(returnStatement);
+                                    methodSpecBuilder.returns(ClassName.bestGuess(flow.output().toString()));
+                                });
+
+                        MethodSpec methodSpec = methodSpecBuilder.build();
                         externalEntityBuilder.addMethod(methodSpec);
                     });
 
@@ -398,6 +421,8 @@ public class DFDProcessor extends AbstractProcessor {
                 Bond toBond = bonds.get(dataflow.to().id());
                 if (toBond instanceof ProcessBond toProcessBond) {
                     toProcessBond.getFlow(flowName).addInput(bondFlow);
+                } else if (toBond instanceof ExternalEntityBond externalEntityBond) {
+                    externalEntityBond.addEnd(flowName, bondFlow);
                 }
             }
         }
