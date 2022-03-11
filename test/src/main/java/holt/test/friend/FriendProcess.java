@@ -37,7 +37,7 @@ public class FriendProcess implements IFriendProcess {
     }
 
     @Override
-    public IFriendsDBToFriendProcessformatFriendQuery query_FriendsDB_formatFriend(FriendID input) {
+    public IFriendsDBToFriendProcessformatFriendQuery query_FriendsDB_formatFriend(FriendRaw input0) {
         return null;
     }
 
@@ -45,5 +45,4 @@ public class FriendProcess implements IFriendProcess {
     public Friend formatFriend(FriendID input0, FriendRaw dbInput1) {
         return null;
     }
-
 }

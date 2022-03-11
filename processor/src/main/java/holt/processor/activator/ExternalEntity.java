@@ -1,32 +1,33 @@
-package holt.processor.bond;
+package holt.processor.activator;
 
 import javax.lang.model.type.TypeMirror;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class ExternalEntityBond implements Bond {
+public final class ExternalEntity implements Activator {
 
     private final String name;
-    private final Map<FlowName, BondFlow> startBondFlows;
+    private final Map<FlowName, Flow> startBondFlows;
 
     /**
      * If null, then store.
      */
-    private final Map<FlowName, BondFlow> endBondFlows;
+    private final Map<FlowName, Flow> endBondFlows;
 
-    public ExternalEntityBond(String name) {
+    public ExternalEntity(String name) {
         this.name = name;
         startBondFlows = new HashMap<>();
         endBondFlows = new HashMap<>();
     }
 
+    @Override
     public String name() {
         return this.name;
     }
 
-    public BondFlow addFlow(FlowName flowName) {
-        BondFlow bondFlow = new BondFlow();
+    public Flow addFlow(FlowName flowName) {
+        Flow bondFlow = new Flow();
         this.startBondFlows.put(flowName, bondFlow);
         return bondFlow;
     }
@@ -35,15 +36,15 @@ public class ExternalEntityBond implements Bond {
         this.startBondFlows.get(flowName).setOutput(typeMirror);
     }
 
-    public void addEnd(FlowName flowName, BondFlow bondFlow) {
+    public void addEnd(FlowName flowName, Flow bondFlow) {
         this.endBondFlows.put(flowName, bondFlow);
     }
 
-    public Map<FlowName, BondFlow> starts() {
+    public Map<FlowName, Flow> starts() {
         return this.startBondFlows;
     }
 
-    public Optional<BondFlow> end(FlowName flowName) {
+    public Optional<Flow> end(FlowName flowName) {
         return Optional.ofNullable(this.endBondFlows.get(flowName));
     }
 

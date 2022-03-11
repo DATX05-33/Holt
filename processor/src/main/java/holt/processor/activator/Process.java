@@ -1,4 +1,4 @@
-package holt.processor.bond;
+package holt.processor.activator;
 
 import java.util.HashMap;
 import java.util.List;
@@ -8,17 +8,17 @@ import java.util.Map;
  * Right now, there's order in place that would be used by traverses.
  * This will be fixed in the next iteration.
  */
-public class ProcessBond implements Bond {
+public final class Process implements Activator {
 
     private final String name;
-    private final Map<FlowName, BondFlow> methods;
+    private final Map<FlowName, Flow> methods;
 
-    public ProcessBond(String name) {
+    public Process(String name) {
         this.name = name;
         this.methods = new HashMap<>();
     }
 
-    public void addMethod(FlowName flowName, BondFlow bondFlow) {
+    public void addMethod(FlowName flowName, Flow bondFlow) {
         this.methods.put(flowName, bondFlow);
         //TODO: Which it's always right?
         if (bondFlow.name() == null) {
@@ -26,16 +26,17 @@ public class ProcessBond implements Bond {
         }
     }
 
-    public BondFlow getFlow(FlowName flowName) {
+    @Override
+    public String name() {
+        return this.name;
+    }
+
+    public Flow getFlow(FlowName flowName) {
         return this.methods.get(flowName);
     }
 
-    public List<BondFlow> methods() {
+    public List<Flow> methods() {
         return this.methods.values().stream().toList();
-    }
-
-    public String name() {
-        return this.name;
     }
 
     @Override

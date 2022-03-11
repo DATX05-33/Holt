@@ -1,19 +1,20 @@
-package holt.processor.bond;
+package holt.processor.activator;
 
-public class DatabaseBond implements Bond {
+public final class Database implements Activator {
 
     private final String name;
 
-    public DatabaseBond(String name) {
+    public Database(String name) {
         this.name = name;
     }
 
-    public BondFlow addFlow(FlowName flowName) {
-        return new BondFlow();
-    }
-
+    @Override
     public String name() {
         return name;
+    }
+
+    public Flow addFlow(FlowName flowName) {
+        return new Flow();
     }
 
     @Override

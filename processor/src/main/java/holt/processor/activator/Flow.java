@@ -1,29 +1,27 @@
-package holt.processor.bond;
+package holt.processor.activator;
+
+import com.squareup.javapoet.ClassName;
 
 import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BondFlow {
+public class Flow {
 
     //methodName
     private String name;
-    private final List<BondFlow> inputs;
-
-    /**
-     * If null, then Object will be used
-     */
+    private final List<Flow> inputs;
     private TypeMirror output;
 
-    public BondFlow() {
+    public Flow() {
         this.inputs = new ArrayList<>();
     }
 
-    public void addInput(BondFlow bondFlow) {
-        this.inputs.add(bondFlow);
+    public void addInput(Flow flow) {
+        this.inputs.add(flow);
     }
 
-    public List<BondFlow> inputs() {
+    public List<Flow> inputs() {
         return inputs.stream().toList();
     }
 
@@ -31,8 +29,12 @@ public class BondFlow {
         this.output = output;
     }
 
-    public TypeMirror output() {
-        return this.output;
+    public ClassName output() {
+        if (this.output == null) {
+            return ClassName.get(Object.class);
+        } else {
+            return ClassName.bestGuess(this.output.toString());
+        }
     }
 
     public void setName(String name) {
