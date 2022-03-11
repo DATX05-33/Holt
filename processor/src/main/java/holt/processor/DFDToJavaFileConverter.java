@@ -124,7 +124,7 @@ public class DFDToJavaFileConverter {
                     // First add query interface
                     String databaseName = databaseMap.get(queryFlow.database()).typeSpec.name;
                     ClassName databaseClassname = ClassName.bestGuess(dfdPackageName + "." + databaseName);
-                    TypeSpec queryInterfaceSpec = generateQuery(queryFlow, databaseName + "To" + ((Process) process).name() + flow.functionName() + "Query", databaseClassname);
+                    TypeSpec queryInterfaceSpec = generateQuery(queryFlow, databaseName + "To" + process.name() + flow.functionName() + "Query", databaseClassname);
                     newFiles.add(JavaFile.builder(dfdPackageName, queryInterfaceSpec).build());
 
                     // Then add method to create that interface
@@ -135,9 +135,9 @@ public class DFDToJavaFileConverter {
                             .returns(returnClass);
 
                     int j = 0;
-                    for (Flow dbInput : flow.inputs()) {
-                        if (dbInput instanceof QueryFlow) {
-                            ClassName parameterClassName = dbInput.output();
+                    for (Flow input : flow.inputs()) {
+                        if (!(input instanceof QueryFlow)) {
+                            ClassName parameterClassName = input.output();
                             queryMethodSpecBuilder.addParameter(
                                     parameterClassName,
                                     "input" + j,

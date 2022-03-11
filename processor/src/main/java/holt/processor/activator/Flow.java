@@ -7,7 +7,6 @@ import java.util.List;
 
 public class Flow {
 
-    //methodName
     private String functionName;
     private final List<Flow> inputs;
     private ClassName output;
