@@ -1,57 +1,69 @@
 package holt.processor.activator;
 
-import javax.lang.model.type.TypeMirror;
+import com.squareup.javapoet.ClassName;
+import holt.processor.DFDName;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 public final class ExternalEntity implements Activator {
 
-    private final String name;
-    private final Map<FlowName, Flow> startBondFlows;
+    private final ActivatorName activatorName;
+    private final DFDName dfdName;
+    private final Map<FlowName, Flow> startFlows;
 
     /**
      * If null, then store.
      */
-    private final Map<FlowName, Flow> endBondFlows;
+    private final Map<FlowName, Flow> endFlows;
 
-    public ExternalEntity(String name) {
-        this.name = name;
-        startBondFlows = new HashMap<>();
-        endBondFlows = new HashMap<>();
+    public ExternalEntity(ActivatorName activatorName, DFDName dfdName) {
+        this.activatorName = activatorName;
+        this.dfdName = dfdName;
+        startFlows = new HashMap<>();
+        endFlows = new HashMap<>();
     }
 
     @Override
-    public String name() {
-        return this.name;
+    public ActivatorName name() {
+        return this.activatorName;
+    }
+
+    @Override
+    public DFDName dfd() {
+        return this.dfdName;
     }
 
     public Flow addFlow(FlowName flowName) {
-        Flow bondFlow = new Flow();
-        this.startBondFlows.put(flowName, bondFlow);
-        return bondFlow;
+        Flow flow = new Flow();
+        this.startFlows.put(flowName, flow);
+        return flow;
     }
 
-    public void setOutputType(FlowName flowName, TypeMirror typeMirror) {
-        this.startBondFlows.get(flowName).setOutput(typeMirror);
+    public void setOutputType(FlowName flowName, ClassName startOutput) {
+        this.startFlows.get(flowName).setOutput(startOutput);
     }
 
-    public void addEnd(FlowName flowName, Flow bondFlow) {
-        this.endBondFlows.put(flowName, bondFlow);
+    public void addEnd(FlowName flowName, Flow flow) {
+        this.endFlows.put(flowName, flow);
     }
 
     public Map<FlowName, Flow> starts() {
-        return this.startBondFlows;
+        return this.startFlows;
     }
 
     public Optional<Flow> end(FlowName flowName) {
-        return Optional.ofNullable(this.endBondFlows.get(flowName));
+        return Optional.ofNullable(this.endFlows.get(flowName));
     }
 
     @Override
     public String toString() {
-        return "ExternalEntityBond{" +
-                "startBondFlows=" + startBondFlows +
+        return "ExternalEntity{" +
+                "activatorName=" + activatorName +
+                ", dfdName=" + dfdName +
+                ", startFlows=" + startFlows +
+                ", endFlows=" + endFlows +
                 '}';
     }
 }

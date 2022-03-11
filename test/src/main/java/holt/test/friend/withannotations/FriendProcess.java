@@ -1,17 +1,17 @@
-package holt.test.friend;
+package holt.test.friend.withannotations;
 
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Query;
-import holt.processor.generation.IFriendProcess;
-import holt.processor.generation.IFriendsDBToFriendProcessformatFriendQuery;
-import holt.test.friend.model.Friend;
-import holt.test.friend.model.FriendID;
-import holt.test.friend.model.FriendRaw;
-import holt.test.friend.model.Name;
-import holt.test.friend.model.NewFriend;
+import holt.processor.generation.friend_annotations.IFriendProcess;
+import holt.processor.generation.friend_annotations.IFriendsDBToFriendProcessformatFriendQuery;
+import holt.test.friend.withannotations.model.Friend;
+import holt.test.friend.withannotations.model.FriendID;
+import holt.test.friend.withannotations.model.FriendRaw;
+import holt.test.friend.withannotations.model.Name;
+import holt.test.friend.withannotations.model.NewFriend;
 
-import static holt.test.friend.Main.AF;
-import static holt.test.friend.Main.GF;
+import static holt.test.friend.withannotations.Main.AF;
+import static holt.test.friend.withannotations.Main.GF;
 
 @FlowThrough(
         flow = AF,

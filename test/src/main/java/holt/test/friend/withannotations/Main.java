@@ -1,8 +1,8 @@
-package holt.test.friend;
+package holt.test.friend.withannotations;
 
 import holt.processor.annotation.DFD;
 
-@DFD(name = "friend", file = "friend.csv")
+@DFD(name = "friend_annotations", file = "friend.csv")
 public class Main {
 
     public static final String AF = "AF";

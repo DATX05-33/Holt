@@ -1,5 +1,7 @@
 package holt.processor.activator;
 
+import holt.processor.DFDName;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,25 +12,32 @@ import java.util.Map;
  */
 public final class Process implements Activator {
 
-    private final String name;
+    private final ActivatorName activatorName;
+    private final DFDName dfdName;
     private final Map<FlowName, Flow> methods;
 
-    public Process(String name) {
-        this.name = name;
+    public Process(ActivatorName activatorName, DFDName dfdName) {
+        this.activatorName = activatorName;
+        this.dfdName = dfdName;
         this.methods = new HashMap<>();
     }
 
-    public void addMethod(FlowName flowName, Flow bondFlow) {
-        this.methods.put(flowName, bondFlow);
+    public void addMethod(FlowName flowName, Flow flow) {
+        this.methods.put(flowName, flow);
         //TODO: Which it's always right?
-        if (bondFlow.name() == null) {
-            bondFlow.setName(flowName.value());
+        if (flow.functionName() == null) {
+            flow.setFunctionName(flowName.value());
         }
     }
 
     @Override
-    public String name() {
-        return this.name;
+    public ActivatorName name() {
+        return this.activatorName;
+    }
+
+    @Override
+    public DFDName dfd() {
+        return this.dfdName;
     }
 
     public Flow getFlow(FlowName flowName) {
@@ -41,8 +50,9 @@ public final class Process implements Activator {
 
     @Override
     public String toString() {
-        return "ProcessBond{" +
-                "value='" + name + '\'' +
+        return "Process{" +
+                "activatorName=" + activatorName +
+                ", dfdName=" + dfdName +
                 ", methods=" + methods +
                 '}';
     }

@@ -29,7 +29,9 @@ public final class DFDParser {
                       List<Node> databases,
                       Map<String, List<Dataflow>> flowsMap) { }
 
-    public static DFD tableToDfd(DFDTable table) {
+    public static DFD loadDfd(InputStream inputStream) {
+        DFDTable table = csvToTable(inputStream);
+
         Map<Integer, Node> idToNodeMap = new HashMap<>();
 
         //First, all node rows. Go through the table once and add them to idToNodeMap and external entity idToNodeMap
@@ -102,7 +104,7 @@ public final class DFDParser {
         ) { }
     }
 
-    public static DFDTable csvToTable(InputStream inputStream) {
+    private static DFDTable csvToTable(InputStream inputStream) {
         ArrayList<DFDTable.Row> allData = new ArrayList<>();
 
         // create a reader
@@ -132,30 +134,6 @@ public final class DFDParser {
         }
 
         return new DFDTable(allData);
-    }
-
-    public static List<Node> nodeInputs(DFD dfd, String flow, Node node) {
-        List<Node> inputs = new ArrayList<>();
-
-        for (Dataflow d : dfd.flowsMap.get(flow)) {
-            if (d.to().equals(node)) {
-                inputs.add(d.from());
-            }
-        }
-
-        return inputs;
-    }
-
-    public static List<Node> nodeOutputs(DFD dfd, String flow, Node node) {
-        List<Node> outputs = new ArrayList<>();
-
-        for (Dataflow d : dfd.flowsMap.get(flow)) {
-            if (d.from().equals(node)) {
-                outputs.add(d.to());
-            }
-        }
-
-        return outputs;
     }
 
 }

@@ -1,5 +1,8 @@
 package holt.processor.activator;
 
+import holt.processor.DFDName;
+
 public sealed interface Activator permits ExternalEntity, Database, Process {
-    String name();
+    ActivatorName name();
+    DFDName dfd();
 }

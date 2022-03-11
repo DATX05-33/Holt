@@ -2,16 +2,15 @@ package holt.processor.activator;
 
 import com.squareup.javapoet.ClassName;
 
-import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Flow {
 
     //methodName
-    private String name;
+    private String functionName;
     private final List<Flow> inputs;
-    private TypeMirror output;
+    private ClassName output;
 
     public Flow() {
         this.inputs = new ArrayList<>();
@@ -25,7 +24,7 @@ public class Flow {
         return inputs.stream().toList();
     }
 
-    public void setOutput(TypeMirror output) {
+    public void setOutput(ClassName output) {
         this.output = output;
     }
 
@@ -33,22 +32,22 @@ public class Flow {
         if (this.output == null) {
             return ClassName.get(Object.class);
         } else {
-            return ClassName.bestGuess(this.output.toString());
+            return output;
         }
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setFunctionName(String functionName) {
+        this.functionName = functionName;
     }
 
-    public String name() {
-        return this.name;
+    public String functionName() {
+        return this.functionName;
     }
 
     @Override
     public String toString() {
-        return "BondFlow{" +
-                "value='" + name + '\'' +
+        return "Flow{" +
+                "value='" + functionName + '\'' +
                 ", inputs=" + inputs +
                 ", output=" + output +
                 '}';

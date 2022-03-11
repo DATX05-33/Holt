@@ -1,6 +1,6 @@
 package holt.test;
 
-import holt.processor.generation.IFriendProcess;
+import holt.processor.generation.friend_annotations.IFriendProcess;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Modifier;
