@@ -2,6 +2,7 @@ package holt.processor;
 
 import com.squareup.javapoet.JavaFile;
 import holt.processor.activator.ActivatorName;
+import holt.processor.activator.Connector;
 import holt.processor.annotation.DFD;
 import holt.processor.annotation.FlowStart;
 import holt.processor.annotation.FlowStartRep;
@@ -14,9 +15,8 @@ import holt.processor.activator.Database;
 import holt.processor.activator.Activator;
 import holt.processor.activator.ExternalEntity;
 import holt.processor.activator.Process;
-import holt.processor.activator.Flow;
 import holt.processor.activator.FlowName;
-import holt.processor.activator.QueryFlow;
+import holt.processor.activator.QueryConnector;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -114,44 +114,49 @@ public class DFDsProcessor extends AbstractProcessor {
 
             for (Map.Entry<String, List<Dataflow>> entry : dfd.flowsMap().entrySet()) {
                 FlowName flowName = new FlowName(entry.getKey());
-
+                System.out.println(entry.getKey());
                 // Create Flows
                 for (Dataflow dataflow : entry.getValue()) {
-                    Activator to = idToActivator.get(dataflow.to().id());
-                    if (to instanceof Process processTo) {
-                        processTo.addMethod(flowName, new Flow());
+                    Activator from = idToActivator.get(dataflow.from().id());
+                    if (from instanceof Process fromProcess) {
+                        fromProcess.addFlow(flowName);
+                    } else if (from instanceof ExternalEntity fromExternalEntity) {
+                        fromExternalEntity.addStartFlow(flowName);
                     }
                 }
+
+
+                idToActivator.values().forEach(System.out::println);
 
                 // Connect Flows as inputs
                 for (Dataflow dataflow : entry.getValue()) {
                     Activator fromActivator = idToActivator.get(dataflow.from().id());
-                    Flow flow = null;
+                    Connector connector = null;
                     if (fromActivator instanceof ExternalEntity externalEntity) {
-                        flow = externalEntity.addFlow(flowName);
+                        connector = externalEntity.getOutput(flowName);
                     } else if (fromActivator instanceof Process process) {
-                        flow = process.getFlow(flowName);
+                        connector = process.getOutput(flowName);
                     } else if (fromActivator instanceof Database database) {
-                        flow = new QueryFlow(database);
+                        connector = new QueryConnector(database);
                     }
 
                     Activator toActivator = idToActivator.get(dataflow.to().id());
                     if (toActivator instanceof Process toProcess) {
-                        toProcess.getFlow(flowName).addInput(flow);
+                        toProcess.addInputToFlow(flowName, connector);
                     } else if (toActivator instanceof ExternalEntity externalEntity) {
-                        externalEntity.addEnd(flowName, flow);
+                        externalEntity.addEnd(flowName, connector);
                     }
                 }
             }
+
+            idToActivator.values().forEach(System.out::println);
 
             List<Database> databases = new ArrayList<>();
             List<Process> processes = new ArrayList<>();
             List<ExternalEntity> externalEntities = new ArrayList<>();
 
             allActivators.addAll(idToActivator.values());
-            idToActivator.values().forEach(activator -> {
-                activatorToDFDMap.put(activator.name(), dfdName);
-            });
+            idToActivator.values().forEach(activator -> activatorToDFDMap.put(activator.name(), dfdName));
 
             idToActivator.values().forEach(activator -> {
                 if (activator instanceof Database database) {

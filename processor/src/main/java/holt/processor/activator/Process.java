@@ -14,20 +14,12 @@ public final class Process implements Activator {
 
     private final ActivatorName activatorName;
     private final DFDName dfdName;
-    private final Map<FlowName, Flow> methods;
+    private final Map<FlowName, Flow> flows;
 
     public Process(ActivatorName activatorName, DFDName dfdName) {
         this.activatorName = activatorName;
         this.dfdName = dfdName;
-        this.methods = new HashMap<>();
-    }
-
-    public void addMethod(FlowName flowName, Flow flow) {
-        this.methods.put(flowName, flow);
-        //TODO: Which it's always right?
-        if (flow.functionName() == null) {
-            flow.setFunctionName(flowName.value());
-        }
+        this.flows = new HashMap<>();
     }
 
     @Override
@@ -40,12 +32,26 @@ public final class Process implements Activator {
         return this.dfdName;
     }
 
-    public Flow getFlow(FlowName flowName) {
-        return this.methods.get(flowName);
+    public void addFlow(FlowName flowName) {
+        Flow flow = new Flow();
+        flow.setFunctionName(flowName.value());
+        this.flows.put(flowName, flow);
     }
 
-    public List<Flow> methods() {
-        return this.methods.values().stream().toList();
+    public List<Flow> getFlows() {
+        return this.flows.values().stream().toList();
+    }
+
+    public Flow getFlow(FlowName flowName) {
+        return this.flows.get(flowName);
+    }
+
+    public void addInputToFlow(FlowName flowName, Connector connector) {
+        this.flows.get(flowName).addInput(connector);
+    }
+
+    public Connector getOutput(FlowName flowName) {
+        return this.flows.get(flowName).getOutput();
     }
 
     @Override
@@ -53,7 +59,7 @@ public final class Process implements Activator {
         return "Process{" +
                 "activatorName=" + activatorName +
                 ", dfdName=" + dfdName +
-                ", methods=" + methods +
+                ", methods=" + flows +
                 '}';
     }
 }

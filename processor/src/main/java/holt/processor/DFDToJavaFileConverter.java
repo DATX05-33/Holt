@@ -7,12 +7,13 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
 import holt.processor.activator.Activators;
+import holt.processor.activator.Connector;
 import holt.processor.activator.Database;
 import holt.processor.activator.ExternalEntity;
 import holt.processor.activator.Flow;
 import holt.processor.activator.FlowName;
 import holt.processor.activator.Process;
-import holt.processor.activator.QueryFlow;
+import holt.processor.activator.QueryConnector;
 import holt.processor.annotation.FlowStartRep;
 import holt.processor.annotation.FlowThroughRep;
 
@@ -48,15 +49,15 @@ public class DFDToJavaFileConverter {
     public void applyFlowThrough(List<FlowThroughRep> flowThroughReps) {
         for (FlowThroughRep flowThrough : flowThroughReps) {
             Flow flow = flowThrough.process().getFlow(flowThrough.flowName());
-            flow.setOutput(flowThrough.outputType());
+            flow.setOutputType(flowThrough.outputType());
             flow.setFunctionName(flowThrough.functionName());
 
             flowThrough.queries().forEach(query -> {
-                for (Flow inputFlow : flow.inputs()) {
-                    if (inputFlow instanceof QueryFlow queryFlow) {
-                        Database database = queryFlow.database();
+                for (Connector input : flow.getInputs()) {
+                    if (input instanceof QueryConnector inputQueryConnector) {
+                        Database database = inputQueryConnector.database();
                         if ((database.name().value()).equals(query.db().simpleName())) {
-                            queryFlow.setOutput(query.type());
+                            inputQueryConnector.setType(query.type());
                         }
                     }
                 }
@@ -100,17 +101,17 @@ public class DFDToJavaFileConverter {
         TypeSpec.Builder interfaceBuilder = TypeSpec.interfaceBuilder(PROCESS_PREFIX + process.name())
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
-        for (Flow flow : process.methods()) {
+        for (Flow flow : process.getFlows()) {
             MethodSpec.Builder methodSpecBuilder = MethodSpec
-                    .methodBuilder(flow.functionName())
+                    .methodBuilder(flow.getFunctionName())
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
             int i = 0;
-            for (Flow inputFlow : flow.inputs()) {
-                ClassName parameterClassName = inputFlow.output();
+            for (Connector connector : flow.getInputs()) {
+                ClassName parameterClassName = connector.getType();
 
                 String parameterName = "input" + i;
-                if (inputFlow instanceof QueryFlow) {
+                if (connector instanceof QueryConnector) {
                     parameterName = "dbInput" + i;
                 }
 
@@ -119,25 +120,25 @@ public class DFDToJavaFileConverter {
             }
 
             // Databases
-            for (Flow flowInput : flow.inputs()) {
-                if (flowInput instanceof QueryFlow queryFlow) {
+            for (Connector input : flow.getInputs()) {
+                if (input instanceof QueryConnector queryInput) {
                     // First add query interface
-                    String databaseName = databaseMap.get(queryFlow.database()).typeSpec.name;
+                    String databaseName = databaseMap.get(queryInput.database()).typeSpec.name;
                     ClassName databaseClassname = ClassName.bestGuess(dfdPackageName + "." + databaseName);
-                    TypeSpec queryInterfaceSpec = generateQuery(queryFlow, databaseName + "To" + process.name() + flow.functionName() + "Query", databaseClassname);
+                    TypeSpec queryInterfaceSpec = generateQuery(queryInput, databaseName + "To" + process.name() + flow.getFunctionName() + "Query", databaseClassname);
                     newFiles.add(JavaFile.builder(dfdPackageName, queryInterfaceSpec).build());
 
                     // Then add method to create that interface
                     ClassName returnClass = ClassName.bestGuess(dfdPackageName + "." + queryInterfaceSpec.name);
                     MethodSpec.Builder queryMethodSpecBuilder = MethodSpec
-                            .methodBuilder("query_" + queryFlow.database().name() + "_" + flow.functionName())
+                            .methodBuilder("query_" + queryInput.database().name() + "_" + flow.getFunctionName())
                             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                             .returns(returnClass);
 
                     int j = 0;
-                    for (Flow input : flow.inputs()) {
-                        if (!(input instanceof QueryFlow)) {
-                            ClassName parameterClassName = input.output();
+                    for (Connector input2 : flow.getInputs()) {
+                        if (!(input2 instanceof QueryConnector)) {
+                            ClassName parameterClassName = input2.getType();
                             queryMethodSpecBuilder.addParameter(
                                     parameterClassName,
                                     "input" + j,
@@ -151,7 +152,7 @@ public class DFDToJavaFileConverter {
                 }
             }
 
-            ClassName returnClassName = flow.output();
+            ClassName returnClassName = flow.getOutput().getType();
             methodSpecBuilder.returns(returnClassName);
 
             interfaceBuilder.addMethod(methodSpecBuilder.build());
@@ -184,7 +185,7 @@ public class DFDToJavaFileConverter {
     }
 
     private MethodSpec generateExternalEntityStartMethod(ExternalEntity externalEntity, FlowName flowName, Flow startFlow) {
-        ClassName parameterClassType = startFlow.output();
+        ClassName parameterClassType = startFlow.getOutput().getType();
         ParameterSpec dataParameterSpec = ParameterSpec.builder(parameterClassType, "d").build();
         ParameterSpec policyParameterSpec = ParameterSpec.builder(Object.class, "pol").build();
 
@@ -201,7 +202,7 @@ public class DFDToJavaFileConverter {
                 .ifPresent(flow -> {
                     CodeBlock returnStatement = CodeBlock.builder().add("return null;").build();
                     methodSpecBuilder.addCode(returnStatement);
-                    ClassName returnClassType = flow.output();
+                    ClassName returnClassType = flow.getType();
                     methodSpecBuilder.returns(returnClassType);
                 });
 
@@ -216,8 +217,8 @@ public class DFDToJavaFileConverter {
         return JavaFile.builder(dfdPackageName, databaseSpec).build();
     }
 
-    private TypeSpec generateQuery(QueryFlow queryFlow, String queryInterfaceName, ClassName databaseClassname) {
-        ClassName returnQueryType = queryFlow.output();
+    private TypeSpec generateQuery(QueryConnector queryConnector, String queryInterfaceName, ClassName databaseClassname) {
+        ClassName returnQueryType = queryConnector.getType();
 
         MethodSpec queryMethod = MethodSpec
                 .methodBuilder("createQuery")
