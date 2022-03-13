@@ -99,7 +99,7 @@ public class DFDToJavaFileConverter {
         List<JavaFile> newFiles = new ArrayList<>();
 
         TypeSpec.Builder interfaceBuilder = TypeSpec.interfaceBuilder(PROCESS_PREFIX + process.name())
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+                .addModifiers(Modifier.PUBLIC);
 
         for (Flow flow : process.getFlows()) {
             MethodSpec.Builder methodSpecBuilder = MethodSpec
@@ -141,8 +141,7 @@ public class DFDToJavaFileConverter {
                             ClassName parameterClassName = input2.type();
                             queryMethodSpecBuilder.addParameter(
                                     parameterClassName,
-                                    "input" + j,
-                                    Modifier.FINAL
+                                    "input" + j
                             );
                             j++;
                         }

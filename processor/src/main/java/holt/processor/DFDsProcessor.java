@@ -81,8 +81,13 @@ public class DFDsProcessor extends AbstractProcessor {
 
         for (DFDToJavaFileConverter converter : convertersResult.converters) {
             // Apply annotations to dfd
-            converter.applyFlowStarts(flowStartRepMap.get(converter.getDFDName()));
-            converter.applyFlowThrough(flowThroughRepMap.get(converter.getDFDName()));
+            if (flowStartRepMap.containsKey(converter.getDFDName())) {
+                converter.applyFlowStarts(flowStartRepMap.get(converter.getDFDName()));
+            }
+
+            if (flowThroughRepMap.containsKey(converter.getDFDName())) {
+                converter.applyFlowThrough(flowThroughRepMap.get(converter.getDFDName()));
+            }
 
             // Convert to java files for each dfd
             saveJavaFiles(converter.convertToJavaFiles());
@@ -279,7 +284,16 @@ public class DFDsProcessor extends AbstractProcessor {
     }
 
     /*
-     * If it finds more than one, then it will throw an IllegalStateException
+     * Gets the Activator that is connected to the given typeElement.
+     * For example, if a process is the following:
+     * @FlowThrough()
+     * class FriendProcess implements IFriendProcess {
+     *
+     * }
+     *
+     * typeElement would be FriendProcess, and this method would find the Process connected to IFriendProcess.
+     *
+     * If it finds more than one, then it will throw an IllegalStateException.
      */
     private <T extends Activator> T findRelated(Class<T> entityClass, TypeElement typeElement, List<Activator> activators) {
         Map<String, TypeMirror> typeMirrors = Stream.of(

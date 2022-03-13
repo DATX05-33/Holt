@@ -1,0 +1,9 @@
+id,value,style,source,target,type
+2,User2,rounded=0,null,null,external_entity
+3,Friend Process2,ellipse,null,null,process
+4,Friends DB 2,shape=partialRectangle,null,null,data_base
+5,Friend Id;GF,endArrow=classic,2,3,endArrow=classic
+6,Friend In Raw;GF,endArrow=classic,4,3,endArrow=classic
+7,Friend;GF,endArrow=classic,3,2,endArrow=classic
+8,Friend;AF,endArrow=classic,2,3,endArrow=classic
+9,Friend;AF,endArrow=classic,3,4,endArrow=classic
