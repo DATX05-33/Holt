@@ -2,6 +2,8 @@ package holt.processor.activator;
 
 import com.squareup.javapoet.ClassName;
 
+import java.util.Objects;
+
 public class Connector {
 
     private ClassName type;
@@ -10,13 +12,8 @@ public class Connector {
         this.type = type;
     }
 
-    public ClassName getType() {
-        if (this.type == null) {
-            return ClassName.get(Object.class);
-        } else {
-            return type;
-        }
+    public ClassName type() {
+        return Objects.requireNonNullElseGet(this.type, () -> ClassName.get(Object.class));
     }
-
-
+    
 }

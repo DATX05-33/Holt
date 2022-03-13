@@ -15,7 +15,7 @@ public class QueryConnector extends Connector {
     @Override
     public String toString() {
         return "QueryConnector{" +
-                "type=" + super.getType() +
+                "type=" + super.type() +
                 ", database=" + database +
                 '}';
     }

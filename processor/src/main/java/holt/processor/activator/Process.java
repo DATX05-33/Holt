@@ -51,7 +51,7 @@ public final class Process implements Activator {
     }
 
     public Connector getOutput(FlowName flowName) {
-        return this.flows.get(flowName).getOutput();
+        return this.flows.get(flowName).output();
     }
 
     @Override

@@ -41,7 +41,7 @@ public final class ExternalEntity implements Activator {
     }
 
     public Connector getOutput(FlowName flowName) {
-        return this.startFlows.get(flowName).getOutput();
+        return this.startFlows.get(flowName).output();
     }
 
     public void setOutputType(FlowName flowName, ClassName startOutput) {

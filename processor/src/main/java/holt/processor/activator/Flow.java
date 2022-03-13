@@ -20,7 +20,7 @@ public final class Flow {
         this.inputs.add(input);
     }
 
-    public List<Connector> getInputs() {
+    public List<Connector> inputs() {
         return inputs.stream().toList();
     }
 
@@ -28,16 +28,16 @@ public final class Flow {
         this.output.setType(output);
     }
 
-    public Connector getOutput() {
+    public Connector output() {
         return this.output;
-    }
-
-    public String getFunctionName() {
-        return functionName;
     }
 
     public void setFunctionName(String functionName) {
         this.functionName = functionName;
+    }
+
+    public String functionName() {
+        return functionName;
     }
 
     @Override
