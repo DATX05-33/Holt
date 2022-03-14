@@ -156,6 +156,8 @@ public class DFDsProcessor extends AbstractProcessor {
                         toProcessActivator.addInputToFlow(flowName, connector);
                     } else if (toActivator instanceof ExternalEntityActivator externalEntityActivator) {
                         externalEntityActivator.addEnd(flowName, connector);
+                    } else if (toActivator instanceof DatabaseActivator databaseActivator) {
+                        databaseActivator.addStore(flowName, connector);
                     }
                 }
             }
@@ -177,14 +179,16 @@ public class DFDsProcessor extends AbstractProcessor {
                 }
             });
 
-            converters.add(new DFDToJavaFileConverter(
-                    dfdName,
-                    new Activators(
-                            databaseActivators,
-                            externalEntities,
-                            processActivators
+            converters.add(
+                    new DFDToJavaFileConverter(
+                            dfdName,
+                            new Activators(
+                                    databaseActivators,
+                                    externalEntities,
+                                    processActivators
+                            )
                     )
-            ));
+            );
         }
 
         return new ConvertersResult(

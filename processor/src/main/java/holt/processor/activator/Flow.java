@@ -42,9 +42,10 @@ public final class Flow {
 
     @Override
     public String toString() {
-        return "FlowBuilder{" +
-                ", inputs=" + inputs +
+        return "Flow{" +
+                "inputs=" + inputs +
                 ", output=" + output +
+                ", functionName='" + functionName + '\'' +
                 '}';
     }
 }

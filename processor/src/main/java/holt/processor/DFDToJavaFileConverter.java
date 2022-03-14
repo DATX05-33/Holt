@@ -124,7 +124,7 @@ public class DFDToJavaFileConverter {
                 i++;
             }
 
-            // Databases
+            // Databases queries
             for (Connector input : flow.inputs()) {
                 if (input instanceof QueryConnector queryInput) {
                     // First add query interface
@@ -215,11 +215,22 @@ public class DFDToJavaFileConverter {
     }
 
     private JavaFile generateDatabaseJavaFile(DatabaseActivator databaseActivator) {
-        TypeSpec databaseSpec = TypeSpec.interfaceBuilder(DATABASE_PREFIX + databaseActivator.name())
-                .addModifiers(Modifier.PUBLIC)
-                .build();
+        TypeSpec.Builder databaseSpec = TypeSpec.interfaceBuilder(DATABASE_PREFIX + databaseActivator.name())
+                .addModifiers(Modifier.PUBLIC);
 
-        return JavaFile.builder(dfdPackageName, databaseSpec).build();
+        databaseActivator.stores().forEach((flowName, connector) -> {
+            ParameterSpec inputParameter = ParameterSpec.builder(connector.type(), "input")
+                    .build();
+
+            MethodSpec storeMethod = MethodSpec.methodBuilder(flowName.value())
+                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                    .addParameter(inputParameter)
+                    .build();
+
+            databaseSpec.addMethod(storeMethod);
+        });
+
+        return JavaFile.builder(dfdPackageName, databaseSpec.build()).build();
     }
 
     private TypeSpec generateQuery(QueryConnector queryConnector, String queryInterfaceName, ClassName databaseClassname) {
