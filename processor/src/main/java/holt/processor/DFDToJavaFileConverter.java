@@ -8,14 +8,15 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
 import holt.processor.activator.Activators;
 import holt.processor.activator.Connector;
-import holt.processor.activator.Database;
-import holt.processor.activator.ExternalEntity;
+import holt.processor.activator.DatabaseActivator;
+import holt.processor.activator.ExternalEntityActivator;
 import holt.processor.activator.Flow;
 import holt.processor.activator.FlowName;
-import holt.processor.activator.Process;
+import holt.processor.activator.ProcessActivator;
 import holt.processor.activator.QueryConnector;
-import holt.processor.annotation.FlowStartRep;
-import holt.processor.annotation.FlowThroughRep;
+import holt.processor.annotation.representation.DatabaseRep;
+import holt.processor.annotation.representation.FlowStartRep;
+import holt.processor.annotation.representation.FlowThroughRep;
 
 import javax.lang.model.element.Modifier;
 import java.util.ArrayList;
@@ -42,21 +43,21 @@ public class DFDToJavaFileConverter {
 
     public void applyFlowStarts(List<FlowStartRep> flowStartReps) {
         for (FlowStartRep flowStart : flowStartReps) {
-            flowStart.externalEntity().setOutputType(flowStart.flowName(), flowStart.flowStartType());
+            flowStart.externalEntityActivator().setOutputType(flowStart.flowName(), flowStart.flowStartType());
         }
     }
 
     public void applyFlowThrough(List<FlowThroughRep> flowThroughReps) {
         for (FlowThroughRep flowThrough : flowThroughReps) {
-            Flow flow = flowThrough.process().getFlow(flowThrough.flowName());
+            Flow flow = flowThrough.processActivator().getFlow(flowThrough.flowName());
             flow.setOutputType(flowThrough.outputType());
             flow.setFunctionName(flowThrough.functionName());
 
             flowThrough.queries().forEach(query -> {
                 for (Connector input : flow.inputs()) {
                     if (input instanceof QueryConnector inputQueryConnector) {
-                        Database database = inputQueryConnector.database();
-                        if ((database.name().value()).equals(query.db().simpleName())) {
+                        DatabaseActivator databaseActivator = inputQueryConnector.database();
+                        if ((databaseActivator.name().value()).equals(query.db().simpleName())) {
                             inputQueryConnector.setType(query.type());
                         }
                     }
@@ -65,12 +66,16 @@ public class DFDToJavaFileConverter {
         }
     }
 
+    public void applyDatabase(List<DatabaseRep> databaseReps) {
+        databaseReps.forEach(databaseRep -> databaseRep.databaseActivator().setDatabaseClassName(databaseRep.databaseClassName()));
+    }
+
     public List<JavaFile> convertToJavaFiles() {
         List<JavaFile> javaFiles = new ArrayList<>();
-        Map<Database, JavaFile> databaseMap = new HashMap<>();
+        Map<DatabaseActivator, JavaFile> databaseMap = new HashMap<>();
 
         activators
-                .databases()
+                .databaseActivators()
                 .forEach(database -> {
                     JavaFile databaseJavaFile = this.generateDatabaseJavaFile(database);
 
@@ -83,7 +88,7 @@ public class DFDToJavaFileConverter {
                 .forEach(externalEntity -> javaFiles.add(this.generateExternalEntityJavaFile(externalEntity)));
 
         activators
-                .processes()
+                .processActivators()
                 .forEach(process -> javaFiles.addAll(
                         this.generateProcessJavaFile(process, databaseMap)
                 ));
@@ -95,13 +100,13 @@ public class DFDToJavaFileConverter {
         return this.dfdName;
     }
 
-    private List<JavaFile> generateProcessJavaFile(Process process, Map<Database, JavaFile> databaseMap) {
+    private List<JavaFile> generateProcessJavaFile(ProcessActivator processActivator, Map<DatabaseActivator, JavaFile> databaseMap) {
         List<JavaFile> newFiles = new ArrayList<>();
 
-        TypeSpec.Builder interfaceBuilder = TypeSpec.interfaceBuilder(PROCESS_PREFIX + process.name())
+        TypeSpec.Builder interfaceBuilder = TypeSpec.interfaceBuilder(PROCESS_PREFIX + processActivator.name())
                 .addModifiers(Modifier.PUBLIC);
 
-        for (Flow flow : process.getFlows()) {
+        for (Flow flow : processActivator.getFlows()) {
             MethodSpec.Builder methodSpecBuilder = MethodSpec
                     .methodBuilder(flow.functionName())
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
@@ -124,8 +129,9 @@ public class DFDToJavaFileConverter {
                 if (input instanceof QueryConnector queryInput) {
                     // First add query interface
                     String databaseName = databaseMap.get(queryInput.database()).typeSpec.name;
-                    ClassName databaseClassname = ClassName.bestGuess(dfdPackageName + "." + databaseName);
-                    TypeSpec queryInterfaceSpec = generateQuery(queryInput, databaseName + "To" + process.name() + flow.functionName() + "Query", databaseClassname);
+                    ClassName databaseClassname = queryInput.database().databaseClassName()
+                            .orElseGet(() -> ClassName.bestGuess(dfdPackageName + "." + databaseName));
+                    TypeSpec queryInterfaceSpec = generateQuery(queryInput, databaseName + "To" + processActivator.name() + flow.functionName() + "Query", databaseClassname);
                     newFiles.add(JavaFile.builder(dfdPackageName, queryInterfaceSpec).build());
 
                     // Then add method to create that interface
@@ -162,18 +168,18 @@ public class DFDToJavaFileConverter {
         return newFiles;
     }
 
-    private JavaFile generateExternalEntityJavaFile(ExternalEntity externalEntity) {
+    private JavaFile generateExternalEntityJavaFile(ExternalEntityActivator externalEntityActivator) {
         TypeSpec.Builder externalEntityBuilder = TypeSpec
-                .classBuilder(EXTERNAL_ENTITY_PREFIX + externalEntity.name())
+                .classBuilder(EXTERNAL_ENTITY_PREFIX + externalEntityActivator.name())
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
-        externalEntity
+        externalEntityActivator
                 .starts()
                 .entrySet()
                 .stream()
                 .map(flowNameFlowEntry ->
                         this.generateExternalEntityStartMethod(
-                                externalEntity,
+                                externalEntityActivator,
                                 flowNameFlowEntry.getKey(),
                                 flowNameFlowEntry.getValue()
                         )
@@ -183,7 +189,7 @@ public class DFDToJavaFileConverter {
         return JavaFile.builder(dfdPackageName, externalEntityBuilder.build()).build();
     }
 
-    private MethodSpec generateExternalEntityStartMethod(ExternalEntity externalEntity, FlowName flowName, Flow startFlow) {
+    private MethodSpec generateExternalEntityStartMethod(ExternalEntityActivator externalEntityActivator, FlowName flowName, Flow startFlow) {
         ClassName parameterClassType = startFlow.output().type();
         ParameterSpec dataParameterSpec = ParameterSpec.builder(parameterClassType, "d").build();
         ParameterSpec policyParameterSpec = ParameterSpec.builder(Object.class, "pol").build();
@@ -197,7 +203,7 @@ public class DFDToJavaFileConverter {
                 .addParameter(dataParameterSpec)
                 .addParameter(policyParameterSpec);
 
-        externalEntity.end(flowName)
+        externalEntityActivator.end(flowName)
                 .ifPresent(flow -> {
                     CodeBlock returnStatement = CodeBlock.builder().add("return null;").build();
                     methodSpecBuilder.addCode(returnStatement);
@@ -208,8 +214,8 @@ public class DFDToJavaFileConverter {
         return methodSpecBuilder.build();
     }
 
-    private JavaFile generateDatabaseJavaFile(Database database) {
-        TypeSpec databaseSpec = TypeSpec.interfaceBuilder(DATABASE_PREFIX + database.name())
+    private JavaFile generateDatabaseJavaFile(DatabaseActivator databaseActivator) {
+        TypeSpec databaseSpec = TypeSpec.interfaceBuilder(DATABASE_PREFIX + databaseActivator.name())
                 .addModifiers(Modifier.PUBLIC)
                 .build();
 
@@ -232,5 +238,4 @@ public class DFDToJavaFileConverter {
                 .addModifiers(Modifier.PUBLIC)
                 .build();
     }
-
 }

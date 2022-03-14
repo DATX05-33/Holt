@@ -1,8 +1,8 @@
-package holt.processor.annotation;
+package holt.processor.annotation.representation;
 
 import com.squareup.javapoet.ClassName;
-import holt.processor.AnnotationValueUtils;
 import holt.processor.DFDsProcessor;
+import holt.processor.annotation.Query;
 
 import static holt.processor.AnnotationValueUtils.getAnnotationClassValue;
 

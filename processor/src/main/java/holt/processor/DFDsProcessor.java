@@ -1,20 +1,23 @@
 package holt.processor;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import holt.processor.activator.ActivatorName;
 import holt.processor.activator.Connector;
 import holt.processor.annotation.DFD;
+import holt.processor.annotation.Database;
 import holt.processor.annotation.FlowStart;
-import holt.processor.annotation.FlowStartRep;
+import holt.processor.annotation.representation.DatabaseRep;
+import holt.processor.annotation.representation.FlowStartRep;
 import holt.processor.annotation.FlowStarts;
 import holt.processor.annotation.FlowThrough;
-import holt.processor.annotation.FlowThroughRep;
+import holt.processor.annotation.representation.FlowThroughRep;
 import holt.processor.annotation.FlowThroughs;
 import holt.processor.activator.Activators;
-import holt.processor.activator.Database;
+import holt.processor.activator.DatabaseActivator;
 import holt.processor.activator.Activator;
-import holt.processor.activator.ExternalEntity;
-import holt.processor.activator.Process;
+import holt.processor.activator.ExternalEntityActivator;
+import holt.processor.activator.ProcessActivator;
 import holt.processor.activator.FlowName;
 import holt.processor.activator.QueryConnector;
 
@@ -57,7 +60,8 @@ public class DFDsProcessor extends AbstractProcessor {
                 FlowStart.class.getName(),
                 FlowStarts.class.getName(),
                 FlowThrough.class.getName(),
-                FlowThroughs.class.getName()
+                FlowThroughs.class.getName(),
+                Database.class.getName()
         );
     }
 
@@ -78,6 +82,7 @@ public class DFDsProcessor extends AbstractProcessor {
         // Annotations that will be applied to the converters
         Map<DFDName, List<FlowStartRep>> flowStartRepMap = getFlowStarts(convertersResult, environment);
         Map<DFDName, List<FlowThroughRep>> flowThroughRepMap = getFlowThroughs(convertersResult, environment);
+        Map<DFDName, List<DatabaseRep>> databaseRepMap = getDatabases(convertersResult, environment);
 
         for (DFDToJavaFileConverter converter : convertersResult.converters) {
             // Apply annotations to dfd
@@ -87,6 +92,10 @@ public class DFDsProcessor extends AbstractProcessor {
 
             if (flowThroughRepMap.containsKey(converter.getDFDName())) {
                 converter.applyFlowThrough(flowThroughRepMap.get(converter.getDFDName()));
+            }
+
+            if (databaseRepMap.containsKey(converter.getDFDName())) {
+                converter.applyDatabase(databaseRepMap.get(converter.getDFDName()));
             }
 
             // Convert to java files for each dfd
@@ -113,72 +122,67 @@ public class DFDsProcessor extends AbstractProcessor {
 
             Map<Integer, Activator> idToActivator = new HashMap<>();
 
-            dfd.processes().forEach(node -> idToActivator.put(node.id(), new Process(new ActivatorName(node.name()))));
-            dfd.databases().forEach(node -> idToActivator.put(node.id(), new Database(new ActivatorName(node.name()))));
-            dfd.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntity(new ActivatorName(node.name()))));
+            dfd.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivator(new ActivatorName(node.name()))));
+            dfd.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivator(new ActivatorName(node.name()))));
+            dfd.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivator(new ActivatorName(node.name()))));
 
             for (Map.Entry<String, List<Dataflow>> entry : dfd.flowsMap().entrySet()) {
                 FlowName flowName = new FlowName(entry.getKey());
-                System.out.println(entry.getKey());
                 // Create Flows
                 for (Dataflow dataflow : entry.getValue()) {
                     Activator from = idToActivator.get(dataflow.from().id());
-                    if (from instanceof Process fromProcess) {
-                        fromProcess.addFlow(flowName);
-                    } else if (from instanceof ExternalEntity fromExternalEntity) {
-                        fromExternalEntity.addStartFlow(flowName);
+                    if (from instanceof ProcessActivator fromProcessActivator) {
+                        fromProcessActivator.addFlow(flowName);
+                    } else if (from instanceof ExternalEntityActivator fromExternalEntityActivator) {
+                        fromExternalEntityActivator.addStartFlow(flowName);
                     }
                 }
 
-
-                idToActivator.values().forEach(System.out::println);
 
                 // Connect Flows as inputs
                 for (Dataflow dataflow : entry.getValue()) {
                     Activator fromActivator = idToActivator.get(dataflow.from().id());
                     Connector connector = null;
-                    if (fromActivator instanceof ExternalEntity externalEntity) {
-                        connector = externalEntity.getOutput(flowName);
-                    } else if (fromActivator instanceof Process process) {
-                        connector = process.getOutput(flowName);
-                    } else if (fromActivator instanceof Database database) {
-                        connector = new QueryConnector(database);
+                    if (fromActivator instanceof ExternalEntityActivator externalEntityActivator) {
+                        connector = externalEntityActivator.getOutput(flowName);
+                    } else if (fromActivator instanceof ProcessActivator processActivator) {
+                        connector = processActivator.getOutput(flowName);
+                    } else if (fromActivator instanceof DatabaseActivator databaseActivator) {
+                        connector = new QueryConnector(databaseActivator);
                     }
 
                     Activator toActivator = idToActivator.get(dataflow.to().id());
-                    if (toActivator instanceof Process toProcess) {
-                        toProcess.addInputToFlow(flowName, connector);
-                    } else if (toActivator instanceof ExternalEntity externalEntity) {
-                        externalEntity.addEnd(flowName, connector);
+                    if (toActivator instanceof ProcessActivator toProcessActivator) {
+                        toProcessActivator.addInputToFlow(flowName, connector);
+                    } else if (toActivator instanceof ExternalEntityActivator externalEntityActivator) {
+                        externalEntityActivator.addEnd(flowName, connector);
                     }
                 }
             }
 
-            idToActivator.values().forEach(System.out::println);
-
-            List<Database> databases = new ArrayList<>();
-            List<Process> processes = new ArrayList<>();
-            List<ExternalEntity> externalEntities = new ArrayList<>();
+            List<DatabaseActivator> databaseActivators = new ArrayList<>();
+            List<ProcessActivator> processActivators = new ArrayList<>();
+            List<ExternalEntityActivator> externalEntities = new ArrayList<>();
 
             allActivators.addAll(idToActivator.values());
             idToActivator.values().forEach(activator -> activatorToDFDMap.put(activator.name(), dfdName));
 
             idToActivator.values().forEach(activator -> {
-                if (activator instanceof Database database) {
-                    databases.add(database);
-                } else if (activator instanceof ExternalEntity externalEntity) {
-                    externalEntities.add(externalEntity);
-                } else if (activator instanceof Process process) {
-                    processes.add(process);
+                if (activator instanceof DatabaseActivator databaseActivator) {
+                    databaseActivators.add(databaseActivator);
+                } else if (activator instanceof ExternalEntityActivator externalEntityActivator) {
+                    externalEntities.add(externalEntityActivator);
+                } else if (activator instanceof ProcessActivator processActivator) {
+                    processActivators.add(processActivator);
                 }
             });
 
             converters.add(new DFDToJavaFileConverter(
                     dfdName,
                     new Activators(
-                            databases,
+                            databaseActivators,
                             externalEntities,
-                            processes
+                            processActivators
                     )
             ));
         }
@@ -200,8 +204,8 @@ public class DFDsProcessor extends AbstractProcessor {
             FlowStart flowStart = flowStartPair.annotation;
             TypeElement typeElement = flowStartPair.typeElement;
 
-            ExternalEntity externalEntity = findRelated(ExternalEntity.class, typeElement, activators);
-            DFDName dfdName = activatorToDFDMap.get(externalEntity.name());
+            ExternalEntityActivator externalEntityActivator = findRelated(ExternalEntityActivator.class, typeElement, activators);
+            DFDName dfdName = activatorToDFDMap.get(externalEntityActivator.name());
             if (!dfdToFlowStartRepMap.containsKey(dfdName)) {
                 dfdToFlowStartRepMap.put(dfdName, new ArrayList<>());
             }
@@ -209,7 +213,7 @@ public class DFDsProcessor extends AbstractProcessor {
                     .get(dfdName)
                     .add(
                             FlowStartRep
-                                    .of(flowStart, externalEntity)
+                                    .of(flowStart, externalEntityActivator)
                                     .with(this)
                     );
         }
@@ -227,8 +231,8 @@ public class DFDsProcessor extends AbstractProcessor {
             FlowThrough flowThrough = flowThroughPair.annotation;
             TypeElement typeElement = flowThroughPair.typeElement;
 
-            Process process = findRelated(Process.class, typeElement, activators);
-            DFDName dfdName = activatorToDFDMap.get(process.name());
+            ProcessActivator processActivator = findRelated(ProcessActivator.class, typeElement, activators);
+            DFDName dfdName = activatorToDFDMap.get(processActivator.name());
 
             if (!dfdToFlowThroughRepMap.containsKey(dfdName)) {
                 dfdToFlowThroughRepMap.put(dfdName, new ArrayList<>());
@@ -237,13 +241,40 @@ public class DFDsProcessor extends AbstractProcessor {
             dfdToFlowThroughRepMap
                     .get(dfdName)
                     .add(FlowThroughRep
-                            .of(process, flowThrough)
+                            .of(processActivator, flowThrough)
                             .with(this)
                     );
 
         }
 
         return dfdToFlowThroughRepMap;
+    }
+
+    private Map<DFDName, List<DatabaseRep>> getDatabases(ConvertersResult convertersResult,
+                                                         RoundEnvironment environment) {
+        Map<ActivatorName, DFDName> activatorToDFDMap = convertersResult.activatorToDFDMap;
+        List<Activator> activators = convertersResult.activators;
+
+        Map<DFDName, List<DatabaseRep>> dfdToDatabasesMap = new HashMap<>();
+        for (Element element : environment.getElementsAnnotatedWith(Database.class)) {
+            if (element instanceof TypeElement typeElement) {
+                DatabaseActivator databaseActivator = findRelated(DatabaseActivator.class, typeElement, activators);
+                DFDName dfdName = activatorToDFDMap.get(databaseActivator.name());
+
+                if (!dfdToDatabasesMap.containsKey(dfdName)) {
+                    dfdToDatabasesMap.put(dfdName, new ArrayList<>());
+                }
+
+                dfdToDatabasesMap.get(dfdName).add(
+                        new DatabaseRep(
+                                databaseActivator,
+                                ClassName.bestGuess(typeElement.toString())
+                        )
+                );
+            }
+        }
+        return dfdToDatabasesMap;
+
     }
 
     private record AnnotationWithTypeElement<S extends Annotation>(S annotation, TypeElement typeElement) {
@@ -311,8 +342,7 @@ public class DFDsProcessor extends AbstractProcessor {
                 .toList();
 
         if (hits.size() != 1) {
-            System.err.println(hits);
-            throw new IllegalStateException("Can only have one hit");
+            throw new IllegalStateException("Can only have one hit. Hits found: " + hits);
         }
 
         return entityClass.cast(hits.get(0));

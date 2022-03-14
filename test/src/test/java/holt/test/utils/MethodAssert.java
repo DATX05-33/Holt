@@ -19,8 +19,6 @@ public class MethodAssert extends AbstractAssert<MethodAssert, Method> {
     public MethodAssert hasReturnType(Class<?> returnType) {
         isNotNull();
 
-        System.out.println(actual.getReturnType());
-
         if (!Objects.equals(actual.getReturnType(), returnType)) {
             failWithMessage(
                     "Expected return type to be <%s>, but it was <%s>",

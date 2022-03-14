@@ -1,24 +1,25 @@
-package holt.processor.annotation;
+package holt.processor.annotation.representation;
 
 import com.squareup.javapoet.ClassName;
 import holt.processor.DFDsProcessor;
 import holt.processor.activator.FlowName;
-import holt.processor.activator.Process;
+import holt.processor.activator.ProcessActivator;
+import holt.processor.annotation.FlowThrough;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static holt.processor.AnnotationValueUtils.getAnnotationClassValue;
 
-public record FlowThroughRep(Process process,
+public record FlowThroughRep(ProcessActivator processActivator,
                              FlowName flowName,
                              String functionName,
                              ClassName outputType,
                              List<QueryRep> queries) {
 
-    public static FlowThroughRepBuilder of(Process process, FlowThrough flowThrough) {
+    public static FlowThroughRepBuilder of(ProcessActivator processActivator, FlowThrough flowThrough) {
         return processor -> new FlowThroughRep(
-                process,
+                processActivator,
                 new FlowName(flowThrough.flow()),
                 flowThrough.functionName(),
                 ClassName.bestGuess(getAnnotationClassValue(

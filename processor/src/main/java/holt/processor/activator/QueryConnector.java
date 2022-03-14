@@ -2,21 +2,21 @@ package holt.processor.activator;
 
 public class QueryConnector extends Connector {
 
-    private final Database database;
+    private final DatabaseActivator databaseActivator;
 
-    public QueryConnector(Database database) {
-        this.database = database;
+    public QueryConnector(DatabaseActivator databaseActivator) {
+        this.databaseActivator = databaseActivator;
     }
 
-    public Database database() {
-        return this.database;
+    public DatabaseActivator database() {
+        return this.databaseActivator;
     }
 
     @Override
     public String toString() {
         return "QueryConnector{" +
                 "type=" + super.type() +
-                ", database=" + database +
+                ", database=" + databaseActivator +
                 '}';
     }
 }

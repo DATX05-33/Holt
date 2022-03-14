@@ -1,7 +1,5 @@
 package holt.processor.activator;
 
-import holt.processor.DFDName;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,12 +8,12 @@ import java.util.Map;
  * Right now, there's order in place that would be used by traverses.
  * This will be fixed in the next iteration.
  */
-public final class Process implements Activator {
+public final class ProcessActivator implements Activator {
 
     private final ActivatorName activatorName;
     private final Map<FlowName, Flow> flows;
 
-    public Process(ActivatorName activatorName) {
+    public ProcessActivator(ActivatorName activatorName) {
         this.activatorName = activatorName;
         this.flows = new HashMap<>();
     }
@@ -49,9 +47,9 @@ public final class Process implements Activator {
 
     @Override
     public String toString() {
-        return "Process{" +
+        return "ProcessActivator{" +
                 "activatorName=" + activatorName +
-                ", methods=" + flows +
+                ", flows=" + flows +
                 '}';
     }
 }

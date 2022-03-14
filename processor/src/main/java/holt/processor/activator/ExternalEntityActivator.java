@@ -1,13 +1,12 @@
 package holt.processor.activator;
 
 import com.squareup.javapoet.ClassName;
-import holt.processor.DFDName;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public final class ExternalEntity implements Activator {
+public final class ExternalEntityActivator implements Activator {
 
     private final ActivatorName activatorName;
     private final Map<FlowName, Flow> startFlows;
@@ -17,7 +16,7 @@ public final class ExternalEntity implements Activator {
      */
     private final Map<FlowName, Connector> endConnections;
 
-    public ExternalEntity(ActivatorName activatorName) {
+    public ExternalEntityActivator(ActivatorName activatorName) {
         this.activatorName = activatorName;
         startFlows = new HashMap<>();
         endConnections = new HashMap<>();
@@ -55,10 +54,10 @@ public final class ExternalEntity implements Activator {
 
     @Override
     public String toString() {
-        return "ExternalEntity{" +
+        return "ExternalEntityActivator{" +
                 "activatorName=" + activatorName +
                 ", startFlows=" + startFlows +
-                ", endFlows=" + endConnections +
+                ", endConnections=" + endConnections +
                 '}';
     }
 }
