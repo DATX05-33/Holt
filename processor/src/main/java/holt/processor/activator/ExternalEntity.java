@@ -10,7 +10,6 @@ import java.util.Optional;
 public final class ExternalEntity implements Activator {
 
     private final ActivatorName activatorName;
-    private final DFDName dfdName;
     private final Map<FlowName, Flow> startFlows;
 
     /**
@@ -18,9 +17,8 @@ public final class ExternalEntity implements Activator {
      */
     private final Map<FlowName, Connector> endConnections;
 
-    public ExternalEntity(ActivatorName activatorName, DFDName dfdName) {
+    public ExternalEntity(ActivatorName activatorName) {
         this.activatorName = activatorName;
-        this.dfdName = dfdName;
         startFlows = new HashMap<>();
         endConnections = new HashMap<>();
     }
@@ -28,11 +26,6 @@ public final class ExternalEntity implements Activator {
     @Override
     public ActivatorName name() {
         return this.activatorName;
-    }
-
-    @Override
-    public DFDName dfd() {
-        return this.dfdName;
     }
 
     public void addStartFlow(FlowName flowName) {
@@ -64,7 +57,6 @@ public final class ExternalEntity implements Activator {
     public String toString() {
         return "ExternalEntity{" +
                 "activatorName=" + activatorName +
-                ", dfdName=" + dfdName +
                 ", startFlows=" + startFlows +
                 ", endFlows=" + endConnections +
                 '}';

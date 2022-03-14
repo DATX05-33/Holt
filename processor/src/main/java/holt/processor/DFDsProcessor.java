@@ -113,9 +113,9 @@ public class DFDsProcessor extends AbstractProcessor {
 
             Map<Integer, Activator> idToActivator = new HashMap<>();
 
-            dfd.processes().forEach(node -> idToActivator.put(node.id(), new Process(new ActivatorName(node.name()), dfdName)));
-            dfd.databases().forEach(node -> idToActivator.put(node.id(), new Database(new ActivatorName(node.name()), dfdName)));
-            dfd.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntity(new ActivatorName(node.name()), dfdName)));
+            dfd.processes().forEach(node -> idToActivator.put(node.id(), new Process(new ActivatorName(node.name()))));
+            dfd.databases().forEach(node -> idToActivator.put(node.id(), new Database(new ActivatorName(node.name()))));
+            dfd.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntity(new ActivatorName(node.name()))));
 
             for (Map.Entry<String, List<Dataflow>> entry : dfd.flowsMap().entrySet()) {
                 FlowName flowName = new FlowName(entry.getKey());

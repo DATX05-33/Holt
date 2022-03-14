@@ -5,11 +5,9 @@ import holt.processor.DFDName;
 public final class Database implements Activator {
 
     private final ActivatorName activatorName;
-    private final DFDName dfdName;
 
-    public Database(ActivatorName activatorName, DFDName dfdName) {
+    public Database(ActivatorName activatorName) {
         this.activatorName = activatorName;
-        this.dfdName = dfdName;
     }
 
     @Override
@@ -18,19 +16,9 @@ public final class Database implements Activator {
     }
 
     @Override
-    public DFDName dfd() {
-        return this.dfdName;
-    }
-
-    public Flow addFlow(FlowName flowName) {
-        return new Flow();
-    }
-
-    @Override
     public String toString() {
         return "Database{" +
                 "activatorName=" + activatorName +
-                ", dfdName=" + dfdName +
                 '}';
     }
 }

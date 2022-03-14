@@ -13,23 +13,16 @@ import java.util.Map;
 public final class Process implements Activator {
 
     private final ActivatorName activatorName;
-    private final DFDName dfdName;
     private final Map<FlowName, Flow> flows;
 
-    public Process(ActivatorName activatorName, DFDName dfdName) {
+    public Process(ActivatorName activatorName) {
         this.activatorName = activatorName;
-        this.dfdName = dfdName;
         this.flows = new HashMap<>();
     }
 
     @Override
     public ActivatorName name() {
         return this.activatorName;
-    }
-
-    @Override
-    public DFDName dfd() {
-        return this.dfdName;
     }
 
     public void addFlow(FlowName flowName) {
@@ -58,7 +51,6 @@ public final class Process implements Activator {
     public String toString() {
         return "Process{" +
                 "activatorName=" + activatorName +
-                ", dfdName=" + dfdName +
                 ", methods=" + flows +
                 '}';
     }
