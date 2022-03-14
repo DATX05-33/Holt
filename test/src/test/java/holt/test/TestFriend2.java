@@ -1,14 +1,7 @@
 package holt.test;
 
-import holt.processor.generation.friend.IFriendsDB;
 import holt.processor.generation.friend.IFriendsDBToFriendProcessformatFriendQuery;
 import holt.processor.generation.friend2.IFriendsDB2;
-import holt.processor.generation.friend2.IFriendsDB2ToFriendProcess2GFQuery;
-import holt.test.friend.model.Friend;
-import holt.test.friend.model.FriendId;
-import holt.test.friend.model.FriendRaw;
-import holt.test.friend.model.Name;
-import holt.test.friend.model.NewFriend;
 import holt.test.utils.ClassAssert;
 import holt.test.utils.MethodAssert;
 import org.junit.jupiter.api.Test;
@@ -43,7 +36,7 @@ public class TestFriend2 {
     @Test
     public void test_query_FriendsDB_formatFriend_Method() {
         MethodAssert.assertThat(findMethod(IFriendProcess2Interface, "query_FriendsDB2_GF"))
-                .hasReturnType(IFriendsDB2ToFriendProcess2GFQuery.class)
+                .hasReturnType(IFriendsDBToFriendProcessformatFriendQuery.class)
                 .hasParameters(Object.class)
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
     }

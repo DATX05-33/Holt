@@ -6,5 +6,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface DFD {
     String name();
-    String file();
+    String csv();
+    String json();
 }

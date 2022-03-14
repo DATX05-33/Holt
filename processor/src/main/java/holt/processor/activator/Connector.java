@@ -15,5 +15,11 @@ public class Connector {
     public ClassName type() {
         return Objects.requireNonNullElseGet(this.type, () -> ClassName.get(Object.class));
     }
-    
+
+    @Override
+    public String toString() {
+        return "Connector{" +
+                "type=" + type +
+                '}';
+    }
 }

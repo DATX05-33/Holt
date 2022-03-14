@@ -2,6 +2,7 @@ package holt.processor;
 
 
 
+import com.google.gson.Gson;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
@@ -21,16 +22,14 @@ public final class DFDParser {
 
     private DFDParser() {}
 
-    /**
-     * Note that the flows in flowsMap are not ordered in execution order.
-     */
     public record DFD(List<Node> externalEntities,
                       List<Node> processes,
                       List<Node> databases,
                       Map<String, List<Dataflow>> flowsMap) { }
 
-    public static DFD loadDfd(InputStream inputStream) {
-        DFDTable table = csvToTable(inputStream);
+    public static DFD loadDfd(InputStream csvInputStream, InputStream optionsInputStream) {
+        DFDTable table = csvToTable(csvInputStream);
+        DFDOptions options = jsonToOptions(optionsInputStream);
 
         Map<Integer, Node> idToNodeMap = new HashMap<>();
 
@@ -44,36 +43,41 @@ public final class DFDParser {
         }
 
         Map<String, List<Dataflow>> flowsMap = new HashMap<>();
+        // Go through the table again, this time connecting the idToNodeMap by adding outputs via order
+        if (options.flowOrder != null) {
 
-        // Go through the table again, this time connecting the idToNodeMap by adding outputs
-        for (DFDTable.Row row : table.data()) {
-            // data flows, if from is not null then to is not either.
-            if (!row.fromId().equals("null")) {
+
+            options.flowOrder.forEach((flowName, order) -> {
+            for (int current : order) {
+                DFDTable.Row row = getRow(table.data, current);
+
                 Node source = idToNodeMap.get(Integer.valueOf(row.fromId()));
                 Node target = idToNodeMap.get(Integer.valueOf(row.toId()));
-
-                /* A flow must have the text: Something;SAF
-                 * Something would be a descriptive text that explaines the flow
-                 * when looking at the graph in Draw.io.
-                 * It's not used here, but the text after ; is important.
-                 * It's the name of the full flow through out the DFD.
-                 */
-
-                String flowName = row.name.split(";")[1];
 
                 List<Dataflow> flows = flowsMap.computeIfAbsent(flowName, key -> new ArrayList<>());
                 flows.add(new Dataflow(source, target));
             }
+            });
         }
 
         Collection<Node> nodes = idToNodeMap.values();
 
         return new DFD(
-                nodes.stream().filter(DFDParser::isExternalEntity).toList(),
-                nodes.stream().filter(DFDParser::isProcess).toList(),
-                nodes.stream().filter(DFDParser::isDb).toList(),
-                flowsMap
-        );
+                    nodes.stream().filter(DFDParser::isExternalEntity).toList(),
+                    nodes.stream().filter(DFDParser::isProcess).toList(),
+                    nodes.stream().filter(DFDParser::isDb).toList(),
+                    flowsMap
+            );
+    }
+
+    private static DFDTable.Row getRow(List<DFDTable.Row> rows, int id) {
+        for (DFDTable.Row row : rows) {
+            if (row.id == id) {
+                return row;
+            }
+        }
+
+        return null;
     }
 
     private static boolean isExternalEntity(Node node) {
@@ -93,7 +97,26 @@ public final class DFDParser {
         return node.nodeType().equals(NodeType.DATA_BASE);
     }
 
-    public record DFDTable(List<Row> data) {
+    public record DFDOptions(Map<String, Integer[]> flowOrder) { }
+
+    private static class DFDOptionsJson {
+        private Map<String, Integer[]> flows;
+
+        @Override
+        public String toString() {
+            return "DFDOptionsJson{" +
+                    "flows=" + flows +
+                    '}';
+        }
+    }
+
+    private static DFDOptions jsonToOptions(InputStream inputStream) {
+        DFDOptionsJson dfdOptionsJson = new Gson().fromJson(new InputStreamReader(inputStream), DFDOptionsJson.class);
+
+        return new DFDOptions(dfdOptionsJson.flows);
+    }
+
+    private record DFDTable(List<Row> data) {
         private record Row(
                 int id,
                 String name,

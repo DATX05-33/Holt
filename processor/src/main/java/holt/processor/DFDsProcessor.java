@@ -113,10 +113,11 @@ public class DFDsProcessor extends AbstractProcessor {
         List<DFDToJavaFileConverter> converters = new ArrayList<>();
         List<Activator> allActivators = new ArrayList<>();
         Map<ActivatorName, DFDName> activatorToDFDMap = new HashMap<>();
+        Map<DFDName, Map<FlowName, List<Activator>>> flows = new HashMap<>();
 
         for (Element element : environment.getElementsAnnotatedWith(DFD.class)) {
             DFD dfdAnnotation = element.getAnnotation(DFD.class);
-            DFDParser.DFD dfd = loadDfd(toInputStream(dfdAnnotation.file()));
+            DFDParser.DFD dfd = loadDfd(toInputStream(dfdAnnotation.csv()), toInputStream(dfdAnnotation.json()));
 
             DFDName dfdName = new DFDName(dfdAnnotation.name());
 
@@ -126,11 +127,20 @@ public class DFDsProcessor extends AbstractProcessor {
             dfd.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivator(new ActivatorName(node.name()))));
             dfd.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivator(new ActivatorName(node.name()))));
 
+            flows.put(dfdName, new HashMap<>());
+
             for (Map.Entry<String, List<Dataflow>> entry : dfd.flowsMap().entrySet()) {
                 FlowName flowName = new FlowName(entry.getKey());
+
+                flows.get(dfdName).put(flowName, new ArrayList<>());
+
                 // Create Flows
                 for (Dataflow dataflow : entry.getValue()) {
                     Activator from = idToActivator.get(dataflow.from().id());
+
+                    // Add to flows
+                    flows.get(dfdName).get(flowName).add(from);
+
                     if (from instanceof ProcessActivator fromProcessActivator) {
                         fromProcessActivator.addFlow(flowName);
                     } else if (from instanceof ExternalEntityActivator fromExternalEntityActivator) {
@@ -138,6 +148,10 @@ public class DFDsProcessor extends AbstractProcessor {
                     }
                 }
 
+                // Adds the last Activator to flows for the flowName, before it just adds the "to" for each dataflow
+                int dataflows = entry.getValue().size();
+                Activator lastActivator = idToActivator.get(entry.getValue().get(dataflows - 1).to().id());
+                flows.get(dfdName).get(flowName).add(lastActivator);
 
                 // Connect Flows as inputs
                 for (Dataflow dataflow : entry.getValue()) {
@@ -185,7 +199,8 @@ public class DFDsProcessor extends AbstractProcessor {
                             new Activators(
                                     databaseActivators,
                                     externalEntities,
-                                    processActivators
+                                    processActivators,
+                                    flows.get(dfdName)
                             )
                     )
             );
@@ -355,7 +370,7 @@ public class DFDsProcessor extends AbstractProcessor {
     private void saveJavaFiles(List<JavaFile> javaFiles) {
         javaFiles.forEach(javaFile -> {
             try {
-                System.out.println(javaFile);
+//                System.out.println(javaFile);
                 javaFile.writeTo(processingEnv.getFiler());
             } catch (IOException e) {
                 e.printStackTrace();

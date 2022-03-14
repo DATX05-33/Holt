@@ -11,11 +11,9 @@ import java.util.stream.Collectors;
 public final class DatabaseActivator implements Activator {
 
     private final ActivatorName activatorName;
-
     // For example, FriendsDB that in turn implements IFriendsDB
     private ClassName databaseClassName;
-
-    private Map<FlowName, Connector> stores;
+    private final Map<FlowName, Connector> stores;
 
     public DatabaseActivator(ActivatorName activatorName) {
         this.activatorName = activatorName;

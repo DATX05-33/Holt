@@ -6,6 +6,7 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
+import holt.processor.activator.Activator;
 import holt.processor.activator.Activators;
 import holt.processor.activator.Connector;
 import holt.processor.activator.DatabaseActivator;
@@ -85,7 +86,7 @@ public class DFDToJavaFileConverter {
 
         activators
                 .externalEntities()
-                .forEach(externalEntity -> javaFiles.add(this.generateExternalEntityJavaFile(externalEntity)));
+                .forEach(externalEntity -> javaFiles.add(this.generateExternalEntityJavaFile(activators, externalEntity)));
 
         activators
                 .processActivators()
@@ -168,50 +169,33 @@ public class DFDToJavaFileConverter {
         return newFiles;
     }
 
-    private JavaFile generateExternalEntityJavaFile(ExternalEntityActivator externalEntityActivator) {
+    private JavaFile generateExternalEntityJavaFile(Activators activators, ExternalEntityActivator externalEntityActivator) {
+        TraversesGenerator traversesGenerator = new TraversesGenerator();
+
         TypeSpec.Builder externalEntityBuilder = TypeSpec
                 .classBuilder(EXTERNAL_ENTITY_PREFIX + externalEntityActivator.name())
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+
+        var code = traversesGenerator.generateFieldsAndConstructor(activators);
+        externalEntityBuilder.addFields(code.fieldSpecs());
+        externalEntityBuilder.addMethod(code.constructorSpec());
 
         externalEntityActivator
                 .starts()
                 .entrySet()
                 .stream()
                 .map(flowNameFlowEntry ->
-                        this.generateExternalEntityStartMethod(
-                                externalEntityActivator,
+                        traversesGenerator.generateTraverse(
+                                new ArrayList<>(),
                                 flowNameFlowEntry.getKey(),
-                                flowNameFlowEntry.getValue()
+                                flowNameFlowEntry.getValue().output(),
+                                externalEntityActivator.end(flowNameFlowEntry.getKey())
+                                        .orElse(null)
                         )
                 )
                 .forEach(externalEntityBuilder::addMethod);
 
         return JavaFile.builder(dfdPackageName, externalEntityBuilder.build()).build();
-    }
-
-    private MethodSpec generateExternalEntityStartMethod(ExternalEntityActivator externalEntityActivator, FlowName flowName, Flow startFlow) {
-        ClassName parameterClassType = startFlow.output().type();
-        ParameterSpec dataParameterSpec = ParameterSpec.builder(parameterClassType, "d").build();
-        ParameterSpec policyParameterSpec = ParameterSpec.builder(Object.class, "pol").build();
-
-        CodeBlock comment = CodeBlock.builder().add("// TODO: Call Holt?\n").build();
-
-        MethodSpec.Builder methodSpecBuilder = MethodSpec
-                .methodBuilder(flowName.value())
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addCode(comment)
-                .addParameter(dataParameterSpec)
-                .addParameter(policyParameterSpec);
-
-        externalEntityActivator.end(flowName)
-                .ifPresent(flow -> {
-                    CodeBlock returnStatement = CodeBlock.builder().add("return null;").build();
-                    methodSpecBuilder.addCode(returnStatement);
-                    ClassName returnClassType = flow.type();
-                    methodSpecBuilder.returns(returnClassType);
-                });
-
-        return methodSpecBuilder.build();
     }
 
     private JavaFile generateDatabaseJavaFile(DatabaseActivator databaseActivator) {

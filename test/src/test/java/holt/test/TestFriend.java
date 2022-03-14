@@ -2,6 +2,7 @@ package holt.test;
 
 import holt.processor.generation.friend.IFriendsDB;
 import holt.processor.generation.friend.IFriendsDBToFriendProcessformatFriendQuery;
+import holt.test.friend.FriendsDB;
 import holt.test.friend.model.Friend;
 import holt.test.friend.model.FriendId;
 import holt.test.friend.model.FriendRaw;
@@ -67,7 +68,7 @@ public class TestFriend {
     public void test_createQuery_Method() {
         MethodAssert.assertThat(findMethod(FormatFriendQueryInterface, "createQuery"))
                 .hasReturnType(FriendRaw.class)
-                .hasParameters(IFriendsDB.class)
+                .hasParameters(FriendsDB.class)
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
     }
