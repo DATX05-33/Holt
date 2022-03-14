@@ -138,9 +138,14 @@ public class DFDsProcessor extends AbstractProcessor {
                 for (Dataflow dataflow : entry.getValue()) {
                     Activator from = idToActivator.get(dataflow.from().id());
 
-                    // Add to flows
-                    flows.get(dfdName).get(flowName).add(from);
+                    // This is used to generate code. Databases are not needed,
+                    // since each processor has a reference to all relevant
+                    // databases through Connector
+                    if (!(from instanceof DatabaseActivator)) {
+                        flows.get(dfdName).get(flowName).add(from);
+                    }
 
+                    // Add to flows
                     if (from instanceof ProcessActivator fromProcessActivator) {
                         fromProcessActivator.addFlow(flowName);
                     } else if (from instanceof ExternalEntityActivator fromExternalEntityActivator) {
@@ -263,7 +268,6 @@ public class DFDsProcessor extends AbstractProcessor {
                             .of(processActivator, flowThrough)
                             .with(this)
                     );
-
         }
 
         return dfdToFlowThroughRepMap;

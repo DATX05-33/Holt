@@ -32,17 +32,17 @@ import static holt.test.friend.Main.GF;
 public class FriendProcess implements IFriendProcess {
 
     @Override
-    public NewFriend addFriend(Name input0) {
-        return null;
+    public NewFriend addFriend(Name name) {
+        return new NewFriend(name.name());
     }
 
     @Override
-    public IFriendsDBToFriendProcessformatFriendQuery query_FriendsDB_formatFriend(FriendId input0) {
-        return null;
+    public IFriendsDBToFriendProcessformatFriendQuery query_FriendsDB_formatFriend(FriendId id) {
+        return db -> db.getById(id);
     }
 
     @Override
-    public Friend formatFriend(FriendId input0, FriendRaw dbInput1) {
-        return null;
+    public Friend formatFriend(FriendId id, FriendRaw friendRaw) {
+        return new Friend(friendRaw.firstName() + "; " + friendRaw.lastName()) ;
     }
 }

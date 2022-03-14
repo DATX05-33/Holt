@@ -18,7 +18,4 @@ import static holt.test.friend.Main.GF;
 )
 public class UserExternalEntity extends AbstractUser {
 
-    public UserExternalEntity() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-
-    }
 }

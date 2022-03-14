@@ -70,7 +70,6 @@ public class TestFriend {
                 .hasReturnType(FriendRaw.class)
                 .hasParameters(FriendsDB.class)
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
-
     }
 
 }

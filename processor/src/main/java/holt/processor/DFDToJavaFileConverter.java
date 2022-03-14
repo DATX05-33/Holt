@@ -1,12 +1,10 @@
 package holt.processor;
 
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
-import holt.processor.activator.Activator;
 import holt.processor.activator.Activators;
 import holt.processor.activator.Connector;
 import holt.processor.activator.DatabaseActivator;
@@ -184,15 +182,14 @@ public class DFDToJavaFileConverter {
                 .starts()
                 .entrySet()
                 .stream()
-                .map(flowNameFlowEntry ->
-                        traversesGenerator.generateTraverse(
-                                new ArrayList<>(),
-                                flowNameFlowEntry.getKey(),
-                                flowNameFlowEntry.getValue().output(),
-                                externalEntityActivator.end(flowNameFlowEntry.getKey())
-                                        .orElse(null)
-                        )
-                )
+                .map(flowNameFlowEntry -> {
+                    FlowName flowName = flowNameFlowEntry.getKey();
+                    return traversesGenerator.generateTraverse(
+                            activators.flows().get(flowName),
+                            flowName,
+                            flowNameFlowEntry.getValue().output()
+                    );
+                })
                 .forEach(externalEntityBuilder::addMethod);
 
         return JavaFile.builder(dfdPackageName, externalEntityBuilder.build()).build();

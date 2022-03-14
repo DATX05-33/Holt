@@ -19,7 +19,8 @@ public class Connector {
     @Override
     public String toString() {
         return "Connector{" +
-                "type=" + type +
+                "hashcode=" + super.hashCode() +
+                ", type=" + type +
                 '}';
     }
 }
