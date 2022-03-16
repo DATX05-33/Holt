@@ -1,4 +1,4 @@
-package Holt.graph;
+package Holt.processor.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;

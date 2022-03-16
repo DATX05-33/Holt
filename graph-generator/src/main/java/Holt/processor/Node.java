@@ -1,4 +1,4 @@
-package Holt.graph;
+package Holt.processor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,8 +8,6 @@ import java.util.Objects;
 public final class Node {
     private final String name;
     private final NodeType nodeType;
-
-    //If Node becomes a record, then this list will become Immutable
     private final List<Node> outputs;
 
     public Node(String name, NodeType nodeType) {
@@ -30,8 +28,7 @@ public final class Node {
         return outputs;
     }
 
-    //TODO: This method should not be public. Node should be immutable outside of this project.
-    public void addOutput(Node node) {
+    void addOutput(Node node) {
         this.outputs.add(node);
     }
 
