@@ -16,7 +16,6 @@ public enum NodeType {
 
     public static NodeType get(String name) {
         return Arrays.stream(NodeType.values()).filter(nodeType -> name.equals(nodeType.name)).findAny()
-                .orElse(DATAFLOW); // TODO: Possible type that is not a Data flow
-        //.orElseThrow(() -> new IllegalArgumentException("Cannot find NodeType for name " + name));
+                .orElse(DATAFLOW);
     }
 }

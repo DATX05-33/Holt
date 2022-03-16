@@ -10,6 +10,7 @@ public final class ExternalEntityActivator implements Activator {
 
     private final ActivatorName activatorName;
     private final Map<FlowName, Flow> startFlows;
+    private QualifiedName qualifiedName;
 
     /**
      * If null, then store.
@@ -20,6 +21,15 @@ public final class ExternalEntityActivator implements Activator {
         this.activatorName = activatorName;
         startFlows = new HashMap<>();
         endConnections = new HashMap<>();
+    }
+
+    @Override
+    public Optional<QualifiedName> qualifiedName() {
+        return Optional.ofNullable(qualifiedName);
+    }
+
+    public void setQualifiedName(QualifiedName qualifiedName) {
+        this.qualifiedName = qualifiedName;
     }
 
     @Override

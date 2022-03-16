@@ -15,6 +15,7 @@ public class FriendsDB implements IFriendsDB {
 
     @Override
     public void AF(NewFriend input) {
+        // This output is used for testing...
         System.out.println("Saving..." + input);
     }
 }

@@ -3,6 +3,7 @@ package holt.processor.activator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Right now, there's order in place that would be used by traverses.
@@ -12,6 +13,7 @@ public final class ProcessActivator implements Activator {
 
     private final ActivatorName activatorName;
     private final Map<FlowName, Flow> flows;
+    private QualifiedName qualifiedName;
 
     public ProcessActivator(ActivatorName activatorName) {
         this.activatorName = activatorName;
@@ -21,6 +23,15 @@ public final class ProcessActivator implements Activator {
     @Override
     public ActivatorName name() {
         return this.activatorName;
+    }
+
+    @Override
+    public Optional<QualifiedName> qualifiedName() {
+        return Optional.ofNullable(this.qualifiedName);
+    }
+
+    public void setQualifiedName(QualifiedName qualifiedName) {
+        this.qualifiedName = qualifiedName;
     }
 
     public void addFlow(FlowName flowName) {

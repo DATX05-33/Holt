@@ -98,13 +98,16 @@ public final class TraversesGenerator {
                                                     CodeBlock instantiation) { }
 
     private FieldAndConstructorInstantiation generateCodeForActivator(Activator activator) {
+        if (activator.qualifiedName().isEmpty()) {
+            throw new IllegalStateException();
+        }
+
         String activatorName = activator.name().value();
-        //TODO: Please no
-        String activatorPackageName = "holt.test.friend.";
+        String activatorQualifiedName = activator.qualifiedName().get().value();
         String activatorReferenceVar = activatorName + "Ref";
         activatorToVariable.put(activator, activatorReferenceVar);
 
-        ClassName activatorClassName = ClassName.bestGuess(activatorPackageName + activatorName);
+        ClassName activatorClassName = ClassName.bestGuess(activatorQualifiedName);
         FieldSpec fieldSpec = FieldSpec.builder(
                 activatorClassName,
                 activatorReferenceVar,
@@ -114,7 +117,7 @@ public final class TraversesGenerator {
 
         String activatorClassVar = activatorName + "_";
         CodeBlock.Builder codeBlockBuilder = CodeBlock.builder();
-        codeBlockBuilder.add("  Class " + activatorClassVar + " = Class.forName(\"" + activatorPackageName + activatorName + "\");\n");
+        codeBlockBuilder.add("  Class " + activatorClassVar + " = Class.forName(\"" + activatorQualifiedName + "\");\n");
         codeBlockBuilder.add("  this." + activatorReferenceVar + " = (" + activatorName + ")" + activatorClassVar + ".newInstance();");
         codeBlockBuilder.add("\n");
 

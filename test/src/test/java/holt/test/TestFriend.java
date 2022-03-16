@@ -3,6 +3,7 @@ package holt.test;
 import holt.processor.generation.friend.IFriendsDB;
 import holt.processor.generation.friend.IFriendsDBToFriendProcessformatFriendQuery;
 import holt.test.friend.FriendsDB;
+import holt.test.friend.UserExternalEntity;
 import holt.test.friend.model.Friend;
 import holt.test.friend.model.FriendId;
 import holt.test.friend.model.FriendRaw;
@@ -12,6 +13,8 @@ import holt.test.utils.ClassAssert;
 import holt.test.utils.MethodAssert;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Modifier;
 
 import static holt.test.utils.ClassUtils.findClass;
@@ -25,6 +28,25 @@ public class TestFriend {
 
     private static final String IFriendProcessInterface = "holt.processor.generation.friend.IFriendProcess";
     private static final String FormatFriendQueryInterface = "holt.processor.generation.friend.IFriendsDBToFriendProcessformatFriendQuery";
+
+    @Test
+    public void test_Running_Flows() {
+        UserExternalEntity user = new UserExternalEntity();
+
+        //Testing add friend flow
+        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outputStreamCaptor));
+
+        user.AF(new Name("Theodor"));
+        assertThat(outputStreamCaptor.toString().trim())
+                .isEqualTo("Saving...NewFriend[name=Theodor]");
+
+        System.setOut(System.out);
+
+        // Testing GF flow
+        assertThat(user.GF(new FriendId("asdf")))
+                .isEqualTo(new Friend("Smurf; Smurfsson"));
+    }
 
     @Test
     public void test_IFormatFriend_Interface() {

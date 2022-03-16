@@ -4,6 +4,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import holt.processor.activator.ActivatorName;
 import holt.processor.activator.Connector;
+import holt.processor.activator.QualifiedName;
 import holt.processor.annotation.DFD;
 import holt.processor.annotation.Database;
 import holt.processor.annotation.FlowStart;
@@ -229,6 +230,8 @@ public class DFDsProcessor extends AbstractProcessor {
             TypeElement typeElement = flowStartPair.typeElement;
 
             ExternalEntityActivator externalEntityActivator = findRelated(ExternalEntityActivator.class, typeElement, activators);
+            externalEntityActivator.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
+
             DFDName dfdName = activatorToDFDMap.get(externalEntityActivator.name());
             if (!dfdToFlowStartRepMap.containsKey(dfdName)) {
                 dfdToFlowStartRepMap.put(dfdName, new ArrayList<>());
@@ -256,6 +259,8 @@ public class DFDsProcessor extends AbstractProcessor {
             TypeElement typeElement = flowThroughPair.typeElement;
 
             ProcessActivator processActivator = findRelated(ProcessActivator.class, typeElement, activators);
+            processActivator.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
+
             DFDName dfdName = activatorToDFDMap.get(processActivator.name());
 
             if (!dfdToFlowThroughRepMap.containsKey(dfdName)) {
@@ -282,6 +287,7 @@ public class DFDsProcessor extends AbstractProcessor {
         for (Element element : environment.getElementsAnnotatedWith(Database.class)) {
             if (element instanceof TypeElement typeElement) {
                 DatabaseActivator databaseActivator = findRelated(DatabaseActivator.class, typeElement, activators);
+                databaseActivator.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
                 DFDName dfdName = activatorToDFDMap.get(databaseActivator.name());
 
                 if (!dfdToDatabasesMap.containsKey(dfdName)) {
@@ -374,7 +380,6 @@ public class DFDsProcessor extends AbstractProcessor {
     private void saveJavaFiles(List<JavaFile> javaFiles) {
         javaFiles.forEach(javaFile -> {
             try {
-//                System.out.println(javaFile);
                 javaFile.writeTo(processingEnv.getFiler());
             } catch (IOException e) {
                 e.printStackTrace();

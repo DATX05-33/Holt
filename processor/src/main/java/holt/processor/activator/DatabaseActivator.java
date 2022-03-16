@@ -12,12 +12,22 @@ public final class DatabaseActivator implements Activator {
 
     private final ActivatorName activatorName;
     // For example, FriendsDB that in turn implements IFriendsDB
-    private ClassName databaseClassName;
     private final Map<FlowName, Connector> stores;
+    private ClassName databaseClassName;
+    private QualifiedName qualifiedName;
 
     public DatabaseActivator(ActivatorName activatorName) {
         this.activatorName = activatorName;
         this.stores = new HashMap<>();
+    }
+
+    @Override
+    public Optional<QualifiedName> qualifiedName() {
+        return Optional.ofNullable(this.qualifiedName);
+    }
+
+    public void setQualifiedName(QualifiedName qualifiedName) {
+        this.qualifiedName = qualifiedName;
     }
 
     @Override

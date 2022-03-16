@@ -16,7 +16,6 @@ public final class AnnotationValueUtils {
         ProcessingEnvironment processingEnvironment = processor.getProcessingEnvironment();
         Elements elements = processingEnvironment.getElementUtils();
 
-        // TODO: Find a better way rather than try/catch
         TypeMirror typeMirror;
         try {
             typeMirror = elements.getTypeElement(func.apply(anno).getCanonicalName()).asType();
