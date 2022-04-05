@@ -5,6 +5,7 @@ import org.assertj.core.api.AbstractAssert;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class ClassAssert extends AbstractAssert<ClassAssert, Class<?>> {
@@ -46,8 +47,10 @@ public class ClassAssert extends AbstractAssert<ClassAssert, Class<?>> {
                     actual.getMethods().length
             );
         } else {
-            for (int i = 0; i < methodNames.length; i++) {
-                if (!Objects.equals(methodNames[i], actual.getMethods()[i].getName())) {
+            List<String> actualMethodNames = Arrays.stream(actual.getMethods()).map(Method::getName).toList();
+
+            for (String methodName : methodNames) {
+                if (!actualMethodNames.contains(methodName)) {
                     failWithMessage(
                             "Mismatch in methods, expected:\n <%s>\n but was:\n <%s>",
                             Arrays.toString(methodNames),

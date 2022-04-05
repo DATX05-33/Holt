@@ -1,16 +1,16 @@
 package holt.test.friend;
 
-import holt.processor.annotation.Database;
-import holt.processor.generation.friend.IFriendsDB;
-import holt.test.friend.model.FriendId;
-import holt.test.friend.model.FriendRaw;
+import holt.processor.annotation.Activator;
+import holt.processor.generation.friend.FriendsDBRequirements;
 import holt.test.friend.model.NewFriend;
 
-@Database
-public class FriendsDB implements IFriendsDB {
+@Activator
+public class FriendsDB implements FriendsDBRequirements {
 
-    public FriendRaw getById(FriendId friendId) {
-        return new FriendRaw(friendId, "Smurf", "Smurfsson");
+    private final FriendsDBQuerier friendsDBQuerier;
+
+    public FriendsDB() {
+        this.friendsDBQuerier = new FriendsDBQuerier();
     }
 
     @Override
@@ -18,4 +18,10 @@ public class FriendsDB implements IFriendsDB {
         // This output is used for testing...
         System.out.println("Saving..." + input);
     }
+
+    @Override
+    public FriendsDBQuerier getQuerierInstance() {
+        return this.friendsDBQuerier;
+    }
+
 }

@@ -1,9 +1,11 @@
 id,value,style,source,target,type
-2,User2,rounded=0,null,null,external_entity
-3,Friend Process2,ellipse,null,null,process
-4,Friends DB 2,shape=partialRectangle,null,null,data_base
-5,Friend Id,endArrow=classic,2,3,endArrow=classic
-6,Friend In Raw,endArrow=classic,4,3,endArrow=classic
-7,Friend,endArrow=classic,3,2,endArrow=classic
-8,Friend,endArrow=classic,2,3,endArrow=classic
-9,Friend,endArrow=classic,3,4,endArrow=classic
+2,UserAdder,rounded=0,null,null,external_entity
+10,UserRetriever,rounded=0,null,null,external_entity
+3,UserFormatter,ellipse,null,null,process
+11,UserFetcher,ellipse,null,null,process
+4,UserDatabase,shape=partialRectangle,null,null,data_base
+5,UR->UFe,endArrow=classic,10,11,endArrow=classic
+6,UDB->UFe,endArrow=classic,4,11,endArrow=classic
+7,UFe->UR,endArrow=classic,11,10,endArrow=classic
+8,UA->UFo,endArrow=classic,2,3,endArrow=classic
+9,UFo->UDB,endArrow=classic,3,4,endArrow=classic

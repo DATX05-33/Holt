@@ -2,13 +2,13 @@ package holt.processor.activator;
 
 public class QueryConnector extends Connector {
 
-    private final DatabaseActivator databaseActivator;
+    private final DatabaseActivatorAggregate databaseActivator;
 
-    public QueryConnector(DatabaseActivator databaseActivator) {
+    public QueryConnector(DatabaseActivatorAggregate databaseActivator) {
         this.databaseActivator = databaseActivator;
     }
 
-    public DatabaseActivator database() {
+    public DatabaseActivatorAggregate database() {
         return this.databaseActivator;
     }
 

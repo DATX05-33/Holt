@@ -9,7 +9,7 @@ public final class Flow {
 
     private final List<Connector> inputs;
     private final Connector output;
-    private String functionName;
+    private FunctionName functionName;
 
     public Flow() {
         this.inputs = new ArrayList<>();
@@ -32,11 +32,11 @@ public final class Flow {
         return this.output;
     }
 
-    public void setFunctionName(String functionName) {
+    public void setFunctionName(FunctionName functionName) {
         this.functionName = functionName;
     }
 
-    public String functionName() {
+    public FunctionName functionName() {
         return functionName;
     }
 

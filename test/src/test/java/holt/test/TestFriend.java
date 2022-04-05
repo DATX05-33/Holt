@@ -1,14 +1,9 @@
 package holt.test;
 
-import holt.processor.generation.friend.IFriendsDB;
-import holt.processor.generation.friend.IFriendsDBToFriendProcessformatFriendQuery;
-import holt.test.friend.FriendsDB;
-import holt.test.friend.UserExternalEntity;
-import holt.test.friend.model.Friend;
-import holt.test.friend.model.FriendId;
-import holt.test.friend.model.FriendRaw;
-import holt.test.friend.model.Name;
-import holt.test.friend.model.NewFriend;
+import holt.processor.generation.friend.FriendsDBToFriendProcessFormatFriendQuery;
+import holt.test.friend.FriendsDBQuerier;
+import holt.test.friend.User;
+import holt.test.friend.model.*;
 import holt.test.utils.ClassAssert;
 import holt.test.utils.MethodAssert;
 import org.junit.jupiter.api.Test;
@@ -26,72 +21,78 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class TestFriend {
 
-    private static final String IFriendProcessInterface = "holt.processor.generation.friend.IFriendProcess";
-    private static final String FormatFriendQueryInterface = "holt.processor.generation.friend.IFriendsDBToFriendProcessformatFriendQuery";
+    private static final String FriendProcessRequirementsInterface = "holt.processor.generation.friend.FriendProcessRequirements";
+    private static final String FormatFriendQueryInterface = "holt.processor.generation.friend.FriendsDBToFriendProcessFormatFriendQuery";
+    private static final String FriendDBRequirementsInterface = "holt.processor.generation.friend.FriendsDBRequirements";
 
     @Test
     public void test_Running_Flows() {
-        UserExternalEntity user = new UserExternalEntity();
+        User user = new User();
 
         //Testing add friend flow
         ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outputStreamCaptor));
 
-        user.AF(new Name("Theodor"));
+        user.addFriend(new Name("Theodor"));
         assertThat(outputStreamCaptor.toString().trim())
                 .isEqualTo("Saving...NewFriend[name=Theodor]");
 
         System.setOut(System.out);
 
         // Testing GF flow
-        assertThat(user.GF(new FriendId("asdf")))
+        assertThat(user.getFriend(new FriendId("asdf")))
                 .isEqualTo(new Friend("Smurf; Smurfsson"));
     }
 
     @Test
-    public void test_IFormatFriend_Interface() {
-        ClassAssert.assertThat(findClass(IFriendProcessInterface))
+    public void test_FormatFriendProcessor() {
+        ClassAssert.assertThat(findClass(FriendProcessRequirementsInterface))
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT, Modifier.INTERFACE)
-                .hasMethods("addFriend", "query_FriendsDB_formatFriend", "formatFriend");
-    }
+                .hasMethods("addFriend", "queryFriendsDBFormatFriend", "formatFriend");
 
-    @Test
-    public void test_addFriend_Method() {
-        MethodAssert.assertThat(findMethod(IFriendProcessInterface, "addFriend"))
+        MethodAssert.assertThat(findMethod(FriendProcessRequirementsInterface, "addFriend"))
                 .hasReturnType(NewFriend.class)
                 .hasParameters(Name.class)
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
-    }
 
-    @Test
-    public void test_query_FriendsDB_formatFriend_Method() {
-        MethodAssert.assertThat(findMethod(IFriendProcessInterface, "query_FriendsDB_formatFriend"))
-                .hasReturnType(IFriendsDBToFriendProcessformatFriendQuery.class)
+        MethodAssert.assertThat(findMethod(FriendProcessRequirementsInterface, "queryFriendsDBFormatFriend"))
+                .hasReturnType(FriendsDBToFriendProcessFormatFriendQuery.class)
                 .hasParameters(FriendId.class)
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
-    }
 
-    @Test
-    public void test_formatFriend_Method() {
-        MethodAssert.assertThat(findMethod(IFriendProcessInterface, "formatFriend"))
+        MethodAssert.assertThat(findMethod(FriendProcessRequirementsInterface, "formatFriend"))
                 .hasReturnType(Friend.class)
                 .hasParameters(FriendId.class, FriendRaw.class)
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
     }
 
     @Test
-    public void test_IFriendsDBToFriendProcessformatFriendQuery_Interface() {
+    public void test_FriendsDBToFriendProcessFormatFriendQuery() {
         ClassAssert.assertThat(findClass(FormatFriendQueryInterface))
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT, Modifier.INTERFACE)
                 .hasMethods("createQuery");
+
+        MethodAssert.assertThat(findMethod(FormatFriendQueryInterface, "createQuery"))
+                .hasReturnType(FriendRaw.class)
+                .hasParameters(FriendsDBQuerier.class)
+                .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
     }
 
     @Test
-    public void test_createQuery_Method() {
-        MethodAssert.assertThat(findMethod(FormatFriendQueryInterface, "createQuery"))
-                .hasReturnType(FriendRaw.class)
-                .hasParameters(FriendsDB.class)
+    public void test_FriendsDBQuerier() {
+        ClassAssert.assertThat(findClass(FriendDBRequirementsInterface))
+                .hasMethods("AF", "getQuerierInstance")
+                .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT, Modifier.INTERFACE);
+
+        MethodAssert.assertThat(findMethod(FriendDBRequirementsInterface, "AF"))
+                .hasNoReturn()
+                .hasParameters(NewFriend.class)
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+
+        MethodAssert.assertThat(findMethod(FriendDBRequirementsInterface, "getQuerierInstance"))
+                .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .hasNoParameters()
+                .hasReturnType(FriendsDBQuerier.class);
     }
 
 }

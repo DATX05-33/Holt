@@ -1,14 +1,11 @@
 package holt.test.friend;
 
+import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Query;
-import holt.processor.generation.friend.IFriendProcess;
-import holt.processor.generation.friend.IFriendsDBToFriendProcessformatFriendQuery;
-import holt.test.friend.model.Friend;
-import holt.test.friend.model.FriendId;
-import holt.test.friend.model.FriendRaw;
-import holt.test.friend.model.Name;
-import holt.test.friend.model.NewFriend;
+import holt.processor.generation.friend.FriendProcessRequirements;
+import holt.processor.generation.friend.FriendsDBToFriendProcessFormatFriendQuery;
+import holt.test.friend.model.*;
 
 import static holt.test.friend.Main.AF;
 import static holt.test.friend.Main.GF;
@@ -29,7 +26,8 @@ import static holt.test.friend.Main.GF;
                 )
         }
 )
-public class FriendProcess implements IFriendProcess {
+@Activator
+public class FriendProcess implements FriendProcessRequirements {
 
     @Override
     public NewFriend addFriend(Name name) {
@@ -37,7 +35,7 @@ public class FriendProcess implements IFriendProcess {
     }
 
     @Override
-    public IFriendsDBToFriendProcessformatFriendQuery query_FriendsDB_formatFriend(FriendId id) {
+    public FriendsDBToFriendProcessFormatFriendQuery queryFriendsDBFormatFriend(FriendId id) {
         return db -> db.getById(id);
     }
 

@@ -1,10 +1,8 @@
 package holt.test.friend;
 
 import holt.processor.annotation.DFD;
-import holt.test.friend.model.FriendId;
-import holt.test.friend.model.Name;
 
-@DFD(name = "friend", csv = "friend.csv", json = "friend.json")
+@DFD(name = "friend", csv = "friend.csv")
 public class Main {
 
     public static final String AF = "AF";

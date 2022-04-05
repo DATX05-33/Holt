@@ -1,21 +1,12 @@
 package holt.processor;
 
 
-
 import com.google.gson.Gson;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 
 public final class DFDParser {
@@ -25,13 +16,13 @@ public final class DFDParser {
     public record DFD(List<Node> externalEntities,
                       List<Node> processes,
                       List<Node> databases,
-                      Map<String, List<Dataflow>> flowsMap) { }
+                      Map<String, Dataflow> dataflows) { }
 
-    public static DFD loadDfd(InputStream csvInputStream, InputStream optionsInputStream) {
+    public static DFD loadDfd(InputStream csvInputStream) {
         DFDTable table = csvToTable(csvInputStream);
-        DFDOptions options = jsonToOptions(optionsInputStream);
 
         Map<Integer, Node> idToNodeMap = new HashMap<>();
+        Map<String, Dataflow> dataflows = new HashMap<>();
 
         //First, all node rows. Go through the table once and add them to idToNodeMap and external entity idToNodeMap
         for (DFDTable.Row row : table.data()) {
@@ -42,22 +33,14 @@ public final class DFDParser {
             }
         }
 
-        Map<String, List<Dataflow>> flowsMap = new HashMap<>();
-        // Go through the table again, this time connecting the idToNodeMap by adding outputs via order
-        if (options.flowOrder != null) {
-
-
-            options.flowOrder.forEach((flowName, order) -> {
-            for (int current : order) {
-                DFDTable.Row row = getRow(table.data, current);
-
+        // Second, all dataflow rows
+        for (DFDTable.Row row : table.data()) {
+            //If there's a from, then it's a dataflow
+            if (!row.fromId().equals("null")) {
                 Node source = idToNodeMap.get(Integer.valueOf(row.fromId()));
                 Node target = idToNodeMap.get(Integer.valueOf(row.toId()));
-
-                List<Dataflow> flows = flowsMap.computeIfAbsent(flowName, key -> new ArrayList<>());
-                flows.add(new Dataflow(source, target));
+                dataflows.put(row.name(), new Dataflow(source, target));
             }
-            });
         }
 
         Collection<Node> nodes = idToNodeMap.values();
@@ -66,7 +49,7 @@ public final class DFDParser {
                     nodes.stream().filter(DFDParser::isExternalEntity).toList(),
                     nodes.stream().filter(DFDParser::isProcess).toList(),
                     nodes.stream().filter(DFDParser::isDb).toList(),
-                    flowsMap
+                    dataflows
             );
     }
 
