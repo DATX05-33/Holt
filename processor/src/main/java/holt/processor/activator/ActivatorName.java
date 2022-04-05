@@ -6,4 +6,5 @@ public record ActivatorName(String value) {
     public String toString() {
         return value;
     }
+
 }

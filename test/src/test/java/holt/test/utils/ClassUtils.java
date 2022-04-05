@@ -1,8 +1,5 @@
 package holt.test.utils;
 
-import java.lang.reflect.Modifier;
-import java.util.Objects;
-
 public final class ClassUtils {
 
     private ClassUtils() { }

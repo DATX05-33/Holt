@@ -31,6 +31,18 @@ public class MethodAssert extends AbstractAssert<MethodAssert, Method> {
         return this;
     }
 
+    public MethodAssert hasNoReturn() {
+        isNotNull();
+
+        if (!actual.getReturnType().getName().equals("void")) {
+            failWithMessage(
+                    "Expected method to return nothing (void)"
+            );
+        }
+
+        return this;
+    }
+
     public MethodAssert hasParameters(Class<?>... parameters) {
         isNotNull();
 
@@ -52,6 +64,18 @@ public class MethodAssert extends AbstractAssert<MethodAssert, Method> {
             }
         }
 
+
+        return this;
+    }
+
+    public MethodAssert hasNoParameters() {
+        isNotNull();
+
+        if (actual.getParameterCount() > 0) {
+            failWithMessage(
+                    "Expected no parameters"
+            );
+        }
 
         return this;
     }
@@ -79,5 +103,4 @@ public class MethodAssert extends AbstractAssert<MethodAssert, Method> {
     protected void failWithMessage(String errorMessage, Object... arguments) {
         super.failWithMessage("[" + actual.getName() + "] " + errorMessage, arguments);
     }
-
 }
