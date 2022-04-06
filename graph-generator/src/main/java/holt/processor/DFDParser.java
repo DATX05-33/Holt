@@ -1,145 +1,212 @@
 package holt.processor;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
-import com.google.gson.Gson;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import java.io.*;
-import java.util.*;
-
+import static holt.processor.DFDRep.Activator.Type.*;
+import static holt.processor.DFDRep.Flow.Type.*;
 
 public final class DFDParser {
 
     private DFDParser() {}
 
-    public record DFD(List<Node> externalEntities,
-                      List<Node> processes,
-                      List<Node> databases,
-                      Map<String, Dataflow> dataflows) { }
+    public static DFDRep fromDrawIO(InputStream inputStream) throws NotWellFormedDFDException {
+        final String externalEntityStyle = "rounded=0;";
+        final String processStyle = "ellipse;";
+        final String dbStyle = "shape=partialRectangle;";
+        final String flowStyle = "endArrow=classic;";
+        final String deleteFlowStyle = "endArrow=cross;";
 
-    public static DFD loadDfd(InputStream csvInputStream) {
-        DFDTable table = csvToTable(csvInputStream);
+        Map<String, DFDRep.Activator> idToActivator = new HashMap<>();
+        List<DFDRep.Flow> flows = new ArrayList<>();
 
-        Map<Integer, Node> idToNodeMap = new HashMap<>();
-        Map<String, Dataflow> dataflows = new HashMap<>();
-
-        //First, all node rows. Go through the table once and add them to idToNodeMap and external entity idToNodeMap
-        for (DFDTable.Row row : table.data()) {
-            //If there's no from, then it's a node
-            if (row.fromId().equals("null")) {
-                Node node = new Node(row.id, row.name, row.type);
-                idToNodeMap.put(row.id, node);
-            }
+        Document doc;
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            doc = db.parse(inputStream);
+            doc.getDocumentElement().normalize();
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Parser error");
         }
 
-        // Second, all dataflow rows
-        for (DFDTable.Row row : table.data()) {
-            //If there's a from, then it's a dataflow
-            if (!row.fromId().equals("null")) {
-                Node source = idToNodeMap.get(Integer.valueOf(row.fromId()));
-                Node target = idToNodeMap.get(Integer.valueOf(row.toId()));
-                dataflows.put(row.name(), new Dataflow(source, target));
-            }
-        }
+        NodeList list = doc.getElementsByTagName("mxCell");
+        for (int i = 0; i < list.getLength(); i++) {
+            Node node = list.item(i);
+            if (node.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
+                Element element = (Element) node;
+                String style = element.getAttribute("style");
+                String id = element.getAttribute("id");
+                String name = element.getAttribute("value");
 
-        Collection<Node> nodes = idToNodeMap.values();
-
-        return new DFD(
-                    nodes.stream().filter(DFDParser::isExternalEntity).toList(),
-                    nodes.stream().filter(DFDParser::isProcess).toList(),
-                    nodes.stream().filter(DFDParser::isDb).toList(),
-                    dataflows
-            );
-    }
-
-    private static DFDTable.Row getRow(List<DFDTable.Row> rows, int id) {
-        for (DFDTable.Row row : rows) {
-            if (row.id == id) {
-                return row;
-            }
-        }
-
-        return null;
-    }
-
-    private static boolean isExternalEntity(Node node) {
-        return node.nodeType().equals(NodeType.EXTERNAL_ENTITY);
-    }
-
-    // Ignoring all custom processes that PA_DFD have.
-    private static boolean isProcess(Node node) {
-        // If the node is not an external entity, db or flow, then it's a process.
-        return !(node.nodeType().equals(NodeType.EXTERNAL_ENTITY)
-                || node.nodeType().equals(NodeType.DATA_BASE)
-                || node.nodeType().equals(NodeType.DATAFLOW)
-        );
-    }
-
-    private static boolean isDb(Node node) {
-        return node.nodeType().equals(NodeType.DATA_BASE);
-    }
-
-    public record DFDOptions(Map<String, Integer[]> flowOrder) { }
-
-    private static class DFDOptionsJson {
-        private Map<String, Integer[]> flows;
-
-        @Override
-        public String toString() {
-            return "DFDOptionsJson{" +
-                    "flows=" + flows +
-                    '}';
-        }
-    }
-
-    private static DFDOptions jsonToOptions(InputStream inputStream) {
-        DFDOptionsJson dfdOptionsJson = new Gson().fromJson(new InputStreamReader(inputStream), DFDOptionsJson.class);
-
-        return new DFDOptions(dfdOptionsJson.flows);
-    }
-
-    private record DFDTable(List<Row> data) {
-        private record Row(
-                int id,
-                String name,
-                String style,
-                String fromId,
-                String toId,
-                NodeType type
-        ) { }
-    }
-
-    private static DFDTable csvToTable(InputStream inputStream) {
-        ArrayList<DFDTable.Row> allData = new ArrayList<>();
-
-        // create a reader
-        try (Reader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-
-            // read .csv file
-            Iterable<CSVRecord> records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
-
-            for (CSVRecord record : records) {
-                if (record.get(0).equals("id")) {
+                DFDRep.Activator.Type type;
+                if (style.startsWith(externalEntityStyle)) {
+                    type = EXTERNAL_ENTITY;
+                } else if (style.startsWith(dbStyle)) {
+                    type = DATABASE;
+                } else if (style.startsWith(processStyle)) {
+                    type = PROCESS;
+                } else {
                     continue;
                 }
 
-                allData.add(
-                        new DFDTable.Row(
-                                Integer.parseInt(record.get("id")),
-                                record.get("value"),
-                                record.get("style"),
-                                record.get("source"),
-                                record.get("target"),
-                                NodeType.get(record.get("type"))
+                DFDRep.Activator activator = new DFDRep.Activator(id, name, type);
+                idToActivator.put(id, activator);
+            }
+        }
+
+        for (int i = 0; i < list.getLength(); i++) {
+            Node node = list.item(i);
+
+            if (node.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
+                Element element = (Element) node;
+                String style = element.getAttribute("style");
+                if (!(style.contains(flowStyle) || style.contains(deleteFlowStyle))) {
+                    continue;
+                }
+
+                String id = element.getAttribute("value");
+                String source = element.getAttribute("source");
+                String target = element.getAttribute("target");
+                boolean delete = style.contains(deleteFlowStyle);
+
+                DFDRep.Activator sourceActivator = idToActivator.get(source);
+                DFDRep.Activator targetActivator = idToActivator.get(target);
+
+                if (sourceActivator == null) {
+                    throw new IllegalArgumentException("Cannot find source from a XML flow. [id of flow: " + id + "], [attempted source: " + source + "]");
+                } else if (targetActivator == null) {
+                    throw new IllegalArgumentException("Cannot find target from a XML flow. [id of flow: " + id + "], [attempted target: " + source + "]");
+                }
+
+                DFDRep.Flow.Type type = getFlowType(sourceActivator, targetActivator, delete);
+                flows.add(
+                        new DFDRep.Flow(
+                                id,
+                                sourceActivator,
+                                targetActivator,
+                                type
                         )
                 );
             }
-        } catch (IOException ex) {
-            ex.printStackTrace();
         }
 
-        return new DFDTable(allData);
+        List<DFDRep.Activator> activators = new ArrayList<>(idToActivator.values());
+
+        //Makes sure that each activator is a part of a given flow.
+        assertThatActivatorIsPartOfAFlow(activators, flows);
+
+        return new DFDRep(activators, flows);
+    }
+
+    // TODO: Create OrderedDFDRep
+
+
+    /**
+     * @param inputStream Input stream to XML file that represents XML file from Draw.IO
+     * @return DFDTable from XML file.
+     */
+    public static DFDOrderedRep fromDrawIO(DFDRep dfd, Map<String, List<String>> rawTraverseOrders) throws NotWellFormedDFDException {
+        // Please do not confuse these two maps.
+        // First one is traverse -> List<Flow>, which is the ordered flow order for that traverse
+        // Second one is a helper Map, where flow id -> that flow.
+        Map<String, List<DFDRep.Flow>> traverseOrders = new HashMap<>();
+        Map<String, DFDRep.Flow> idToFlow = dfd.flows()
+                .stream()
+                .collect(Collectors.toMap(
+                        DFDRep.Flow::id,
+                        flow -> flow
+                ));
+
+        int addedFlows = 0;
+        for (Map.Entry<String, List<String>> traverseSet : rawTraverseOrders.entrySet()) {
+            List<DFDRep.Flow> orderedFlow = new ArrayList<>();
+
+            for (String flowId : traverseSet.getValue()) {
+                DFDRep.Flow flow = idToFlow.get(flowId);
+                if (flow == null) {
+                    throw new IllegalStateException("Flow with id: " + flowId + " not found. Available flows: "
+                            + dfd.flows().stream().map(DFDRep.Flow::id).collect(Collectors.joining(", ")));
+                }
+                orderedFlow.add(flow);
+                addedFlows++;
+            }
+
+            traverseOrders.put(traverseSet.getKey(), orderedFlow);
+        }
+
+        if (addedFlows < dfd.flows().size()) {
+            System.out.println("Warning: There are more flows defined in XML than used in traverses");
+        } else if (addedFlows > dfd.flows().size()) {
+            throw new IllegalStateException("You cannot reuse flows when defining traverses");
+        }
+
+        return new DFDOrderedRep(dfd.activators(), dfd.flows(), traverseOrders);
+    }
+
+    private static void assertThatActivatorIsPartOfAFlow(Collection<DFDRep.Activator> activators, Collection<DFDRep.Flow> flows) throws NotWellFormedDFDException {
+        for (DFDRep.Activator activator : activators) {
+            boolean found = false;
+            for (DFDRep.Flow flow : flows) {
+                found = flow.from().equals(activator) || flow.to().equals(activator);
+                if (found) {
+                    break;
+                }
+            }
+
+            if (!found) {
+                throw new NotWellFormedDFDException(activator);
+            }
+        }
+    }
+
+    private static DFDRep.Flow.Type getFlowType(DFDRep.Activator fromActivator, DFDRep.Activator toActivator, boolean delete) throws NotWellFormedDFDException {
+        DFDRep.Activator.Type from = fromActivator.type();
+        DFDRep.Activator.Type to = toActivator.type();
+
+        if (from == EXTERNAL_ENTITY && to == PROCESS) {
+            return IN;
+        } else if (from == PROCESS && to == EXTERNAL_ENTITY) {
+            return OUT;
+        } else if (from == PROCESS && to == PROCESS && fromActivator != toActivator) {
+            return COMP;
+        } else if (from == PROCESS && to == DATABASE && delete) {
+            return DELETE;
+        } else if (from == PROCESS && to == DATABASE) {
+            return STORE;
+        } else if (from == DATABASE && to == PROCESS) {
+            return READ;
+        } else {
+            throw new NotWellFormedDFDException(fromActivator, toActivator, delete);
+        }
+    }
+
+    public static class NotWellFormedDFDException extends Exception {
+        public NotWellFormedDFDException(DFDRep.Activator activator) {
+            super("Not a well-formed DFD. There's no flow for activator " + activator);
+        }
+
+        public NotWellFormedDFDException(DFDRep.Activator from, DFDRep.Activator to, boolean delete) {
+            super("Not a well-formed DFD. There's a flow where from is " + from + " and to is " + to + " where delete?" + delete);
+        }
     }
 
 }

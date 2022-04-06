@@ -2,8 +2,8 @@ package holt.test.friend2;
 
 import holt.processor.annotation.DFD;
 
-@DFD(name = "friend2", csv = "friend2.csv")
-@DFD(name = "friend3", csv = "friend3.csv")
+@DFD(name = "friend2", xml = "friend2.xml")
+@DFD(name = "friend3", xml = "friend3.xml", privacyAware = true)
 public class Main {
     public static void main(String[] args) {
         UserFormatter userFormatter = new UserFormatter();

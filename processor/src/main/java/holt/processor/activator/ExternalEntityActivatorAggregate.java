@@ -3,8 +3,10 @@ package holt.processor.activator;
 import com.squareup.javapoet.ClassName;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public final class ExternalEntityActivatorAggregate extends ActivatorAggregate {
 
@@ -44,6 +46,17 @@ public final class ExternalEntityActivatorAggregate extends ActivatorAggregate {
 
     public Optional<Connector> end(TraverseName traverseName) {
         return Optional.ofNullable(this.endConnections.get(traverseName));
+    }
+
+    public Map<TraverseName, Connector> onlyEnds() {
+        return this.endConnections.entrySet()
+                .stream()
+                // Remove ends that also is a start
+                .filter(entry -> !startFlows.containsKey(entry.getKey()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
     }
 
     @Override

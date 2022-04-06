@@ -68,7 +68,7 @@ public class DFDToJavaFileConverter {
         Map<DatabaseActivatorAggregate, JavaFile> databaseMap = new HashMap<>();
 
         activators
-                .databaseActivators()
+                .databases()
                 .forEach(database -> {
                     JavaFile databaseJavaFile = this.generateDatabaseJavaFile(database);
 
@@ -81,7 +81,7 @@ public class DFDToJavaFileConverter {
                 .forEach(externalEntity -> javaFiles.add(this.generateExternalEntityJavaFile(activators, externalEntity)));
 
         activators
-                .processActivators()
+                .processes()
                 .forEach(process -> javaFiles.addAll(
                         this.generateProcessJavaFile(process, databaseMap)
                 ));

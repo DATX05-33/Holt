@@ -21,7 +21,9 @@ public final class Flow {
     }
 
     public List<Connector> inputs() {
-        return inputs.stream().toList();
+        // Sometimes the same connector can be added as input, distince remove those.
+        // TODO: Maybe hinder the ability to add the same input instead?
+        return inputs.stream().distinct().toList();
     }
 
     public void setOutputType(ClassName output) {

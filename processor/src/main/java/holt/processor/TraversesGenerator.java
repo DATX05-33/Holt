@@ -14,7 +14,6 @@ import static holt.processor.DFDsProcessor.EXTERNAL_ENTITY_PREFIX;
 
 public final class TraversesGenerator {
 
-
     private TraversesGenerator() {}
 
     private record State(ExternalEntityActivatorAggregate externalEntityActivator,
@@ -52,8 +51,14 @@ public final class TraversesGenerator {
                     .forEach(externalEntityBuilder::addMethod);
         }
 
-        //TODO: Add debug information if the activators are not valid
-
+        externalEntityActivator.onlyEnds().forEach((traverseName, connector) -> {
+            externalEntityBuilder.addMethod(
+                    MethodSpec.methodBuilder(traverseName.value())
+                            .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                            .addParameter(connector.type(), "v")
+                            .build()
+            );
+        });
 
         return JavaFile.builder(dfdPackageName, externalEntityBuilder.build()).build();
     }
@@ -86,23 +91,22 @@ public final class TraversesGenerator {
                         // Retrieves only activators from traverses where the traverse start with this external entity.
                         entrySet.getValue().get(0).equals(state.externalEntityActivator))
                 // Extract all query connectors for their databases activators.
-                .<ActivatorAggregate>mapMulti((traverseEntry, consumer) -> {
-                    traverseEntry.getValue().forEach(activatorAggregate -> {
-                        if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
-                            processActivatorAggregate.getFlow(traverseEntry.getKey()).inputs()
-                                    .stream()
-                                    .filter(connector -> connector instanceof QueryConnector)
-                                    .forEach(connector -> consumer.accept(((QueryConnector) connector).database()));
-                        }
-                        consumer.accept(activatorAggregate);
-                    });
-                })
+                .<ActivatorAggregate>mapMulti((traverseEntry, consumer) ->
+                        traverseEntry.getValue().forEach(activatorAggregate -> {
+                                if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                                    processActivatorAggregate.getFlow(traverseEntry.getKey()).inputs()
+                                            .stream()
+                                            .filter(connector -> connector instanceof QueryConnector)
+                                            .forEach(connector -> consumer.accept(((QueryConnector) connector).database()));
+                                }
+                                consumer.accept(activatorAggregate);
+                }))
                 .distinct()
                 .toList();
 
         int connectorVariableIndex = 0;
         for (ActivatorAggregate activatorAggregate : activatorsToInstantiate) {
-            if (activatorAggregate instanceof ProcessActivatorAggregate || activatorAggregate instanceof DatabaseActivatorAggregate) {
+            if (!activatorAggregate.equals(state.externalEntityActivator)) {
                 var activatorCode = generateCodeForActivator(activatorAggregate, state);
                 fieldSpecs.addAll(activatorCode.fieldSpecs);
                 constructorSpecBuilder.addCode(activatorCode.instantiation);
@@ -212,11 +216,31 @@ public final class TraversesGenerator {
                 .addModifiers(Modifier.PROTECTED, Modifier.FINAL)
                 .addParameter(dataParameterSpec);
 
-        // Every processor except the first and last.
-        for (int i = 1; i < orderOfExecution.size() - 1; i++) {
-            ActivatorAggregate activatorAggregate = orderOfExecution.get(i);
+        ActivatorAggregate firstActivatorAggregate = orderOfExecution.get(0);
 
-            if (activatorAggregate instanceof ProcessActivatorAggregate processActivator) {
+        if (!(firstActivatorAggregate instanceof ExternalEntityActivatorAggregate)) {
+            throw new IllegalStateException("First activator aggregate must be an external entity activator aggregate");
+        }
+
+        // Every processor except the first.
+        for (int i = 1; i < orderOfExecution.size(); i++) {
+            ActivatorAggregate activatorAggregate = orderOfExecution.get(i);
+            boolean lastActivator = i == orderOfExecution.size() - 1;
+
+            if (lastActivator && firstActivatorAggregate.equals(activatorAggregate)) {
+                ExternalEntityActivatorAggregate externalEntityActivator =
+                        (ExternalEntityActivatorAggregate) activatorAggregate;
+                Connector lastConnector = externalEntityActivator.end(traverseName)
+                        .orElseThrow(IllegalStateException::new);
+
+                String returnVariable = connectorToVariable.get(lastConnector);
+
+                CodeBlock returnStatement = CodeBlock.builder().add("return " + returnVariable + ";").build();
+                methodSpecBuilder.addCode(returnStatement);
+                ClassName returnClassType = lastConnector.type();
+                methodSpecBuilder.returns(returnClassType);
+
+            } else if (activatorAggregate instanceof ProcessActivatorAggregate processActivator) {
                 Flow flow = processActivator.getFlow(traverseName);
                 String connectorVar = connectorToVariable.get(processActivator.getOutput(traverseName));
                 String activatorReferenceVar = activatorToVariable.get(activatorAggregate);
@@ -272,40 +296,38 @@ public final class TraversesGenerator {
                 processorCallSB.append(");\n");
 
                 methodSpecBuilder.addCode(CodeBlock.of(processorCallSB.toString()));
-            } else {
-                throw new IllegalStateException("Must be ProcessActivator here");
+            } else if (activatorAggregate instanceof DatabaseActivatorAggregate databaseActivatorAggregate) {
+                String activatorReferenceVar = activatorToVariable.get(activatorAggregate);
+                Connector storeConnector = databaseActivatorAggregate.getStore(traverseName);
+
+                StringBuilder databaseCallSB = new StringBuilder();
+                databaseCallSB
+                        .append("this.")
+                        .append(activatorReferenceVar)
+                        .append(".")
+                        .append(traverseName.value())
+                        .append("(")
+                        .append(connectorToVariable.get(storeConnector))
+                        .append(");\n");
+
+                methodSpecBuilder.addCode(CodeBlock.of(databaseCallSB.toString()));
+            } else if (activatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
+                String activatorReferenceVar = activatorToVariable.get(activatorAggregate);
+                Connector lastConnector = externalEntityActivator.end(traverseName)
+                        .orElseThrow(IllegalStateException::new);
+
+                StringBuilder externalEntitySB = new StringBuilder();
+                externalEntitySB
+                        .append("this.")
+                        .append(activatorReferenceVar)
+                        .append(".")
+                        .append(traverseName.value())
+                        .append("(")
+                        .append(connectorToVariable.get(lastConnector))
+                        .append(");\n");
+
+                methodSpecBuilder.addCode(CodeBlock.of(externalEntitySB.toString()));
             }
-        }
-
-        // Last activator can either be the same external entity as the start of a database store.
-        ActivatorAggregate lastActivatorAggregate = orderOfExecution.get(orderOfExecution.size() - 1);
-
-        if (lastActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("this.")
-                    .append(activatorToVariable.get(databaseActivator))
-                    .append(".")
-                    .append(traverseName.value())
-                    .append("(")
-                    .append(connectorToVariable.get(databaseActivator.stores().get(traverseName)))
-                    .append(");\n");
-
-            methodSpecBuilder.addCode(CodeBlock.of(sb.toString()));
-        } else if (lastActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-            ActivatorAggregate firstActivatorAggregate = orderOfExecution.get(0);
-            if (firstActivatorAggregate != lastActivatorAggregate) {
-                throw new IllegalStateException("If flow ends with external entity, then it must begin with the same one");
-            }
-
-            Connector lastConnector = externalEntityActivator.end(traverseName)
-                    .orElseThrow(IllegalStateException::new);
-
-            String returnVariable = connectorToVariable.get(lastConnector);
-
-            CodeBlock returnStatement = CodeBlock.builder().add("return " + returnVariable + ";").build();
-            methodSpecBuilder.addCode(returnStatement);
-            ClassName returnClassType = lastConnector.type();
-            methodSpecBuilder.returns(returnClassType);
         }
 
         return methodSpecBuilder.build();

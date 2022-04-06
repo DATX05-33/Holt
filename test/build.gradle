@@ -2,14 +2,13 @@ plugins {
     id 'Holt.java-application-conventions'
 }
 
-tasks.register("move-csv-json-files", Copy) {
+tasks.register("move-xml-files", Copy) {
     from layout.projectDirectory.dir("./src/main/resources")
-    include "**/*.csv"
-    include "**/*.json"
+    include "**/*.xml"
     into layout.buildDirectory.dir("classes/java/main")
 }
 
-tasks.compileJava.dependsOn("move-csv-json-files")
+tasks.compileJava.dependsOn("move-xml-files")
 
 dependencies {
     implementation project(':core')

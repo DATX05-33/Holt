@@ -17,7 +17,7 @@ import static holt.test.utils.MethodUtils.findMethod;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * friend.csv, that uses annotations
+ * friend.xml, that uses annotations
  */
 public class TestFriend {
 
