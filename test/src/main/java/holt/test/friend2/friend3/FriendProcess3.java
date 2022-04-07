@@ -12,8 +12,7 @@ public class FriendProcess3 implements FriendProcess3Requirements {
     }
 
     @Override
-    public Object GF(Object input0) {
+    public Object GF(Object input0, Object input1) {
         return null;
     }
-
 }

@@ -1,7 +1,6 @@
 package holt.processor;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,9 +118,7 @@ public class PADFDBuilder {
             case DATABASE, POLICY_DATABASE, LOG_DATABASE -> {
                 return DFDRep.Activator.Type.DATABASE;
             }
-            default -> {
-                throw new IllegalArgumentException();
-            }
+            default -> throw new IllegalArgumentException();
         }
     }
 
