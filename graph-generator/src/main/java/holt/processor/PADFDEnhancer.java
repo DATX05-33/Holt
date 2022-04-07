@@ -61,25 +61,25 @@ public final class PADFDEnhancer {
 
     private NewCommonElements addCommonElements(DFDRep.Flow flow) {
         Activator n0 = new Activator(
-                flow.to().id() + "-limit",
-                flow.to().name() + "Limit",
+                flow.to().id() + "-limit-" + flow.id(),
+                flow.to().name() + "Limit" + flow.id(),
                 LIMIT
         );
         Activator n1 = new Activator(
-                flow.to().id() + "-request",
-                flow.to().name() + "Request",
+                flow.to().id() + "-request-" + flow.id(),
+                flow.to().name() + "Request" + flow.id(),
                 REQUEST
         );
         n0.setPartner(n1);
         n1.setPartner(n0);
         Activator n2 = new Activator(
-                flow.to().id() + "-log",
-                n0.getName() + "Log",
+                flow.to().id() + "-log-" + flow.id(),
+                n0.getName() + "Log" + flow.id(),
                 LOG
         );
         Activator n3 = new Activator(
-                flow.to().id() + "-log_db",
-                n2.getName() + "Database",
+                flow.to().id() + "-log_db-" + flow.id(),
+                n2.getName() + "Database" + flow.id(),
                 LOG_DATABASE
         );
 

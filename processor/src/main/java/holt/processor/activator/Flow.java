@@ -17,13 +17,14 @@ public final class Flow {
     }
 
     public void addInput(Connector input) {
+        if (this.inputs.contains(input)) {
+            throw new IllegalArgumentException("Input is already added: " + input);
+        }
         this.inputs.add(input);
     }
 
     public List<Connector> inputs() {
-        // Sometimes the same connector can be added as input, distince remove those.
-        // TODO: Maybe hinder the ability to add the same input instead?
-        return inputs.stream().distinct().toList();
+        return inputs.stream().toList();
     }
 
     public void setOutputType(ClassName output) {
