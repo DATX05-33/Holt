@@ -262,7 +262,7 @@ public class DFDsProcessor extends AbstractProcessor {
 
                 if (to instanceof ExternalEntityActivatorAggregate || to instanceof DatabaseActivatorAggregate) {
                     // If the last is not the same activator. This is done to make sure Joins work.
-                    if (!order.get(order.size() - 1).equals(to)) {
+                    if (!order.contains(to) || order.get(0).equals(to)) {
                         order.add(to);
                     }
                 }
