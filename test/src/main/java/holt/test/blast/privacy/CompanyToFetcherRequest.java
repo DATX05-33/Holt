@@ -1,18 +1,23 @@
 package holt.test.blast.privacy;
 
 import holt.processor.annotation.Activator;
-import holt.processor.generation.emailBlast.EmailDBPolicyToEmailFetcherRequestfetchEmailsEmailBlastQuery;
-import holt.processor.generation.emailBlast.EmailFetcherRequestfetchEmailsRequirements;
+import holt.processor.annotation.FlowThrough;
+import holt.processor.generation.emailBlast.EmailFetcherRequestwantBlastRequirements;
+import holt.test.blast.model.EmailContent;
+import holt.test.blast.privacy.model.RequestPolicy;
 
-@Activator
-public class CompanyToFetcherRequest implements EmailFetcherRequestfetchEmailsRequirements {
-    @Override
-    public EmailDBPolicyToEmailFetcherRequestfetchEmailsEmailBlastQuery queryEmailDBPolicyEmailBlast() {
-        return null;
-    }
+import static holt.test.blast.Main.emailBlast;
+
+@FlowThrough(
+        flow = emailBlast,
+        functionName = "wantBlastRequest",
+        outputType = RequestPolicy.class
+)
+@Activator(graphName = "EmailFetcherRequestwantBlast")
+public class CompanyToFetcherRequest implements EmailFetcherRequestwantBlastRequirements {
 
     @Override
-    public Object emailBlast(Object dbInput0) {
+    public RequestPolicy wantBlastRequest(EmailContent input0) {
         return null;
     }
 }
