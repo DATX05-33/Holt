@@ -13,11 +13,11 @@ import static holt.test.friend.Main.GF;
 @Traverse(
         name = AF,
         flowStartType = Name.class,
-        order = {"AF_U-=FP", "AF_FP-=SDB", "wow1", "wow2", "AF_FP-=FDB"})
+        order = {"AFwow1", "AFwow3", "wow1", "wow2", "AFwow2"})
 @Traverse(
         name = GF,
         flowStartType = FriendId.class,
-        order = {"GF_U-=FP", "GF_FDB-=FP", "GF_FP-=U"})
+        order = {"GFwow1", "GFwow2", "GFwow3"})
 @Activator
 public class User extends AbstractUser {
 
@@ -26,8 +26,7 @@ public class User extends AbstractUser {
     }
 
     public Friend getFriend(FriendId id) {
-//        return super.GF(id);
-        return null;
+        return super.GF(id);
     }
 
     @Override
@@ -37,7 +36,7 @@ public class User extends AbstractUser {
 
     @Override
     protected Wow getWowInstance() {
-        return null;
+        return new Wow();
     }
 
     @Override
@@ -47,7 +46,7 @@ public class User extends AbstractUser {
 
     @Override
     protected WowEntity getWowEntityInstance() {
-        return null;
+        return new WowEntity();
     }
 
     @Override
