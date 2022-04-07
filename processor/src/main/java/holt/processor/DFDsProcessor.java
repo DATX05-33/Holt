@@ -114,7 +114,7 @@ public class DFDsProcessor extends AbstractProcessor {
             if (activatorAggregate == null) {
                 throw new IllegalStateException("Cannot find an activator aggregate for element: " +
                         element.toString() +
-                        ", have you annotated the class with @Activator yet? " +
+                        ", have you annotated the class with @Activator yet? Check the warnings for unannotated classes above!" +
                         "Is your class name the same name as in the DFD?\n" +
                         "Registered activators: " +
                         elementToActivatorAggregate.keySet());
