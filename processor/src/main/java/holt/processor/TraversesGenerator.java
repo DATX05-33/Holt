@@ -239,7 +239,6 @@ public final class TraversesGenerator {
                 methodSpecBuilder.addCode(returnStatement);
                 ClassName returnClassType = lastConnector.type();
                 methodSpecBuilder.returns(returnClassType);
-
             } else if (activatorAggregate instanceof ProcessActivatorAggregate processActivator) {
                 Flow flow = processActivator.getFlow(traverseName);
                 String connectorVar = connectorToVariable.get(processActivator.getOutput(traverseName));

@@ -3,15 +3,15 @@ package holt.test.blast.privacy;
 import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Query;
-import holt.processor.generation.emailBlast.EmailDBPolicyToEmailFetcherRequestfetchEmailsFetchEmailsRequestQuery;
-import holt.processor.generation.emailBlast.EmailFetcherRequestfetchEmailsRequirements;
+import holt.processor.generation.emailBlast.EmailDBPolicyToEmailFetcherRequestEmailsFetchEmailsRequestQuery;
+import holt.processor.generation.emailBlast.EmailFetcherRequestEmailsRequirements;
 import holt.test.blast.privacy.model.Policy;
 import holt.test.blast.privacy.model.RequestPolicy;
 
-import static holt.test.blast.Main.emailBlast;
+import static holt.test.blast.Main.EB;
 
 @FlowThrough(
-        flow = emailBlast,
+        traverse = EB,
         functionName = "fetchEmailsRequest",
         outputType = RequestPolicy.class,
         queries = {
@@ -21,16 +21,16 @@ import static holt.test.blast.Main.emailBlast;
                 )
         }
 )
-@Activator(graphName = "EmailFetcherRequestfetchEmails")
-public class DBToFetcherRequest implements EmailFetcherRequestfetchEmailsRequirements {
+@Activator(graphName = "EmailFetcherRequestEmails")
+public class DBToFetcherRequest implements EmailFetcherRequestEmailsRequirements {
 
     @Override
-    public EmailDBPolicyToEmailFetcherRequestfetchEmailsFetchEmailsRequestQuery queryEmailDBPolicyFetchEmailsRequest() {
+    public EmailDBPolicyToEmailFetcherRequestEmailsFetchEmailsRequestQuery queryEmailDBPolicyFetchEmailsRequest(Object input0) {
         return null;
     }
 
     @Override
-    public RequestPolicy fetchEmailsRequest(Policy dbInput0) {
+    public RequestPolicy fetchEmailsRequest(Object input0, Policy dbInput1) {
         return null;
     }
 }

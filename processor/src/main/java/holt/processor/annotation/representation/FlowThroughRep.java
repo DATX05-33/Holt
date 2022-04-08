@@ -20,7 +20,7 @@ public record FlowThroughRep(ProcessActivatorAggregate processActivator,
     public static FlowThroughRepBuilder of(ProcessActivatorAggregate processActivator, FlowThrough flowThrough) {
         return processor -> new FlowThroughRep(
                 processActivator,
-                new TraverseName(flowThrough.flow()),
+                new TraverseName(flowThrough.traverse()),
                 flowThrough.functionName(),
                 ClassName.bestGuess(getAnnotationClassValue(
                         processor, flowThrough, FlowThrough::outputType

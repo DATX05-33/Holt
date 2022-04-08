@@ -5,4 +5,8 @@ import holt.processor.generation.emailBlast.EmailDBRequirements;
 
 @Activator
 public class EmailDB implements EmailDBRequirements {
+    @Override
+    public EmailDBQuerier getQuerierInstance() {
+        return null;
+    }
 }

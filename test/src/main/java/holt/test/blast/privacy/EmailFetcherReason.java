@@ -6,10 +6,10 @@ import holt.processor.generation.emailBlast.EmailFetcherReasonRequirements;
 import holt.test.blast.privacy.model.Policy;
 import holt.test.blast.privacy.model.RequestPolicy;
 
-import static holt.test.blast.Main.emailBlast;
+import static holt.test.blast.Main.EB;
 
 @FlowThrough(
-        flow = emailBlast,
+        traverse = EB,
         functionName = "emailFetcherReason",
         outputType = Policy.class
 )

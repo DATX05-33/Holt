@@ -11,12 +11,12 @@ import static holt.test.friend.Main.AF;
 import static holt.test.friend.Main.GF;
 
 @FlowThrough(
-        flow = AF,
+        traverse = AF,
         outputType = NewFriend.class,
         functionName = "addFriend"
 )
 @FlowThrough(
-        flow = GF,
+        traverse = GF,
         outputType = Friend.class,
         functionName = "formatFriend",
         queries = {

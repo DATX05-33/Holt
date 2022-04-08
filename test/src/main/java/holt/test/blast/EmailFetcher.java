@@ -2,16 +2,14 @@ package holt.test.blast;
 
 import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
-import holt.processor.annotation.Query;
-import holt.processor.generation.emailBlast.EmailFetcherRequirements;
 import holt.test.blast.model.Emails;
 import holt.test.blast.privacy.model.LimitFetchEmails;
 import holt.test.blast.privacy.model.LimitWantBlast;
 
-import static holt.test.blast.Main.emailBlast;
+import static holt.test.blast.Main.EB;
 
 @FlowThrough(
-        flow = emailBlast,
+        traverse = EB,
         outputType = Emails.class,
         functionName = "fetchEmails"
 )

@@ -1,14 +1,13 @@
 package holt.test.blast.privacy;
 
 import holt.processor.annotation.Activator;
-import holt.processor.generation.emailBlast.EmailBlasterLimitblastEmailsLogblastEmailsDatabaseblastEmailsRequirements;
+import holt.processor.generation.emailBlast.EmailBlasterLimitToSendLogToSendDatabaseToSendRequirements;
 import holt.test.blast.privacy.model.LimitBlastEmails;
 
-@Activator(graphName = "EmailBlasterLimitblastEmailsLogblastEmailsDatabaseblastEmails")
-public class LogWantEmailsDB implements EmailBlasterLimitblastEmailsLogblastEmailsDatabaseblastEmailsRequirements {
-
+@Activator(graphName = "EmailBlasterLimitToSendLogToSendDatabaseToSend")
+public class LogWantEmailsDB implements EmailBlasterLimitToSendLogToSendDatabaseToSendRequirements {
     @Override
-    public void emailBlast(LimitBlastEmails input) {
+    public void EB(LimitBlastEmails input) {
 
     }
 }
