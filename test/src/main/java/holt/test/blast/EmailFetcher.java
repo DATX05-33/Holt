@@ -13,13 +13,7 @@ import static holt.test.blast.Main.emailBlast;
 @FlowThrough(
         flow = emailBlast,
         outputType = Emails.class,
-        functionName = "fetchEmails",
-        queries = {
-                @Query(
-                        db = EmailDB.class,
-                        type = Emails.class
-                )
-        }
+        functionName = "fetchEmails"
 )
 @Activator
 public class EmailFetcher implements EmailFetcherRequirements {

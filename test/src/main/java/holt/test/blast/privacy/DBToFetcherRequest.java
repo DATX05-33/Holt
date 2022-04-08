@@ -16,7 +16,7 @@ import static holt.test.blast.Main.emailBlast;
         outputType = RequestPolicy.class,
         queries = {
                 @Query(
-                        db = PolicyDB.class,
+                        db = EmailDBPolicy.class,
                         type = Policy.class
                 )
         }
@@ -30,7 +30,7 @@ public class DBToFetcherRequest implements EmailFetcherRequestfetchEmailsRequire
     }
 
     @Override
-    public RequestPolicy fetchEmailsRequest(Object dbInput0) {
+    public RequestPolicy fetchEmailsRequest(Policy dbInput0) {
         return null;
     }
 }
