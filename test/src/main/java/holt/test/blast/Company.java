@@ -67,11 +67,6 @@ public class Company extends AbstractCompany {
     }
 
     @Override
-    protected EmailFetcherTempQuerier getEmailFetcherTempQuerierInstance() {
-        return null;
-    }
-
-    @Override
     protected EmailDBPolicy getEmailDBPolicyInstance() {
         return null;
     }

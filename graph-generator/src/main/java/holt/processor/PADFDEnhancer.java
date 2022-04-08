@@ -187,19 +187,8 @@ public final class PADFDEnhancer {
         Activator s = a(f.from());
         Activator t = a(f.to());
 
-        Activator queryActivator = new Activator(
-                f.to().id() + "TempQuerier",
-                f.to().name() + "TempQuerier",
-                PROCESS
-        );
-
-        // Database -> Querier
-        var f3 = flow(f.id() + "3", s, queryActivator);
-        // Querier -> Request
-        var f6 = flow(f.id() + "6", queryActivator, e.n[1]);
-        // Querier -> Limit
-        var f7 = flow(f.id() + "7", queryActivator, e.n[0]);
-
+        // Database -> Limit
+        var f3 = flow(f.id() + "3", s, e.n[0]);
         // Policy Database -> Request
         var f4 = flow(f.id() + "4", s.getPartner(), e.n[1]);
         f3.setPartner(f4);
@@ -212,10 +201,7 @@ public final class PADFDEnhancer {
         newF.setPartner(f5);
         f5.setPartner(newF);
 
-
-
-
-        builder.addFlow(f, List.of(f3, f6, f4, f7, e.flows[0], e.flows[1], e.flows[2], newF, f5));
+        builder.addFlow(f, List.of(f3, f4, e.flows[0], e.flows[1], e.flows[2], newF, f5));
     }
 
     private void addDeleteElements(DFDRep.Flow f) {

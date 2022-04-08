@@ -15,17 +15,12 @@ public class FriendProcess3Request implements FriendProcess3RequestAF1Requiremen
     }
 
     @Override
-    public Object GF(Object input0) {
+    public FriendsDB3PolicyToFriendProcess3RequestGF2GFQuery queryFriendsDB3PolicyGF() {
         return null;
     }
 
     @Override
-    public FriendsDB3PolicyToFriendProcess3RequestGF2GFQuery queryFriendsDB3PolicyGF(Object input0) {
-        return db -> null;
-    }
-
-    @Override
-    public Object GF(Object input0, Object dbInput1) {
+    public Object GF(Object input0) {
         return null;
     }
 }

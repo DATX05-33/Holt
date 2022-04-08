@@ -25,12 +25,12 @@ import static holt.test.blast.Main.EB;
 public class DBToFetcherRequest implements EmailFetcherRequestEmailsRequirements {
 
     @Override
-    public EmailDBPolicyToEmailFetcherRequestEmailsFetchEmailsRequestQuery queryEmailDBPolicyFetchEmailsRequest(Object input0) {
+    public EmailDBPolicyToEmailFetcherRequestEmailsFetchEmailsRequestQuery queryEmailDBPolicyFetchEmailsRequest() {
         return null;
     }
 
     @Override
-    public RequestPolicy fetchEmailsRequest(Object input0, Policy dbInput1) {
+    public RequestPolicy fetchEmailsRequest(Policy dbInput0) {
         return null;
     }
 }
