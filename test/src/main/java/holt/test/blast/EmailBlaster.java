@@ -6,9 +6,8 @@ import holt.test.blast.privacy.model.RequestPolicy;
 
 @Activator
 public class EmailBlaster extends AbstractEmailBlaster {
-
     @Override
-    public void emailBlast(RequestPolicy v) {
+    public void EB(RequestPolicy v) {
 
     }
 }

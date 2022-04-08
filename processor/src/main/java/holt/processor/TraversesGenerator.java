@@ -263,15 +263,20 @@ public final class TraversesGenerator {
                                 .append(functionName.inPascalCase())
                                 .append("(");
 
-                        flow.inputs()
-                                .stream()
-                                .filter(dbConnectorInput -> !(dbConnectorInput instanceof QueryConnector))
-                                .forEach(dbConnectorInput ->
-                                        processorCallSB.append(connectorToVariable.get(dbConnectorInput))
-                                                .append(","));
+                        int queryInputs = 0;
 
-                        //Removes the last , from the previous forEach
-                        processorCallSB.setLength(processorCallSB.length() - 1);
+                        for (Connector connectorInput : flow.inputs()) {
+                            if (!(connectorInput instanceof QueryConnector)) {
+                                queryInputs++;
+                                processorCallSB.append(connectorToVariable.get(connectorInput))
+                                        .append(",");
+                            }
+                        }
+
+                        //Removes the last , from the previous forEach, if there was any input to the query
+                        if (queryInputs > 0) {
+                            processorCallSB.setLength(processorCallSB.length() - 1);
+                        }
 
                         String querier;
                         //Either it's the querier for the db, or it's the db.
