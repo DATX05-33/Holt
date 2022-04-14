@@ -15,7 +15,6 @@ import static holt.test.blast.Main.EB;
 )
 @Activator(graphName = "EmailFetcherRequestBlastContent")
 public class CompanyToFetcherRequest implements EmailFetcherRequestBlastContentRequirements {
-
     @Override
     public RequestPolicy wantBlastRequest(EmailContent input0) {
         return null;

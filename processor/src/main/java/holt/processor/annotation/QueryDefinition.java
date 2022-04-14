@@ -4,7 +4,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
-public @interface Query {
+public @interface QueryDefinition {
     Class<?> db();
-    Class<?> type() default Object.class;
+    Class<?> process();
+    Class<?> type();
 }

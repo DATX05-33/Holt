@@ -42,27 +42,22 @@ public class Company extends AbstractCompany {
 
 
     @Override
-    protected CompanyToFetcherRequest getEmailFetcherRequestBlastContentInstance() {
+    protected CompanyToFetcherRequest getCompanyToFetcherRequestInstance() {
         return null;
     }
 
     @Override
-    protected CompanyToFetcherLimit getEmailFetcherLimitBlastContentInstance() {
+    protected CompanyToFetcherLimit getCompanyToFetcherLimitInstance() {
         return null;
     }
 
     @Override
-    protected LogWantBlast getEmailFetcherLimitBlastContentLogBlastContentInstance() {
+    protected LogWantBlast getLogWantBlastInstance() {
         return null;
     }
 
     @Override
-    protected LogBlastEmailsDB getEmailFetcherLimitBlastContentLogBlastContentDatabaseBlastContentInstance() {
-        return null;
-    }
-
-    @Override
-    protected EmailDB getEmailDBInstance() {
+    protected LogBlastEmailsDB getLogBlastEmailsDBInstance() {
         return null;
     }
 
@@ -72,22 +67,27 @@ public class Company extends AbstractCompany {
     }
 
     @Override
-    protected DBToFetcherRequest getEmailFetcherRequestEmailsInstance() {
+    protected DBToFetcherRequest getDBToFetcherRequestInstance() {
         return null;
     }
 
     @Override
-    protected DBtoFetcherLimit getEmailFetcherLimitEmailsInstance() {
+    protected EmailDB getEmailDBInstance() {
         return null;
     }
 
     @Override
-    protected LogFetchEmails getEmailFetcherLimitEmailsLogEmailsInstance() {
+    protected DBtoFetcherLimit getDBtoFetcherLimitInstance() {
         return null;
     }
 
     @Override
-    protected LogFetchEmailsDB getEmailFetcherLimitEmailsLogEmailsDatabaseEmailsInstance() {
+    protected LogFetchEmails getLogFetchEmailsInstance() {
+        return null;
+    }
+
+    @Override
+    protected LogFetchEmailsDB getLogFetchEmailsDBInstance() {
         return null;
     }
 
@@ -102,22 +102,22 @@ public class Company extends AbstractCompany {
     }
 
     @Override
-    protected FetcherToBlasterRequest getEmailBlasterRequestToSendInstance() {
+    protected FetcherToBlasterRequest getFetcherToBlasterRequestInstance() {
         return null;
     }
 
     @Override
-    protected FetcherToBlasterLimit getEmailBlasterLimitToSendInstance() {
+    protected FetcherToBlasterLimit getFetcherToBlasterLimitInstance() {
         return null;
     }
 
     @Override
-    protected LogBlastEmails getEmailBlasterLimitToSendLogToSendInstance() {
+    protected LogBlastEmails getLogBlastEmailsInstance() {
         return null;
     }
 
     @Override
-    protected LogWantEmailsDB getEmailBlasterLimitToSendLogToSendDatabaseToSendInstance() {
+    protected LogWantEmailsDB getLogWantEmailsDBInstance() {
         return null;
     }
 

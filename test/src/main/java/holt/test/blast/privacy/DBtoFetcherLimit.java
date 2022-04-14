@@ -3,7 +3,6 @@ package holt.test.blast.privacy;
 import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Query;
-import holt.processor.generation.emailBlast.EmailDBToEmailFetcherLimitEmailsLimitFetchEmailsQuery;
 import holt.processor.generation.emailBlast.EmailFetcherLimitEmailsRequirements;
 import holt.test.blast.EmailDB;
 import holt.test.blast.model.Email;
@@ -17,21 +16,16 @@ import static holt.test.blast.Main.EB;
         functionName = "limitFetchEmails",
         outputType = LimitFetchEmails.class,
         queries = {
-                @Query(
-                        db = EmailDB.class,
-                        type = Email.class
-                )
+//                @Query(
+//                        db = EmailDB.class,
+//                        type = Email.class
+//                )
         }
 )
 @Activator(graphName = "EmailFetcherLimitEmails")
 public class DBtoFetcherLimit implements EmailFetcherLimitEmailsRequirements {
     @Override
-    public EmailDBToEmailFetcherLimitEmailsLimitFetchEmailsQuery queryEmailDBLimitFetchEmails(RequestPolicy input0) {
-        return null;
-    }
-
-    @Override
-    public LimitFetchEmails limitFetchEmails(Email dbInput0, RequestPolicy input1) {
+    public LimitFetchEmails limitFetchEmails(Object dbInput0, RequestPolicy input1) {
         return null;
     }
 }

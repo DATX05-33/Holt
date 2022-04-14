@@ -5,17 +5,24 @@ import java.util.Optional;
 
 public abstract class ActivatorAggregate {
 
-    private final ActivatorName activatorName;
+    private final ActivatorName requirementsName;
+    private ActivatorName activatorName;
     private QualifiedName qualifiedName;
 
-    protected ActivatorAggregate(ActivatorName activatorName) {
+    protected ActivatorAggregate(ActivatorName activatorName, ActivatorName requirementsName) {
         Objects.requireNonNull(activatorName);
+        this.activatorName = activatorName;
+        this.requirementsName = requirementsName;
+    }
+
+    // Only called when @Activator(graphName) is active
+    public final void setActivatorName(ActivatorName activatorName) {
         this.activatorName = activatorName;
     }
 
     /**
      * The name of the activator.
-     * If the name of the class and the name from the graph differes,
+     * If the name of the class and the name from the graph differs,
      * then this name will be the name of the class instead.
      * @return name of the activator aggregate.
      */
@@ -34,6 +41,10 @@ public abstract class ActivatorAggregate {
 
     public final void setQualifiedName(QualifiedName qualifiedName) {
         this.qualifiedName = qualifiedName;
+    }
+
+    public ActivatorName requirementsName() {
+        return requirementsName;
     }
 
     @Override

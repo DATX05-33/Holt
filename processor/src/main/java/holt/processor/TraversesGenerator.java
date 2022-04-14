@@ -29,7 +29,7 @@ public final class TraversesGenerator {
         State state = new State(externalEntityActivator, activators);
 
         TypeSpec.Builder externalEntityBuilder = TypeSpec
-                .classBuilder(EXTERNAL_ENTITY_PREFIX + externalEntityActivator.name())
+                .classBuilder(externalEntityActivator.requirementsName().value())
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addAnnotation(getGeneratedAnnotation());
 
@@ -118,6 +118,12 @@ public final class TraversesGenerator {
                     if (!connectorToVariable.containsKey(flow.output())) {
                         connectorToVariable.put(flow.output(), "v" + connectorVariableIndex);
                         connectorVariableIndex++;
+                    }
+                    for (Connector connector : flow.inputs()) {
+                        if (connector instanceof QueryConnector) {
+                            connectorToVariable.put(connector, "v" + connectorVariableIndex);
+                            connectorVariableIndex++;
+                        }
                     }
                 }
             } else if (activatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
@@ -246,6 +252,82 @@ public final class TraversesGenerator {
                 FunctionName functionName = flow.functionName();
 
                 StringBuilder processorCallSB = new StringBuilder();
+
+                // First, check if this process has any queries
+                // If it does, then call for all the query definitions
+                flow.inputs()
+                        .stream()
+                        .filter(connector -> connector instanceof QueryConnector)
+                        .map(connector -> (QueryConnector) connector)
+                        .forEach(queryConnector -> {
+                            QueryDefinition queryDefinition = queryConnector.queryDefinition();
+                            String activatorThatHaveQueryDefinitionVar = activatorToVariable.get(queryDefinition.source());
+                            Flow queryDefinitionFlow = queryConnector.queryDefinition().flow();
+                            processorCallSB.append("var ")
+                                    .append(connectorToVariable.get(queryConnector))
+                                    .append(" = ")
+                                    .append("this.")
+                                    .append(activatorThatHaveQueryDefinitionVar)
+                                    .append(".query")
+                                    .append(queryConnector.database().name().value())
+                                    .append(queryDefinitionFlow.functionName().inPascalCase())
+                                    .append("(");
+
+                            int queryInputs = 0;
+
+                            List<Connector> inputs = new ArrayList<>(flow.inputs());
+                            int processIndex = -1;
+                            for (ActivatorAggregate _activatorAggregate : orderOfExecution) {
+                                if (_activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                                    for (Flow processActivatorAggregateFlow : processActivatorAggregate.getFlows()) {
+                                        if (processActivatorAggregateFlow.inputs().contains(queryConnector)) {
+                                            processIndex = orderOfExecution.indexOf(processActivatorAggregate);
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (processIndex == -1) {
+                                throw new IllegalStateException();
+                            }
+
+                            boolean debug = state.externalEntityActivator.name().equals(new ActivatorName("Company"));
+                            if (debug) {
+                                System.out.println("before");
+                                inputs.forEach(System.out::println);
+                            }
+
+                            for (int j = 0; j < processIndex; j++) {
+                                ActivatorAggregate _activatorAggregate = orderOfExecution.get(j);
+                                if (_activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                                    boolean removed = inputs.remove(processActivatorAggregate.getFlow(traverseName).output());
+                                    if (debug) {
+                                        System.out.println("[" + j + "] - " + processActivatorAggregate.name() + " { " + processActivatorAggregate.getOutput(traverseName).type() + "} ? " + removed);
+                                    }
+                                }
+                            }
+
+                            if (debug) {
+                                System.out.println("after");
+                                inputs.forEach(System.out::println);
+                            }
+
+                            for (Connector connectorInput : inputs) {
+                                if (!(connectorInput instanceof QueryConnector)) {
+                                    queryInputs++;
+                                    processorCallSB.append(connectorToVariable.get(connectorInput))
+                                            .append(",");
+                                }
+                            }
+
+                            //Removes the last , from the previous forEach, if there was any input to the query
+                            if (queryInputs > 0) {
+                                processorCallSB.setLength(processorCallSB.length() - 1);
+                            }
+
+                            processorCallSB.append(");\n");
+                        });
+
                 processorCallSB.append("var ")
                         .append(connectorVar)
                         .append(" = this.")
@@ -256,27 +338,7 @@ public final class TraversesGenerator {
                 for (Connector connector : flow.inputs()) {
                     // Query all the relevant information for the process
                     if (connector instanceof QueryConnector queryConnector) {
-                        processorCallSB.append("this.")
-                                .append(activatorReferenceVar)
-                                .append(".query")
-                                .append(queryConnector.database().name().value())
-                                .append(functionName.inPascalCase())
-                                .append("(");
-
-                        int queryInputs = 0;
-
-                        for (Connector connectorInput : flow.inputs()) {
-                            if (!(connectorInput instanceof QueryConnector)) {
-                                queryInputs++;
-                                processorCallSB.append(connectorToVariable.get(connectorInput))
-                                        .append(",");
-                            }
-                        }
-
-                        //Removes the last , from the previous forEach, if there was any input to the query
-                        if (queryInputs > 0) {
-                            processorCallSB.setLength(processorCallSB.length() - 1);
-                        }
+                        String queryDefinitionVar = connectorToVariable.get(queryConnector);
 
                         String querier;
                         //Either it's the querier for the db, or it's the db.
@@ -286,7 +348,8 @@ public final class TraversesGenerator {
                             querier = queryConnector.database().name().value() + "Ref";
                         }
 
-                        processorCallSB.append(")")
+                        processorCallSB
+                                .append(queryDefinitionVar)
                                 .append(".createQuery(this.")
                                 .append(querier)
                                 .append("),");

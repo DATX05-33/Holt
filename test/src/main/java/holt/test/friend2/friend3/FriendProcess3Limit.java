@@ -15,12 +15,13 @@ public class FriendProcess3Limit implements FriendProcess3LimitAF1Requirements, 
     }
 
     @Override
-    public FriendsDB3ToFriendProcess3LimitGF2GFQuery queryFriendsDB3GF(Object input0) {
+    public Object GF(Object input0, Object input1) {
         return null;
     }
 
     @Override
-    public Object GF(Object input0, Object input1) {
+    public FriendsDB3ToFriendProcess3LimitGF2GFQuery queryFriendsDB3GF(Object input0) {
         return null;
     }
+
 }

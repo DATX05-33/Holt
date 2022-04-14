@@ -17,7 +17,7 @@ public final class ExternalEntityActivatorAggregate extends ActivatorAggregate {
     private final Map<TraverseName, Connector> endConnections;
 
     public ExternalEntityActivatorAggregate(ActivatorName activatorName) {
-        super(activatorName);
+        super(activatorName, new ActivatorName("Abstract" + activatorName.value()));
         startFlows = new HashMap<>();
         endConnections = new HashMap<>();
     }

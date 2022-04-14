@@ -12,4 +12,5 @@ public @interface FlowThrough {
     String traverse();
     String functionName();
     Query[] queries() default {};
+    QueryDefinition[] overrideQueries() default {};
 }

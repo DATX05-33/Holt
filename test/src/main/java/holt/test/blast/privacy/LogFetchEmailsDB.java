@@ -6,6 +6,7 @@ import holt.test.blast.privacy.model.LimitFetchEmails;
 
 @Activator(graphName = "EmailFetcherLimitEmailsLogEmailsDatabaseEmails")
 public class LogFetchEmailsDB implements EmailFetcherLimitEmailsLogEmailsDatabaseEmailsRequirements {
+
     @Override
     public void EB(LimitFetchEmails input) {
 

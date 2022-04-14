@@ -15,7 +15,7 @@ public final class DatabaseActivatorAggregate extends ActivatorAggregate {
     private ClassName queriesClassName;
 
     public DatabaseActivatorAggregate(ActivatorName activatorName) {
-        super(activatorName);
+        super(activatorName, new ActivatorName(activatorName + "Requirements"));
         this.stores = new HashMap<>();
     }
 

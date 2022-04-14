@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static holt.processor.AnnotationValueUtils.getAnnotationClassValue;
@@ -28,8 +29,6 @@ public class DFDsProcessor extends AbstractProcessor {
 
     public static final String PACKAGE_NAME = "holt.processor.generation";
     public static final String EXTERNAL_ENTITY_PREFIX = "Abstract";
-    public static final String PROCESS_SUFFIX = "Requirements";
-    public static final String DATABASE_SUFFIX = "Requirements";
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -93,18 +92,15 @@ public class DFDsProcessor extends AbstractProcessor {
         return true;
     }
 
-    private static final class ConvertersResult {
+    public static final class ConvertersResult {
         private final List<DFDToJavaFileConverter> converters;
-        private final List<ActivatorAggregate> activatorAggregates;
         private final Map<ActivatorName, DFDName> activatorToDFDMap;
         private final Map<Element, ActivatorAggregate> elementToActivatorAggregate;
 
         private ConvertersResult(List<DFDToJavaFileConverter> converters,
-                                 List<ActivatorAggregate> activatorAggregates,
                                  Map<ActivatorName, DFDName> activatorToDFDMap,
                                  Map<Element, ActivatorAggregate> elementToActivatorAggregate) {
             this.converters = converters;
-            this.activatorAggregates = activatorAggregates;
             this.activatorToDFDMap = activatorToDFDMap;
             this.elementToActivatorAggregate = elementToActivatorAggregate;
         }
@@ -126,11 +122,12 @@ public class DFDsProcessor extends AbstractProcessor {
             List<ActivatorAggregate> activatorAggregates = elementToActivatorAggregate
                     .values()
                     .stream()
-                    .filter(activatorAggregate -> activatorAggregate.name().value().equals(className.simpleName().toString()))
+                    .filter(activatorAggregate -> activatorAggregate.name().value().equals(className.simpleName()))
                     .toList();
 
             if (activatorAggregates.size() != 1) {
-                throw new IllegalStateException("Could not find a suiting ActivatorAggregate with the ClassName: " + className.simpleName());
+                throw new IllegalStateException("Could not find one suiting ActivatorAggregate with the ClassName: " + className.simpleName() +
+                        "\n Available: " + elementToActivatorAggregate.values().stream().map(ActivatorAggregate::name).map(ActivatorName::toString).collect(Collectors.joining(", ")));
             }
 
             return activatorAggregates.get(0);
@@ -174,12 +171,12 @@ public class DFDsProcessor extends AbstractProcessor {
             orderedDFD.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorName(node.name()))));
             orderedDFD.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorName(node.name()))));
 
-            allActivatorAggregates.addAll(idToActivator.values());
-            idToActivator.values().forEach(activator -> activatorToDFDMap.put(activator.name(), dfdName));
-
             elementToActivatorAggregateMap.putAll(
                     connectAggregatesWithActivatorAnnotation(environment, idToActivator.values())
             );
+
+            allActivatorAggregates.addAll(idToActivator.values());
+            idToActivator.values().forEach(activator -> activatorToDFDMap.put(activator.name(), dfdName));
 
             traverses.put(
                     dfdName,
@@ -201,7 +198,6 @@ public class DFDsProcessor extends AbstractProcessor {
 
         return new ConvertersResult(
                 converters,
-                allActivatorAggregates,
                 activatorToDFDMap,
                 elementToActivatorAggregateMap
         );
@@ -220,6 +216,7 @@ public class DFDsProcessor extends AbstractProcessor {
                 for (ActivatorAggregate activatorAggregate : allActivatorAggregates) {
                     if (activatorFromGraphName.equals(activatorAggregate.name().value())) {
                         elementToActivatorAggregateMap.put(element, activatorAggregate);
+                        activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
                         activatorAggregate.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
                         break;
                     }
@@ -271,18 +268,21 @@ public class DFDsProcessor extends AbstractProcessor {
             // Connect Flows as inputs
             for (DFDRep.Flow dataflow : entry.getValue()) {
                 ActivatorAggregate fromActivatorAggregate = idToActivator.get(dataflow.from().id());
+                ActivatorAggregate toActivatorAggregate = idToActivator.get(dataflow.to().id());
                 Objects.requireNonNull(fromActivatorAggregate);
 
                 Connector connector = null;
-                if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                    connector = externalEntityActivator.getOutput(traverseName);
-                } else if (fromActivatorAggregate instanceof ProcessActivatorAggregate processActivator) {
-                    connector = processActivator.getOutput(traverseName);
-                } else if (fromActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
-                    connector = new QueryConnector(databaseActivator);
+                if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate fromExternalEntityActivator) {
+                    connector = fromExternalEntityActivator.getOutput(traverseName);
+                } else if (fromActivatorAggregate instanceof ProcessActivatorAggregate fromProcessActivator) {
+                    connector = fromProcessActivator.getOutput(traverseName);
+                } else if (fromActivatorAggregate instanceof DatabaseActivatorAggregate fromDatabaseActivator) {
+                    // If fromActivatorAggregate is a database, then the 'to' must be a Process.
+                    ProcessActivatorAggregate toProcessActivator = (ProcessActivatorAggregate) toActivatorAggregate;
+                    connector = new QueryConnector(fromDatabaseActivator, toProcessActivator, toProcessActivator.getFlow(traverseName));
+                    toProcessActivator.addQueryConnectorDefinition((QueryConnector) connector);
                 }
 
-                ActivatorAggregate toActivatorAggregate = idToActivator.get(dataflow.to().id());
                 if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
                     toProcessActivator.addInputToFlow(traverseName, connector);
                 } else if (toActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
@@ -323,17 +323,21 @@ public class DFDsProcessor extends AbstractProcessor {
             processActivator.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
 
             DFDName dfdName = activatorToDFDMap.get(processActivator.name());
+            if (dfdName == null) {
+                throw new IllegalStateException("DFDName cannot be null");
+            }
 
             if (!dfdToFlowThroughRepMap.containsKey(dfdName)) {
                 dfdToFlowThroughRepMap.put(dfdName, new ArrayList<>());
             }
 
+            FlowThroughRep flowThroughRep = FlowThroughRep
+                    .of(processActivator, convertersResult, flowThrough)
+                    .with(this);
+
             dfdToFlowThroughRepMap
                     .get(dfdName)
-                    .add(FlowThroughRep
-                            .of(processActivator, flowThrough)
-                            .with(this)
-                    );
+                    .add(flowThroughRep);
         }
 
         return dfdToFlowThroughRepMap;
