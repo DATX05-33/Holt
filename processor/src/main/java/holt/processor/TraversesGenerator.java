@@ -37,7 +37,7 @@ public final class TraversesGenerator {
             var code = generateFieldsAndConstructor(state);
             externalEntityBuilder.addFields(code.fieldSpecs());
             externalEntityBuilder.addMethod(code.constructorSpec());
-            externalEntityBuilder.addMethods(code.getInstanceSpecs());
+            externalEntityBuilder.addMethods(code.methods());
 
             externalEntityActivator
                     .starts()
@@ -59,13 +59,13 @@ public final class TraversesGenerator {
 
     private static boolean activatorsAreValid(Activators activators) {
         return activators.stream()
-                .map(activatorAggregates -> activatorAggregates.qualifiedName().isPresent())
+                .map(activatorAggregates -> activatorAggregates.connectedClass().isPresent())
                 .reduce(true, (b1, b2) -> b1 && b2);
     }
 
     private record ExternalEntityFieldsWithConstructor(List<FieldSpec> fieldSpecs,
                                                       MethodSpec constructorSpec,
-                                                      List<MethodSpec> getInstanceSpecs) { }
+                                                      List<MethodSpec> methods) { }
 
     private static ExternalEntityFieldsWithConstructor generateFieldsAndConstructor(State state) {
         var activators = state.activators;
@@ -76,7 +76,7 @@ public final class TraversesGenerator {
         MethodSpec.Builder constructorSpecBuilder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);
-        List<MethodSpec> getInstanceSpecs = new ArrayList<>();
+        List<MethodSpec> methods = new ArrayList<>();
 
         // All the activators that need instantiation
         List<ActivatorAggregate> activatorsToInstantiate = activators.traverses()
@@ -103,11 +103,43 @@ public final class TraversesGenerator {
 
         int connectorVariableIndex = 0;
         for (ActivatorAggregate activatorAggregate : activatorsToInstantiate) {
+            boolean needToGenerateReflectionHelperMethod = false;
+
             if (!activatorAggregate.equals(state.externalEntityActivator)) {
                 var activatorCode = generateCodeForActivator(activatorAggregate, state);
                 fieldSpecs.addAll(activatorCode.fieldSpecs);
                 constructorSpecBuilder.addCode(activatorCode.instantiation);
-                getInstanceSpecs.add(activatorCode.getInstance);
+
+                // If true, then activatorcode.instantiation contains code that uses a reflection helper
+                // method to generate the instance for activators
+                if (activatorCode.getInstance == null) {
+                    needToGenerateReflectionHelperMethod = true;
+                } else {
+                    methods.add(activatorCode.getInstance);
+                }
+            }
+
+            if (needToGenerateReflectionHelperMethod) {
+                TypeVariableName t = TypeVariableName.get("T");
+
+                MethodSpec.Builder reflectionHelperMethodBuilder = MethodSpec.methodBuilder("reflect")
+                        .addModifiers(Modifier.PRIVATE)
+                        .addTypeVariable(t)
+                        .addParameter(ClassName.bestGuess("Class<?>"), "t")
+                        .returns(t);
+
+                CodeBlock.Builder codeBlockBuilder = CodeBlock.builder();
+                codeBlockBuilder.add("  try {\n");
+                codeBlockBuilder.add("    return (T) t.newInstance();\n");
+                codeBlockBuilder.add("  } catch (Exception e) {\n");
+                codeBlockBuilder.add("    e.printStackTrace();\n");
+                codeBlockBuilder.add("    throw new IllegalStateException(\"Could not instantiate...\");\n");
+                codeBlockBuilder.add("  }");
+                codeBlockBuilder.add("\n");
+
+                reflectionHelperMethodBuilder.addCode(codeBlockBuilder.build());
+
+                methods.add(reflectionHelperMethodBuilder.build());
             }
 
             if (activatorAggregate instanceof ProcessActivatorAggregate processActivator) {
@@ -134,7 +166,7 @@ public final class TraversesGenerator {
         return new ExternalEntityFieldsWithConstructor(
                 fieldSpecs,
                 constructorSpecBuilder.build(),
-                getInstanceSpecs
+                methods
         );
     }
 
@@ -144,19 +176,19 @@ public final class TraversesGenerator {
                                                     MethodSpec getInstance) { }
 
     private static FieldAndConstructorInstantiation generateCodeForActivator(ActivatorAggregate activatorAggregate, State state) {
-        if (activatorAggregate.qualifiedName().isEmpty()) {
+        if (activatorAggregate.connectedClass().isEmpty()) {
             throw new IllegalStateException("All activators needs to have set a qualified name");
         }
+        ConnectedClass connectedClass = activatorAggregate.connectedClass().get();
 
         var activatorToVariable = state.activatorToVariable;
         List<FieldSpec> fieldSpecs = new ArrayList<>();
 
         String activatorVariableRef = activatorAggregate.name().asVariableName();
-        String activatorQualifiedName = activatorAggregate.qualifiedName().get().value();
         String activatorReferenceVar = activatorVariableRef + "Ref";
         activatorToVariable.put(activatorAggregate, activatorReferenceVar);
 
-        ClassName activatorClassName = ClassName.bestGuess(activatorQualifiedName);
+        ClassName activatorClassName = connectedClass.qualifiedName().className();
         FieldSpec fieldSpec = FieldSpec.builder(
                 activatorClassName,
                 activatorReferenceVar,
@@ -166,12 +198,19 @@ public final class TraversesGenerator {
 
         CodeBlock.Builder codeBlockBuilder = CodeBlock.builder();
 
-        codeBlockBuilder.add("  this." + activatorReferenceVar + " = get" + activatorAggregate.name().value() + "Instance()" + ";\n");
 
-        MethodSpec getInstance = MethodSpec.methodBuilder("get" + activatorAggregate.name().value() + "Instance")
-                .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
-                .returns(activatorClassName)
-                .build();
+        MethodSpec getInstance = null;
+
+        if (!connectedClass.instantiateWithReflection()) {
+            getInstance = MethodSpec.methodBuilder("get" + activatorAggregate.name().value() + "Instance")
+                    .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
+                    .returns(activatorClassName)
+                    .build();
+
+            codeBlockBuilder.add("  this." + activatorReferenceVar + " = get" + activatorAggregate.name().value() + "Instance()" + ";\n");
+        } else {
+            codeBlockBuilder.add("  this." + activatorReferenceVar + " = reflect(" + activatorClassName + ".class)" + ";\n");
+        }
 
         fieldSpecs.add(fieldSpec);
 

@@ -45,7 +45,7 @@ public class FriendProcess implements FriendProcessRequirements {
 
     @Override
     public SpecialDBToFriendProcessAddFriendQuery querySpecialDBAddFriend(Name input0) {
-        return null;
+        return db -> null;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class FriendProcess implements FriendProcessRequirements {
 
     @Override
     public FriendsDBToFriendProcessFormatFriendQuery queryFriendsDBFormatFriend(FriendId input0) {
-        return null;
+        return db -> null;
     }
 
 }

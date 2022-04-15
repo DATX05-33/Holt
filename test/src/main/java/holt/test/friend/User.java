@@ -35,11 +35,6 @@ public class User extends AbstractUser {
     }
 
     @Override
-    protected Wow getWowInstance() {
-        return new Wow();
-    }
-
-    @Override
     protected SpecialDB getSpecialDBInstance() {
         return new SpecialDB();
     }

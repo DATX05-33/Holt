@@ -154,8 +154,8 @@ public class DFDToJavaFileConverter {
                 ClassName databaseClassname;
                 if (database.getQueriesClassName() != null) {
                     databaseClassname = database.getQueriesClassName();
-                } else if (database.qualifiedName().isPresent()) {
-                    databaseClassname = ClassName.bestGuess(database.qualifiedName().get().value());
+                } else if (database.connectedClass().isPresent()) {
+                    databaseClassname = ClassName.bestGuess(database.connectedClass().get().qualifiedName().value());
                 } else {
                     databaseClassname = ClassName.bestGuess(dfdPackageName + "." + databaseRequirementsName);
                 }

@@ -1,3 +1,9 @@
 package holt.processor.activator;
 
-public record QualifiedName(String value) { }
+import com.squareup.javapoet.ClassName;
+
+public record QualifiedName(String value) {
+    public ClassName className() {
+        return ClassName.bestGuess(value);
+    }
+}

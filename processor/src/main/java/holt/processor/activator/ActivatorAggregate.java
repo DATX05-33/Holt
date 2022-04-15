@@ -7,7 +7,7 @@ public abstract class ActivatorAggregate {
 
     private final ActivatorName requirementsName;
     private ActivatorName activatorName;
-    private QualifiedName qualifiedName;
+    private ConnectedClass connectedClass;
 
     protected ActivatorAggregate(ActivatorName activatorName, ActivatorName requirementsName) {
         Objects.requireNonNull(activatorName);
@@ -35,12 +35,12 @@ public abstract class ActivatorAggregate {
      * this function return the full qualified name for that class.
      * @return The package name
      */
-    public final Optional<QualifiedName> qualifiedName() {
-        return Optional.ofNullable(qualifiedName);
+    public final Optional<ConnectedClass> connectedClass() {
+        return Optional.ofNullable(connectedClass);
     }
 
-    public final void setQualifiedName(QualifiedName qualifiedName) {
-        this.qualifiedName = qualifiedName;
+    public void setConnectedClass(ConnectedClass connectedClass) {
+        this.connectedClass = connectedClass;
     }
 
     public ActivatorName requirementsName() {
@@ -48,22 +48,22 @@ public abstract class ActivatorAggregate {
     }
 
     @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ActivatorAggregate that = (ActivatorAggregate) o;
-        return Objects.equals(activatorName, that.activatorName) && Objects.equals(qualifiedName, that.qualifiedName);
+        return Objects.equals(requirementsName, that.requirementsName) && Objects.equals(activatorName, that.activatorName) && Objects.equals(connectedClass, that.connectedClass);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(activatorName, qualifiedName);
+        return Objects.hash(requirementsName, activatorName, connectedClass);
     }
 
     @Override
     public String toString() {
         return "[activatorName=" + activatorName +
-                ", qualifiedName=" + qualifiedName +
+                ", qualifiedName=" + connectedClass +
                 ']';
     }
 }

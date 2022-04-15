@@ -217,7 +217,12 @@ public class DFDsProcessor extends AbstractProcessor {
                     if (activatorFromGraphName.equals(activatorAggregate.name().value())) {
                         elementToActivatorAggregateMap.put(element, activatorAggregate);
                         activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
-                        activatorAggregate.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
+                        activatorAggregate.setConnectedClass(
+                                new ConnectedClass(
+                                        new QualifiedName(typeElement.getQualifiedName().toString()),
+                                        activator.instantiateWithReflection()
+                                )
+                        );
                         break;
                     }
                 }
@@ -319,7 +324,7 @@ public class DFDsProcessor extends AbstractProcessor {
             System.out.println("************");
             System.out.println("* Warning, the following activators from a DFD does not have a class connected to them:");
             allActivatorAggregates.stream()
-                    .filter(activatorAggregate -> activatorAggregate.qualifiedName().isEmpty())
+                    .filter(activatorAggregate -> activatorAggregate.connectedClass().isEmpty())
                     .forEach(activatorAggregate -> System.out.println("* - " + activatorAggregate.name()));
             System.out.println("************");
         } else {
@@ -337,7 +342,12 @@ public class DFDsProcessor extends AbstractProcessor {
             TypeElement typeElement = flowThroughPair.typeElement;
 
             ProcessActivatorAggregate processActivator = (ProcessActivatorAggregate) convertersResult.getActivatorAggregate(typeElement);
-            processActivator.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
+            processActivator.setConnectedClass(
+                    new ConnectedClass(
+                            new QualifiedName(typeElement.getQualifiedName().toString()),
+                            false
+                    )
+            );
 
             DFDName dfdName = activatorToDFDMap.get(processActivator.name());
             if (dfdName == null) {
@@ -509,7 +519,12 @@ public class DFDsProcessor extends AbstractProcessor {
             TypeElement typeElement = traversePair.typeElement;
 
             ExternalEntityActivatorAggregate externalEntityActivator = (ExternalEntityActivatorAggregate) convertersResult.getActivatorAggregate(typeElement);
-            externalEntityActivator.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
+            externalEntityActivator.setConnectedClass(
+                    new ConnectedClass(
+                            new QualifiedName(typeElement.getQualifiedName().toString()),
+                            false
+                    )
+            );
 
             DFDName dfdName = activatorToDFDMap.get(externalEntityActivator.name());
             if (!dfdTraverseRepMap.containsKey(dfdName)) {
