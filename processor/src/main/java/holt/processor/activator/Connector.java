@@ -4,7 +4,7 @@ import com.squareup.javapoet.ClassName;
 
 import java.util.Objects;
 
-public class Connector {
+public final class Connector {
 
     private ClassName type;
 
@@ -13,7 +13,7 @@ public class Connector {
     }
 
     public ClassName type() {
-        return Objects.requireNonNullElseGet(this.type, () -> ClassName.get(Object.class));
+        return Objects.requireNonNullElseGet(this.type, () -> ClassName.OBJECT);
     }
 
     @Override

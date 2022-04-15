@@ -7,7 +7,8 @@ import holt.test.friend.model.NewFriend;
 @Activator
 public class Wow implements WowRequirements {
     @Override
-    public Object AF(NewFriend input0) {
+    public Object AF(NewFriend input0, Object dbInput1) {
         return null;
     }
+
 }

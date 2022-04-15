@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public final class DatabaseActivatorAggregate extends ActivatorAggregate {
+public final class DatabaseActivatorAggregate extends ActivatorAggregate implements OutputActivator {
 
-    private final Map<TraverseName, Connector> stores;
+    private final Map<TraverseName, TraverseOutput> stores;
 
     // If the developer creates a new class that have the annotation @QueriesFor
     // for this database, then the following ClassName is not null.
@@ -17,12 +17,6 @@ public final class DatabaseActivatorAggregate extends ActivatorAggregate {
     public DatabaseActivatorAggregate(ActivatorName activatorName) {
         super(activatorName, new ActivatorName(activatorName + "Requirements"));
         this.stores = new HashMap<>();
-    }
-
-    public void addStore(TraverseName traverseName, Connector connector) {
-        Objects.requireNonNull(traverseName);
-        Objects.requireNonNull(connector);
-        this.stores.put(traverseName, connector);
     }
 
     public void setQueriesClassName(ClassName queriesClassName) {
@@ -34,14 +28,6 @@ public final class DatabaseActivatorAggregate extends ActivatorAggregate {
         return queriesClassName;
     }
 
-    public Connector getStore(TraverseName traverseName) {
-        return this.stores.get(traverseName);
-    }
-
-    public Map<TraverseName, Connector> stores() {
-        return this.stores;
-    }
-
     @Override
     public String toString() {
         return "DatabaseActivatorAggregate{" +
@@ -49,4 +35,20 @@ public final class DatabaseActivatorAggregate extends ActivatorAggregate {
                 ", stores=" + stores +
                 '}';
     }
+
+    @Override
+    public void addOutput(TraverseName traverseName) {
+        this.stores.put(traverseName, new TraverseOutput(FunctionName.of(traverseName)));
+    }
+
+    @Override
+    public void addInputToTraverseOutput(TraverseName traverseName, Connector connector) {
+        this.stores.get(traverseName).addInput(connector);
+    }
+
+    @Override
+    public Map<TraverseName, TraverseOutput> outputs() {
+        return this.stores;
+    }
+
 }

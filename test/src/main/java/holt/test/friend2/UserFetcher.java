@@ -8,12 +8,13 @@ import holt.processor.generation.friend2.UserFetcherRequirements;
 public class UserFetcher implements UserFetcherRequirements {
 
     @Override
-    public UserDatabaseToUserFetcherFetchTraverseQuery queryUserDatabaseFetchTraverse(Object input0) {
-        return db -> input0;
+    public Object fetchTraverse(Object input0, Object dbInput1) {
+        return null;
     }
 
     @Override
-    public Object fetchTraverse(Object input0, Object dbInput1) {
-        return input0;
+    public UserDatabaseToUserFetcherFetchTraverseQuery queryUserDatabaseFetchTraverse(Object input0) {
+        return null;
     }
+
 }

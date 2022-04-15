@@ -150,7 +150,18 @@ public final class DFDParser {
         }
 
         if (addedFlows < dfd.flows().size()) {
-            System.out.println("Warning: There are more flows defined in XML than used in traverses");
+            System.out.println("There are more flows defined in XML than used in traverses");
+            System.out.println("Added flows:");
+            if (traverseOrders.isEmpty()) {
+                System.out.println("Nothing...");
+            }
+            traverseOrders.forEach((s, flows) -> {
+                System.out.println("Traverse: " + s);
+                flows.forEach(flow -> System.out.println(flow.id()));
+            });
+            System.out.println("-------------------------------------");
+            System.out.println("Available flows: ");
+            dfd.flows().forEach(flow -> System.out.println(flow.id()));
         } else if (addedFlows > dfd.flows().size()) {
             throw new IllegalStateException("You cannot reuse flows when defining traverses");
         }

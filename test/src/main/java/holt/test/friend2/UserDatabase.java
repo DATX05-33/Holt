@@ -6,7 +6,7 @@ import holt.processor.generation.friend2.UserDatabaseRequirements;
 @Activator
 public class UserDatabase implements UserDatabaseRequirements {
     @Override
-    public void storeTraverse(Object input) {
+    public void storeTraverse(Object input0) {
 
     }
 }

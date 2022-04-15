@@ -1,65 +1,74 @@
 package holt.processor.activator;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class ProcessActivatorAggregate extends ActivatorAggregate {
-
-    private final Map<TraverseName, Flow> flows;
-    private final List<QueryConnector> queryConnectorsDefinitions;
-
+    private final Map<TraverseName, FlowThroughAggregate> flowThroughs;
     public ProcessActivatorAggregate(ActivatorName activatorName) {
         super(activatorName, new ActivatorName(activatorName + "Requirements"));
-        this.flows = new HashMap<>();
-        this.queryConnectorsDefinitions = new ArrayList<>();
+        this.flowThroughs = new HashMap<>();
     }
 
-    public void addQueryConnectorDefinition(QueryConnector queryConnector) {
-        this.queryConnectorsDefinitions.add(queryConnector);
+    public void createFlowThrough(TraverseName traverseName) {
+        FlowThroughAggregate flowThroughAggregate = new FlowThroughAggregate();
+        flowThroughAggregate.setFunctionName(new FunctionName(traverseName.value()));
+        this.flowThroughs.put(traverseName, flowThroughAggregate);
     }
 
-    public void removeQueryConnectorDefinition(QueryConnector queryConnector) {
-        this.queryConnectorsDefinitions.remove(queryConnector);
+    public List<FlowThroughAggregate> flows() {
+        return this.flowThroughs.values().stream().toList();
     }
 
-    public List<QueryConnector> queryConnectorsDefinitions() {
-        return this.queryConnectorsDefinitions;
-    }
-
-    public void addFlow(TraverseName traverseName) {
-        Flow flow = new Flow();
-        flow.setFunctionName(new FunctionName(traverseName.value()));
-        this.flows.put(traverseName, flow);
-    }
-
-    public List<Flow> getFlows() {
-        return this.flows.values().stream().toList();
-    }
-
-    public Flow getFlow(TraverseName traverseName) {
-        return this.flows.get(traverseName);
+    public FlowThroughAggregate flow(TraverseName traverseName) {
+        if (!this.flowThroughs.containsKey(traverseName)) {
+            throw new IllegalArgumentException("In " + name() + ", there's no flow for the traverse name " + traverseName);
+        }
+        return this.flowThroughs.get(traverseName);
     }
 
     public void addInputToFlow(TraverseName traverseName, Connector connector) {
-        Flow flow = this.flows.get(traverseName);
-        if (flow == null) {
+        FlowThroughAggregate flowThroughAggregate = this.flowThroughs.get(traverseName);
+        if (flowThroughAggregate == null) {
             throw new IllegalStateException("Cannot add input to a flow that have not been added yet, flowName:" + traverseName.value());
         }
 
-        this.flows.get(traverseName).addInput(connector);
+        this.flowThroughs.get(traverseName).addInput(connector);
+    }
+
+    public void addQueryInputToFlow(TraverseName traverseName, DatabaseActivatorAggregate databaseActivatorAggregate) {
+        FlowThroughAggregate flowThroughAggregate = this.flowThroughs.get(traverseName);
+        if (flowThroughAggregate == null) {
+            throw new IllegalStateException("Cannot add input to a flow that have not been added yet, flowName:" + traverseName.value());
+        }
+
+        flowThroughAggregate.addQueryInput(new QueryInput(new QueryInputDefinition(databaseActivatorAggregate)));
     }
 
     public Connector getOutput(TraverseName traverseName) {
-        return this.flows.get(traverseName).output();
+        return this.flowThroughs.get(traverseName).output();
+    }
+
+    public String getQueryInterfaceNameForDatabase(DatabaseActivatorAggregate databaseActivator, FlowThroughAggregate flowThrough) {
+        return databaseActivator.name().value()
+                + "To"
+                + super.name().value()
+                + flowThrough.functionName().inPascalCase()
+                + "Query";
+    }
+
+    public String getQueryMethodNameForDatabase(DatabaseActivatorAggregate databaseActivator, FlowThroughAggregate flowThrough) {
+        return "query" + databaseActivator.name().value() + flowThrough.functionName().inPascalCase();
     }
 
     @Override
     public String toString() {
         return "ProcessActivatorAggregate{" +
                 "info=" + super.toString() +
-                ", flows=" + flows +
+                ", flows=" + flowThroughs +
                 '}';
     }
+
 }

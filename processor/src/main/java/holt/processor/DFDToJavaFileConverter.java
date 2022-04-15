@@ -35,33 +35,26 @@ public class DFDToJavaFileConverter {
     }
 
     public void applyFlowThrough(List<FlowThroughRep> flowThroughReps) {
-        for (FlowThroughRep flowThrough : flowThroughReps) {
-            TraverseName traverseName = flowThrough.traverseName();
-            Flow flow = flowThrough.processActivator().getFlow(traverseName);
-            flow.setOutputType(flowThrough.outputType());
-            flow.setFunctionName(new FunctionName(flowThrough.functionName()));
+        for (FlowThroughRep flowThroughRep : flowThroughReps) {
+            TraverseName traverseName = flowThroughRep.traverseName();
+            FlowThroughAggregate flowThrough = flowThroughRep.processActivator().flow(traverseName);
+            flowThrough.setOutputType(flowThroughRep.outputType());
+            flowThrough.setFunctionName(new FunctionName(flowThroughRep.functionName()));
 
-            flowThrough.queries().forEach(query -> {
-                for (Connector input : flow.inputs()) {
-                    if (input instanceof QueryConnector inputQueryConnector) {
-                        DatabaseActivatorAggregate databaseActivator = inputQueryConnector.database();
-                        if ((databaseActivator.name().value()).equals(query.db().simpleName())) {
-                            inputQueryConnector.setType(query.type());
-                        }
+            flowThroughRep.queries().forEach(query -> {
+                for (QueryInput queryInput : flowThrough.queries()) {
+                    DatabaseActivatorAggregate databaseActivator = queryInput.queryInputDefinition().database();
+                    if (databaseActivator.name().value().equals(query.db().simpleName())) {
+                        queryInput.queryInputDefinition().setOutput(query.type());
                     }
                 }
             });
 
-            for (QueryDefinitionRep queryDefinitionRep : flowThrough.overrideQueries()) {
-                for (QueryConnector queryConnector : queryDefinitionRep.process().queryConnectorsDefinitions()) {
-                    if (queryConnector.database().equals(queryDefinitionRep.db())) {
-                        queryDefinitionRep.process().removeQueryConnectorDefinition(queryConnector);
-                        queryConnector.setQueryDefinition(new QueryDefinition(flowThrough.processActivator(), flow));
-                        flowThrough.processActivator().addQueryConnectorDefinition(queryConnector);
-                        break;
-                    }
-                }
-
+            for (QueryDefinitionRep queryDefinitionRep : flowThroughRep.overrideQueries()) {
+                queryDefinitionRep.process().flow(traverseName).moveQueryInputDefinitionTo(
+                        queryDefinitionRep.db(),
+                        flowThrough
+                );
             }
         }
     }
@@ -126,104 +119,71 @@ public class DFDToJavaFileConverter {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(getGeneratedAnnotation());
 
-        for (Flow flow : processActivator.getFlows()) {
+        for (FlowThroughAggregate flowThrough : processActivator.flows()) {
             MethodSpec.Builder methodSpecBuilder = MethodSpec
-                    .methodBuilder(flow.functionName().value())
+                    .methodBuilder(flowThrough.functionName().value())
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
             int i = 0;
-            for (Connector connector : flow.inputs()) {
+            for (Connector connector : flowThrough.inputs()) {
                 ClassName parameterClassName = connector.type();
-
-                String parameterName = "input" + i;
-                if (connector instanceof QueryConnector) {
-                    parameterName = "dbInput" + i;
-                }
-
-                methodSpecBuilder.addParameter(parameterClassName, parameterName);
+                methodSpecBuilder.addParameter(parameterClassName, "input" + i);
                 i++;
             }
 
-            ClassName returnClassName = flow.output().type();
+            for (QueryInput queryInput : flowThrough.queries()) {
+                ClassName parameterClassName = queryInput.queryInputDefinition().output();
+                methodSpecBuilder.addParameter(parameterClassName, "dbInput" + i);
+                i++;
+            }
+
+            ClassName returnClassName = flowThrough.output().type();
             methodSpecBuilder.returns(returnClassName);
 
             interfaceBuilder.addMethod(methodSpecBuilder.build());
-        }
 
-        // Databases queries definitions
-        for (QueryConnector queryInput : processActivator.queryConnectorsDefinitions()) {
-            Flow flow = queryInput.queryDefinition().flow();
+            // Databases queries definitions
+            for (QueryInputDefinition queryInputDefinition : flowThrough.queryInputDefinitions()) {
+                // Database that is going to be queried from
+                DatabaseActivatorAggregate database = queryInputDefinition.database();
 
-            // First add query interface
-            String databaseRequirementsName = databaseMap.get(queryInput.database()).typeSpec.name;
+                // First add query interface
+                String databaseRequirementsName = databaseMap.get(queryInputDefinition.database()).typeSpec.name;
 
-            // Find what the type of db should be used. Either querier, db or db requirements
-            ClassName databaseClassname;
-            if (queryInput.database().getQueriesClassName() != null) {
-                databaseClassname = queryInput.database().getQueriesClassName();
-            } else if (queryInput.database().qualifiedName().isPresent()) {
-                databaseClassname = ClassName.bestGuess(queryInput.database().qualifiedName().get().value());
-            } else {
-                databaseClassname = ClassName.bestGuess(dfdPackageName + "." + databaseRequirementsName);
-            }
-
-            String databaseName = queryInput.database().name().value();
-            String queryInterfaceName =  databaseName
-                    + "To"
-                    + processActivator.name().value()
-                    + flow.functionName().inPascalCase()
-                    + "Query";
-            TypeSpec queryInterfaceSpec = generateQuery(queryInput, queryInterfaceName, databaseClassname);
-            newFiles.add(JavaFile.builder(dfdPackageName, queryInterfaceSpec).build());
-
-            // Then add method to create that interface
-            ClassName returnClass = ClassName.bestGuess(dfdPackageName + "." + queryInterfaceSpec.name);
-            String queryMethodName = "query" + databaseName + flow.functionName().inPascalCase();
-            MethodSpec.Builder queryMethodSpecBuilder = MethodSpec
-                    .methodBuilder(queryMethodName)
-                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                    .returns(returnClass);
-
-            List<Connector> inputs = new ArrayList<>(flow.inputs());
-            TraverseName traverseName = null;
-            int processIndex = -1;
-            for (Map.Entry<TraverseName, List<ActivatorAggregate>> traverseNameSet : this.activators.traverses().entrySet()) {
-                for (ActivatorAggregate activatorAggregate : traverseNameSet.getValue()) {
-                    if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
-                        for (Flow processActivatorAggregateFlow : processActivatorAggregate.getFlows()) {
-                            if (processActivatorAggregateFlow.inputs().contains(queryInput)) {
-                                traverseName = traverseNameSet.getKey();
-                                processIndex = traverseNameSet.getValue().indexOf(processActivatorAggregate);
-                            }
-                        }
-                    }
+                // Find what the type of db should be used. Either querier, db or db requirements
+                ClassName databaseClassname;
+                if (database.getQueriesClassName() != null) {
+                    databaseClassname = database.getQueriesClassName();
+                } else if (database.qualifiedName().isPresent()) {
+                    databaseClassname = ClassName.bestGuess(database.qualifiedName().get().value());
+                } else {
+                    databaseClassname = ClassName.bestGuess(dfdPackageName + "." + databaseRequirementsName);
                 }
-            }
 
-            if (traverseName == null || processIndex == -1) {
-                throw new IllegalStateException();
-            }
+                String databaseName = database.name().value();
+                String queryInterfaceName = processActivator.getQueryInterfaceNameForDatabase(database, flowThrough);
 
-            for (int i = processIndex; i < this.activators.traverses().get(traverseName).size(); i++) {
-                ActivatorAggregate activatorAggregate = this.activators.traverses().get(traverseName).get(i);
-                if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
-                    inputs.remove(processActivatorAggregate.getFlow(traverseName).output());
-                }
-            }
+                TypeSpec queryInterfaceSpec = generateQuery(queryInputDefinition, queryInterfaceName, databaseClassname);
+                newFiles.add(JavaFile.builder(dfdPackageName, queryInterfaceSpec).build());
 
-            int j = 0;
-            for (Connector input2 : inputs) {
-                if (!(input2 instanceof QueryConnector)) {
-                    ClassName parameterClassName = input2.type();
+                ClassName returnClass = ClassName.bestGuess(dfdPackageName + "." + queryInterfaceSpec.name);
+                String queryMethodName = processActivator.getQueryMethodNameForDatabase(database, flowThrough);
+                MethodSpec.Builder queryMethodSpecBuilder = MethodSpec
+                        .methodBuilder(queryMethodName)
+                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                        .returns(returnClass);
+
+                List<Connector> inputsForQueryDefinition = flowThrough.inputs();
+                for (int j = 0; j < inputsForQueryDefinition.size(); j++) {
+                    Connector connector = inputsForQueryDefinition.get(j);
                     queryMethodSpecBuilder.addParameter(
-                            parameterClassName,
+                            connector.type(),
                             "input" + j
                     );
-                    j++;
                 }
-            }
 
-            interfaceBuilder.addMethod(queryMethodSpecBuilder.build());
+                interfaceBuilder.addMethod(queryMethodSpecBuilder.build());
+            }
         }
 
         newFiles.add(JavaFile.builder(dfdPackageName, interfaceBuilder.build()).build());
@@ -240,17 +200,8 @@ public class DFDToJavaFileConverter {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(getGeneratedAnnotation());
 
-        databaseActivator.stores().forEach((flowName, connector) -> {
-            ParameterSpec inputParameter = ParameterSpec.builder(connector.type(), "input")
-                    .build();
-
-            MethodSpec storeMethod = MethodSpec.methodBuilder(flowName.value())
-                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                    .addParameter(inputParameter)
-                    .build();
-
-            databaseSpec.addMethod(storeMethod);
-        });
+        List<MethodSpec> stores = toOutputMethods(new ArrayList<>(databaseActivator.outputs().values()));
+        databaseSpec.addMethods(stores);
 
         if (databaseActivator.getQueriesClassName() != null) {
             MethodSpec getQueriesInstance = MethodSpec.methodBuilder("getQuerierInstance")
@@ -264,8 +215,8 @@ public class DFDToJavaFileConverter {
         return JavaFile.builder(dfdPackageName, databaseSpec.build()).build();
     }
 
-    private TypeSpec generateQuery(QueryConnector queryConnector, String queryInterfaceName, ClassName databaseClassname) {
-        ClassName returnQueryType = queryConnector.type();
+    private TypeSpec generateQuery(QueryInputDefinition queryInputDefinition, String queryInterfaceName, ClassName databaseClassname) {
+        ClassName returnQueryType = queryInputDefinition.output();
 
         MethodSpec queryMethod = MethodSpec
                 .methodBuilder("createQuery")
@@ -280,6 +231,23 @@ public class DFDToJavaFileConverter {
                 .addMethod(queryMethod)
                 .addModifiers(Modifier.PUBLIC)
                 .build();
+    }
+
+    public static List<MethodSpec> toOutputMethods(List<TraverseOutput> outputs) {
+        List<MethodSpec> outputMethods = new ArrayList<>();
+        outputs.forEach(traverseOutput -> {
+            var methodSpecBuilder = MethodSpec.methodBuilder(traverseOutput.functionName().value())
+                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+
+            for (int i = 0; i < traverseOutput.inputs().size(); i++) {
+                Connector connector = traverseOutput.inputs().get(i);
+                methodSpecBuilder.addParameter(connector.type(), "input" + i);
+            }
+
+            outputMethods.add(methodSpecBuilder.build());
+        });
+
+        return outputMethods;
     }
 
     public static AnnotationSpec getGeneratedAnnotation() {

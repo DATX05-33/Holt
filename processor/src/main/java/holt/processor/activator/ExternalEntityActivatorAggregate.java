@@ -7,63 +7,69 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public final class ExternalEntityActivatorAggregate extends ActivatorAggregate {
+public final class ExternalEntityActivatorAggregate extends ActivatorAggregate implements OutputActivator {
 
-    private final Map<TraverseName, Flow> startFlows;
-
-    /**
-     * If null, then store.
-     */
-    private final Map<TraverseName, Connector> endConnections;
+    private final Map<TraverseName, Connector> starts;
+    private final Map<TraverseName, TraverseOutput> ends;
 
     public ExternalEntityActivatorAggregate(ActivatorName activatorName) {
         super(activatorName, new ActivatorName("Abstract" + activatorName.value()));
-        startFlows = new HashMap<>();
-        endConnections = new HashMap<>();
+        starts = new HashMap<>();
+        ends = new HashMap<>();
     }
 
-    public void addStartFlow(TraverseName traverseName) {
-        Flow flow = new Flow();
-        this.startFlows.put(traverseName, flow);
+    public void addStart(TraverseName traverseName) {
+        Connector connector = new Connector();
+        this.starts.put(traverseName, connector);
     }
 
-    public Connector getOutput(TraverseName traverseName) {
-        return this.startFlows.get(traverseName).output();
+    public Connector getStartConnector(TraverseName traverseName) {
+        return this.starts.get(traverseName);
     }
 
     public void setOutputType(TraverseName traverseName, ClassName startOutput) {
-        this.startFlows.get(traverseName).setOutputType(startOutput);
+        this.starts.get(traverseName).setType(startOutput);
     }
 
-    public void addEnd(TraverseName traverseName, Connector connector) {
-        this.endConnections.put(traverseName, connector);
+    public void addOutput(TraverseName traverseName) {
+        TraverseOutput traverseOutput = new TraverseOutput(FunctionName.of(traverseName));
+        this.ends.put(traverseName, traverseOutput);
     }
 
-    public Map<TraverseName, Flow> starts() {
-        return this.startFlows;
+    @Override
+    public void addInputToTraverseOutput(TraverseName traverseName, Connector connector) {
+        this.ends.get(traverseName).addInput(connector);
     }
 
-    public Optional<Connector> end(TraverseName traverseName) {
-        return Optional.ofNullable(this.endConnections.get(traverseName));
-    }
-
-    public Map<TraverseName, Connector> onlyEnds() {
-        return this.endConnections.entrySet()
+    /**
+     *
+     * @return TraverseEnds that doesn't originate in this external entity
+     */
+    @Override
+    public Map<TraverseName, TraverseOutput> outputs() {
+        return this.ends.entrySet()
                 .stream()
                 // Remove ends that also is a start
-                .filter(entry -> !startFlows.containsKey(entry.getKey()))
+                .filter(entry -> !starts.containsKey(entry.getKey()))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue
                 ));
     }
 
+    public Map<TraverseName, Connector> starts() {
+        return this.starts;
+    }
+
+    public Optional<TraverseOutput> end(TraverseName traverseName) {
+        return Optional.ofNullable(this.ends.get(traverseName));
+    }
+
     @Override
     public String toString() {
         return "ExternalEntityActivatorAggregate{" +
-                "info=" + super.toString() +
-                ", startFlows=" + startFlows +
-                ", endConnections=" + endConnections +
+                "starts=" + starts +
+                ", ends=" + ends +
                 '}';
     }
 }

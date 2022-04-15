@@ -244,7 +244,7 @@ public class DFDsProcessor extends AbstractProcessor {
                 // This is used to generate code. Databases are not needed,
                 // since each processor has a reference to all relevant
                 // databases through Connector
-                if (!(from instanceof DatabaseActivatorAggregate)) {
+                if (from instanceof ExternalEntityActivatorAggregate || from instanceof ProcessActivatorAggregate) {
                     if (!order.contains(from)) {
                         order.add(from);
                     }
@@ -252,15 +252,31 @@ public class DFDsProcessor extends AbstractProcessor {
 
                 // Add to traverses
                 if (from instanceof ProcessActivatorAggregate fromProcessActivator) {
-                    fromProcessActivator.addFlow(traverseName);
+                    fromProcessActivator.createFlowThrough(traverseName);
                 } else if (from instanceof ExternalEntityActivatorAggregate fromExternalEntityActivator) {
-                    fromExternalEntityActivator.addStartFlow(traverseName);
+                    fromExternalEntityActivator.addStart(traverseName);
                 }
 
-                if (to instanceof ExternalEntityActivatorAggregate || to instanceof DatabaseActivatorAggregate) {
-                    // If the last is not the same activator. This is done to make sure Joins work.
-                    if (!order.get(order.size() - 1).equals(to)) {
+                if (to instanceof OutputActivator outputActivator) {
+                    // if it is going back to the start, then it can only be added one more.
+                    if (to.equals(order.get(0))) {
+                        for (int i = 1; i < order.size(); i++) {
+                            if (order.get(i).equals(to)) {
+                                System.out.println(order.stream().map(ActivatorAggregate::name).map(ActivatorName::toString).collect(Collectors.joining(", ")));
+                                throw new IllegalStateException("Cannot add the start external entity more than once. "
+                                        + "There's is just one value that can be returned.");
+                            }
+                        }
                         order.add(to);
+                        outputActivator.addOutput(traverseName);
+                    }
+                    // If it already exists, move it the back to ensure it's called only when all inputs have been defined.
+                    else if (order.contains(to)) {
+                        order.remove(to);
+                        order.add(to);
+                    } else {
+                        order.add(to);
+                        outputActivator.addOutput(traverseName);
                     }
                 }
             }
@@ -273,22 +289,23 @@ public class DFDsProcessor extends AbstractProcessor {
 
                 Connector connector = null;
                 if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate fromExternalEntityActivator) {
-                    connector = fromExternalEntityActivator.getOutput(traverseName);
+                    connector = fromExternalEntityActivator.getStartConnector(traverseName);
                 } else if (fromActivatorAggregate instanceof ProcessActivatorAggregate fromProcessActivator) {
                     connector = fromProcessActivator.getOutput(traverseName);
                 } else if (fromActivatorAggregate instanceof DatabaseActivatorAggregate fromDatabaseActivator) {
                     // If fromActivatorAggregate is a database, then the 'to' must be a Process.
                     ProcessActivatorAggregate toProcessActivator = (ProcessActivatorAggregate) toActivatorAggregate;
-                    connector = new QueryConnector(fromDatabaseActivator, toProcessActivator, toProcessActivator.getFlow(traverseName));
-                    toProcessActivator.addQueryConnectorDefinition((QueryConnector) connector);
+                    toProcessActivator.addQueryInputToFlow(traverseName, fromDatabaseActivator);
+                }
+
+                if (connector == null) {
+                    continue;
                 }
 
                 if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
                     toProcessActivator.addInputToFlow(traverseName, connector);
-                } else if (toActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                    externalEntityActivator.addEnd(traverseName, connector);
-                } else if (toActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
-                    databaseActivator.addStore(traverseName, connector);
+                } else if (toActivatorAggregate instanceof OutputActivator outputActivator) {
+                    outputActivator.addInputToTraverseOutput(traverseName, connector);
                 }
             }
         }

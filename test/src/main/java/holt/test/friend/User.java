@@ -13,7 +13,7 @@ import static holt.test.friend.Main.GF;
 @Traverse(
         name = AF,
         flowStartType = Name.class,
-        order = {"AFwow1", "AFwow3", "wow1", "wow2", "AFwow2"})
+        order = {"AFwow1", "AFwow3", "wow1", "wow5", "wow2", "AFwow2"})
 @Traverse(
         name = GF,
         flowStartType = FriendId.class,
