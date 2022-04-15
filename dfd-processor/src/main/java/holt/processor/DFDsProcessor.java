@@ -2,6 +2,7 @@ package holt.processor;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
+import holt.PADFDEnhancer;
 import holt.processor.activator.*;
 import holt.processor.annotation.*;
 import holt.processor.annotation.representation.FlowThroughRep;

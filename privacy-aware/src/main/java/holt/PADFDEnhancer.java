@@ -1,10 +1,12 @@
-package holt.processor;
+package holt;
 
-import holt.processor.PADFDBuilder.Activator;
+import holt.processor.DFDOrderedRep;
+import holt.processor.DFDRep;
 
 import java.util.List;
 
-import static holt.processor.PADFDBuilder.Activator.Type.*;
+import static holt.PADFDBuilder.Activator;
+import static holt.PADFDBuilder.Activator.Type.*;
 
 public final class PADFDEnhancer {
 

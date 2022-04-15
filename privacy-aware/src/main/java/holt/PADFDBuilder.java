@@ -1,4 +1,7 @@
-package holt.processor;
+package holt;
+
+import holt.processor.DFDOrderedRep;
+import holt.processor.DFDRep;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +30,7 @@ public class PADFDBuilder {
                 .collect(
                         Collectors.toMap(
                                 DFDRep.Activator::id,
-                                activator -> new PADFDBuilder.Activator(
+                                activator -> new Activator(
                                         activator.id(),
                                         activator.name(),
                                         Activator.Type.fromDFDActivatorType(activator.type())

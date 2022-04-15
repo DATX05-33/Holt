@@ -8,4 +8,4 @@
  */
 
 rootProject.name = 'Holt'
-include('test', 'core', 'processor', 'graph-generator')
+include('test', 'privacy-aware', 'dfd-processor', 'dfd-parser')

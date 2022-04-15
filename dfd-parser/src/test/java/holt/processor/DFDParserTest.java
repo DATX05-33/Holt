@@ -23,8 +23,6 @@ public class DFDParserTest {
         var orderedDFD = DFDParser.fromDrawIO(dfd, traverseOrders);
         System.out.println(orderedDFD);
         System.out.println("____________________________________________");
-        var padfd = PADFDEnhancer.enhance(orderedDFD);
-        System.out.println(padfd);
     }
 
     @Test
@@ -38,8 +36,6 @@ public class DFDParserTest {
 
         System.out.println(orderedDFD);
         System.out.println("____________________________________________");
-        var padfd = PADFDEnhancer.enhance(orderedDFD);
-        System.out.println(padfd);
     }
 
 }
