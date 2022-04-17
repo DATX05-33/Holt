@@ -8,4 +8,13 @@
  */
 
 rootProject.name = 'Holt'
-include('test', 'privacy-aware', 'dfd-processor', 'dfd-parser')
+include(
+        'test',
+        'processor',
+        'dfd-parser',
+        'padfd-transformation',
+        'graph',
+        'dfd-domain',
+        'padfd-domain',
+        'javafile-generator'
+)
