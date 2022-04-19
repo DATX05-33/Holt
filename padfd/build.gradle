@@ -9,12 +9,6 @@ plugins {
 dependencies {
     implementation (
             project(':dfd'),
-            project(':padfd'),
-            project(':graph'),
-            project(':javafile-generator')
+            project(':graph')
     )
-}
-
-test {
-    useJUnitPlatform()
 }

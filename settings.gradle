@@ -11,10 +11,8 @@ rootProject.name = 'Holt'
 include(
         'test',
         'processor',
-        'dfd-parser',
-        'padfd-transformation',
+        'dfd',
         'graph',
-        'dfd-domain',
-        'padfd-domain',
+        'padfd',
         'javafile-generator'
 )

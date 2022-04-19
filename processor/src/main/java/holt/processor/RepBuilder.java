@@ -1,20 +1,18 @@
 package holt.processor;
 
-import holt.DatabaseActivatorAggregate;
-import holt.ExternalEntityActivatorAggregate;
-import holt.ProcessActivatorAggregate;
-import holt.QualifiedName;
-import holt.TraverseName;
-import holt.processor.AnnotationValueUtils;
-import holt.processor.DFDsProcessor;
+import holt.activator.DatabaseActivatorAggregate;
+import holt.activator.ExternalEntityActivatorAggregate;
+import holt.activator.ProcessActivatorAggregate;
+import holt.activator.QualifiedName;
+import holt.activator.TraverseName;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Query;
 import holt.processor.annotation.QueryDefinition;
 import holt.processor.annotation.Traverse;
-import holt.representation.FlowThroughRep;
-import holt.representation.QueryDefinitionRep;
-import holt.representation.QueryRep;
-import holt.representation.TraverseRep;
+import holt.applier.FlowThroughRep;
+import holt.applier.QueryDefinitionRep;
+import holt.applier.QueryRep;
+import holt.applier.TraverseRep;
 
 import java.util.Arrays;
 
@@ -33,7 +31,7 @@ public final class RepBuilder {
         );
     }
 
-    public static FlowThroughRep createFlowThroughRep(ProcessActivatorAggregate processActivator, DFDsProcessor.ConvertersResult convertersResult, FlowThrough flowThrough, DFDsProcessor processor) {
+    public static FlowThroughRep createFlowThroughRep(ProcessActivatorAggregate processActivator, DFDsProcessor.ProcessorResults processorResults, FlowThrough flowThrough, DFDsProcessor processor) {
         return new FlowThroughRep(
                 processActivator,
                 new TraverseName(flowThrough.traverse()),
@@ -45,7 +43,7 @@ public final class RepBuilder {
                         .map(query -> createQueryRep(query, processor))
                         .toList(),
                 Arrays.stream(flowThrough.overrideQueries())
-                        .map(queryDefinition -> createQueryDefinitionRep(queryDefinition, convertersResult, processor))
+                        .map(queryDefinition -> createQueryDefinitionRep(queryDefinition, processorResults, processor))
                         .toList()
         );
     }
@@ -61,7 +59,7 @@ public final class RepBuilder {
         );
     }
 
-    public static QueryDefinitionRep createQueryDefinitionRep(QueryDefinition queryDefinition, DFDsProcessor.ConvertersResult convertersResult, DFDsProcessor processor) {
+    public static QueryDefinitionRep createQueryDefinitionRep(QueryDefinition queryDefinition, DFDsProcessor.ProcessorResults processorResults, DFDsProcessor processor) {
         QualifiedName processClassName = new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
                 processor, queryDefinition, QueryDefinition::process
         ).toString());
@@ -69,8 +67,8 @@ public final class RepBuilder {
                 processor, queryDefinition, QueryDefinition::db
         ).toString());
 
-        ProcessActivatorAggregate processActivatorAggregate = (ProcessActivatorAggregate) convertersResult.getActivatorAggregateByClassName(processClassName);
-        DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) convertersResult.getActivatorAggregateByClassName(dbClassName);
+        ProcessActivatorAggregate processActivatorAggregate = (ProcessActivatorAggregate) processorResults.getActivatorAggregateByClassName(processClassName);
+        DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) processorResults.getActivatorAggregateByClassName(dbClassName);
 
         return new QueryDefinitionRep(
                 databaseActivatorAggregate,

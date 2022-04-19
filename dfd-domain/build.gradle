@@ -1,7 +1,0 @@
-plugins {
-    id 'Holt.java-library-conventions'
-}
-
-dependencies {
-    implementation project(':dfd-parser')
-}

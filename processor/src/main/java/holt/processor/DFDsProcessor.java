@@ -1,23 +1,29 @@
 package holt.processor;
 
-import holt.ActivatorAggregate;
-import holt.ActivatorName;
-import holt.ConnectedClass;
-import holt.Connector;
-import holt.DFDName;
-import holt.DFDToJavaFileConverter;
+import holt.DFDOrderedRep;
+import holt.DFDRep;
+import holt.activator.ActivatorAggregate;
+import holt.activator.ActivatorName;
+import holt.activator.ConnectedClass;
+import holt.activator.Connector;
+import holt.activator.DFDName;
+import holt.JavaFileGenerator;
 import holt.DFDToPADFDConverter;
-import holt.DatabaseActivatorAggregate;
-import holt.Domain;
-import holt.ExternalEntityActivatorAggregate;
-import holt.OutputActivator;
-import holt.ProcessActivatorAggregate;
-import holt.QualifiedName;
-import holt.TraverseName;
+import holt.activator.DatabaseActivatorAggregate;
+import holt.activator.Domain;
+import holt.activator.ExternalEntityActivatorAggregate;
+import holt.activator.OutputActivator;
+import holt.activator.ProcessActivatorAggregate;
+import holt.activator.QualifiedName;
+import holt.activator.TraverseName;
+import holt.applier.FlowThroughApplier;
+import holt.applier.QueriesForApplier;
+import holt.applier.TraverseApplier;
+import holt.parser.DFDParser;
 import holt.processor.annotation.*;
-import holt.representation.FlowThroughRep;
-import holt.representation.QueriesForRep;
-import holt.representation.TraverseRep;
+import holt.applier.FlowThroughRep;
+import holt.applier.QueriesForRep;
+import holt.applier.TraverseRep;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -66,50 +72,50 @@ public class DFDsProcessor extends AbstractProcessor {
         }
 
         // Converters that will convert DFD to Java Files
-        ConvertersResult convertersResult = null;
+        ProcessorResults processorResults;
         try {
-            convertersResult = getConverters(environment);
+            processorResults = readBaseAnnotations(environment);
         } catch (DFDParser.NotWellFormedDFDException e) {
             e.printStackTrace();
             throw new IllegalStateException();
         }
 
         // Annotations that will be applied to the converters
-        Map<DFDName, List<TraverseRep>> transverseRepMap = getTraverses(convertersResult, environment);
-        Map<DFDName, List<FlowThroughRep>> flowThroughRepMap = getFlowThroughs(convertersResult, environment);
-        Map<DFDName, List<QueriesForRep>> queriesForRepMap = getQueriesFor(convertersResult, environment);
+        Map<DFDName, List<TraverseRep>> transverseRepMap = getTraverses(processorResults, environment);
+        Map<DFDName, List<FlowThroughRep>> flowThroughRepMap = getFlowThroughs(processorResults, environment);
+        Map<DFDName, List<QueriesForRep>> queriesForRepMap = getQueriesFor(processorResults, environment);
 
-        for (DFDToJavaFileConverter converter : convertersResult.converters) {
-            DFDName dfdName = converter.getDFDName();
+        for (Domain domain : processorResults.domains) {
+            DFDName dfdName = domain.name();
 
             // Apply annotations to dfd
             if (transverseRepMap.containsKey(dfdName)) {
-                converter.applyTraverses(transverseRepMap.get(dfdName));
+                TraverseApplier.applyTraverseRep(transverseRepMap.get(dfdName));
             }
 
             if (flowThroughRepMap.containsKey(dfdName)) {
-                converter.applyFlowThrough(flowThroughRepMap.get(dfdName));
+                FlowThroughApplier.applyFlowThrough(flowThroughRepMap.get(dfdName));
             }
 
             if (queriesForRepMap.containsKey(dfdName)) {
-                converter.applyQueriesFor(queriesForRepMap.get(dfdName));
+                QueriesForApplier.applyQueriesFor(queriesForRepMap.get(dfdName));
             }
 
-            converter.saveJavaFiles(processingEnv);
+            JavaFileGenerator.saveJavaFiles(domain, processingEnv);
         }
 
         return true;
     }
 
-    public static final class ConvertersResult {
-        private final List<DFDToJavaFileConverter> converters;
+    public static final class ProcessorResults {
+        private final List<Domain> domains;
         private final Map<ActivatorName, DFDName> activatorToDFDMap;
         private final Map<Element, ActivatorAggregate> elementToActivatorAggregate;
 
-        private ConvertersResult(List<DFDToJavaFileConverter> converters,
-                                 Map<ActivatorName, DFDName> activatorToDFDMap,
-                                 Map<Element, ActivatorAggregate> elementToActivatorAggregate) {
-            this.converters = converters;
+        public ProcessorResults(List<Domain> domains,
+                                Map<ActivatorName, DFDName> activatorToDFDMap,
+                                Map<Element, ActivatorAggregate> elementToActivatorAggregate) {
+            this.domains = domains;
             this.activatorToDFDMap = activatorToDFDMap;
             this.elementToActivatorAggregate = elementToActivatorAggregate;
         }
@@ -144,8 +150,8 @@ public class DFDsProcessor extends AbstractProcessor {
 
     }
 
-    private ConvertersResult getConverters(RoundEnvironment environment) throws DFDParser.NotWellFormedDFDException {
-        List<DFDToJavaFileConverter> converters = new ArrayList<>();
+    private ProcessorResults readBaseAnnotations(RoundEnvironment environment) throws DFDParser.NotWellFormedDFDException {
+        List<Domain> domains = new ArrayList<>();
         List<ActivatorAggregate> allActivatorAggregates = new ArrayList<>();
         Map<Element, ActivatorAggregate> elementToActivatorAggregateMap = new HashMap<>();
         Map<ActivatorName, DFDName> activatorToDFDMap = new HashMap<>();
@@ -192,21 +198,20 @@ public class DFDsProcessor extends AbstractProcessor {
                     connectAggregatesForDFD(orderedDFD, idToActivator)
             );
 
-            converters.add(
-                        new DFDToJavaFileConverter(
-                                dfdName,
-                                new Domain(
-                                        new ArrayList<>(idToActivator.values()),
-                                        traverses.get(dfdName)
-                                )
-                        )
-                );
+            domains.add(
+                    new Domain(
+                            dfdName,
+                            new ArrayList<>(idToActivator.values()),
+                            traverses.get(dfdName)
+                    )
+            );
         }
 
-        logUnannotatedActivators(elementToActivatorAggregateMap, allActivatorAggregates);
+        //TODO: This should be logged after padfd enhancer s
+        //logUnannotatedActivators(elementToActivatorAggregateMap, allActivatorAggregates);
 
-        return new ConvertersResult(
-                converters,
+        return new ProcessorResults(
+                domains,
                 activatorToDFDMap,
                 elementToActivatorAggregateMap
         );
@@ -341,16 +346,16 @@ public class DFDsProcessor extends AbstractProcessor {
         }
     }
 
-    private Map<DFDName, List<FlowThroughRep>> getFlowThroughs(ConvertersResult convertersResult,
+    private Map<DFDName, List<FlowThroughRep>> getFlowThroughs(ProcessorResults processorResults,
                                                                RoundEnvironment environment) {
-        Map<ActivatorName, DFDName> activatorToDFDMap = convertersResult.activatorToDFDMap;
+        Map<ActivatorName, DFDName> activatorToDFDMap = processorResults.activatorToDFDMap;
 
         Map<DFDName, List<FlowThroughRep>> dfdToFlowThroughRepMap = new HashMap<>();
         for (var flowThroughPair : getRepeatableAnnotations(environment, FlowThrough.class, FlowThroughs.class, FlowThroughs::value)) {
             FlowThrough flowThrough = flowThroughPair.annotation;
             TypeElement typeElement = flowThroughPair.typeElement;
 
-            ProcessActivatorAggregate processActivator = (ProcessActivatorAggregate) convertersResult.getActivatorAggregate(typeElement);
+            ProcessActivatorAggregate processActivator = (ProcessActivatorAggregate) processorResults.getActivatorAggregate(typeElement);
             processActivator.setConnectedClass(
                     new ConnectedClass(
                             new QualifiedName(typeElement.getQualifiedName().toString()),
@@ -374,7 +379,7 @@ public class DFDsProcessor extends AbstractProcessor {
                     .add(
                             createFlowThroughRep(
                                     processActivator,
-                                    convertersResult,
+                                    processorResults,
                                     flowThrough,
                                     this
                             )
@@ -384,10 +389,10 @@ public class DFDsProcessor extends AbstractProcessor {
         return dfdToFlowThroughRepMap;
     }
 
-    private Map<DFDName, List<QueriesForRep>> getQueriesFor(ConvertersResult convertersResult,
+    private Map<DFDName, List<QueriesForRep>> getQueriesFor(ProcessorResults processorResults,
                                                             RoundEnvironment environment) {
         Map<DFDName, List<QueriesForRep>> queriesForRepMap = new HashMap<>();
-        var activatorToDFDMap = convertersResult.activatorToDFDMap;
+        var activatorToDFDMap = processorResults.activatorToDFDMap;
 
         for (Element element : environment.getElementsAnnotatedWith(QueriesFor.class)) {
             TypeElement typeElement = (TypeElement) element;
@@ -398,7 +403,7 @@ public class DFDsProcessor extends AbstractProcessor {
                     ).toString()
             );
 
-            DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) convertersResult.getActivatorAggregateByClassName(queriesForClassName);
+            DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) processorResults.getActivatorAggregateByClassName(queriesForClassName);
             QueriesForRep queriesForRep = new QueriesForRep(databaseActivatorAggregate, new QualifiedName(typeElement.getQualifiedName().toString()));
 
             DFDName dfdName = activatorToDFDMap.get(databaseActivatorAggregate.name());
@@ -514,15 +519,15 @@ public class DFDsProcessor extends AbstractProcessor {
         return traverseOrder;
     }
 
-    private Map<DFDName, List<TraverseRep>> getTraverses(ConvertersResult convertersResult, RoundEnvironment environment) {
-        Map<ActivatorName, DFDName> activatorToDFDMap = convertersResult.activatorToDFDMap;
+    private Map<DFDName, List<TraverseRep>> getTraverses(ProcessorResults processorResults, RoundEnvironment environment) {
+        Map<ActivatorName, DFDName> activatorToDFDMap = processorResults.activatorToDFDMap;
 
         Map<DFDName, List<TraverseRep>> dfdTraverseRepMap = new HashMap<>();
         for (var traversePair : getRepeatableAnnotations(environment, Traverse.class, Traverses.class, Traverses::value)) {
             Traverse annotation = traversePair.annotation;
             TypeElement typeElement = traversePair.typeElement;
 
-            ExternalEntityActivatorAggregate externalEntityActivator = (ExternalEntityActivatorAggregate) convertersResult.getActivatorAggregate(typeElement);
+            ExternalEntityActivatorAggregate externalEntityActivator = (ExternalEntityActivatorAggregate) processorResults.getActivatorAggregate(typeElement);
             externalEntityActivator.setConnectedClass(
                     new ConnectedClass(
                             new QualifiedName(typeElement.getQualifiedName().toString()),
