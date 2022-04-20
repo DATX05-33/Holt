@@ -63,16 +63,10 @@ public class JavaFileGenerator {
     private static List<JavaFile> convertToJavaFiles(Domain domain) {
         String dfdPackageName = PACKAGE_NAME + "." + domain.name();
         List<JavaFile> javaFiles = new ArrayList<>();
-        Map<DatabaseActivatorAggregate, JavaFile> databaseMap = new HashMap<>();
 
         domain
                 .databases()
-                .forEach(database -> {
-                    JavaFile databaseJavaFile = DatabaseJavaFileGenerator.generate(database, dfdPackageName);
-
-                    javaFiles.add(databaseJavaFile);
-                    databaseMap.put(database, databaseJavaFile);
-                });
+                .forEach(database -> javaFiles.add(DatabaseJavaFileGenerator.generate(database, dfdPackageName)));
 
         domain
                 .externalEntities()
@@ -81,7 +75,7 @@ public class JavaFileGenerator {
         domain
                 .processes()
                 .forEach(process -> javaFiles.addAll(
-                        ProcessJavaFileGenerator.generate(process, dfdPackageName, databaseMap)
+                        ProcessJavaFileGenerator.generate(process, dfdPackageName)
                 ));
 
         return javaFiles;

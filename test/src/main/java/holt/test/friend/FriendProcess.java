@@ -55,7 +55,7 @@ public class FriendProcess implements FriendProcessRequirements {
 
     @Override
     public FriendsDBToFriendProcessFormatFriendQuery queryFriendsDBFormatFriend(FriendId input0) {
-        return db -> null;
+        return db -> db.getById(input0);
     }
 
 }

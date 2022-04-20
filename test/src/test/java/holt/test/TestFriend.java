@@ -1,6 +1,7 @@
 package holt.test;
 
 import holt.processor.generation.friend.FriendsDBToFriendProcessFormatFriendQuery;
+import holt.processor.generation.friend.SpecialDBToFriendProcessAddFriendQuery;
 import holt.test.friend.FriendsDBQuerier;
 import holt.test.friend.User;
 import holt.test.friend.model.*;
@@ -48,7 +49,7 @@ public class TestFriend {
     public void test_FormatFriendProcessor() {
         ClassAssert.assertThat(findClass(FriendProcessRequirementsInterface))
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT, Modifier.INTERFACE)
-                .hasMethods("addFriend", "queryFriendsDBFormatFriend", "formatFriend");
+                .hasMethods("addFriend", "queryFriendsDBFormatFriend", "formatFriend", "querySpecialDBAddFriend");
 
         MethodAssert.assertThat(findMethod(FriendProcessRequirementsInterface, "addFriend"))
                 .hasReturnType(NewFriend.class)
@@ -58,6 +59,11 @@ public class TestFriend {
         MethodAssert.assertThat(findMethod(FriendProcessRequirementsInterface, "queryFriendsDBFormatFriend"))
                 .hasReturnType(FriendsDBToFriendProcessFormatFriendQuery.class)
                 .hasParameters(FriendId.class)
+                .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+
+        MethodAssert.assertThat(findMethod(FriendProcessRequirementsInterface, "querySpecialDBAddFriend"))
+                .hasReturnType(SpecialDBToFriendProcessAddFriendQuery.class)
+                .hasParameters(Name.class)
                 .hasModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
 
         MethodAssert.assertThat(findMethod(FriendProcessRequirementsInterface, "formatFriend"))

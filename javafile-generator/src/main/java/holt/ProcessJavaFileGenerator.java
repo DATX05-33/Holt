@@ -23,7 +23,7 @@ public final class ProcessJavaFileGenerator {
 
     private ProcessJavaFileGenerator() { }
 
-    public static List<JavaFile> generate(ProcessActivatorAggregate processActivator, String dfdPackageName, Map<DatabaseActivatorAggregate, JavaFile> databaseMap) {
+    public static List<JavaFile> generate(ProcessActivatorAggregate processActivator, String dfdPackageName) {
         List<JavaFile> newFiles = new ArrayList<>();
 
         TypeSpec.Builder interfaceBuilder = TypeSpec.interfaceBuilder(processActivator.requirementsName().value())
@@ -61,9 +61,6 @@ public final class ProcessJavaFileGenerator {
                 // Database that is going to be queried from
                 DatabaseActivatorAggregate database = queryInputDefinition.database();
 
-                // First add query interface
-                String databaseRequirementsName = databaseMap.get(queryInputDefinition.database()).typeSpec.name;
-
                 // Find what the type of db should be used. Either querier, db or db requirements
                 ClassName databaseClassname;
                 if (database.getQueriesClassName() != null) {
@@ -71,12 +68,13 @@ public final class ProcessJavaFileGenerator {
                 } else if (database.connectedClass().isPresent()) {
                     databaseClassname = toClassName(database.connectedClass().get().qualifiedName());
                 } else {
+                    String databaseRequirementsName = queryInputDefinition.database().requirementsName().value();
                     databaseClassname = toClassName(dfdPackageName + "." + databaseRequirementsName);
                 }
 
-                String databaseName = database.name().value();
                 String queryInterfaceName = processActivator.getQueryInterfaceNameForDatabase(database, flowThrough);
 
+                // Generate the query interface
                 TypeSpec queryInterfaceSpec = generateQuery(queryInputDefinition, queryInterfaceName, databaseClassname);
                 newFiles.add(JavaFile.builder(dfdPackageName, queryInterfaceSpec).build());
 
