@@ -39,6 +39,7 @@ public final class RepBuilder {
                 new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
                         processor, flowThrough, FlowThrough::outputType
                 ).toString()),
+                flowThrough.outputIsCollection(),
                 Arrays.stream(flowThrough.queries())
                         .map(query -> createQueryRep(query, processor))
                         .toList(),

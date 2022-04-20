@@ -77,8 +77,9 @@ public final class FlowThroughAggregate {
         );
     }
 
-    public void setOutputType(QualifiedName output) {
+    public void setOutputType(QualifiedName output, boolean isCollection) {
         this.output.setType(output);
+        this.output.setCollection(isCollection);
     }
 
     public Connector output() {

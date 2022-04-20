@@ -2,31 +2,17 @@ package holt;
 
 import com.squareup.javapoet.*;
 import holt.activator.Connector;
-import holt.activator.DFDName;
-import holt.activator.DatabaseActivatorAggregate;
 import holt.activator.Domain;
-import holt.activator.ExternalEntityActivatorAggregate;
-import holt.activator.FlowThroughAggregate;
-import holt.activator.FunctionName;
-import holt.activator.ProcessActivatorAggregate;
 import holt.activator.QualifiedName;
-import holt.activator.QueryInput;
-import holt.activator.QueryInputDefinition;
-import holt.activator.TraverseName;
 import holt.activator.TraverseOutput;
-import holt.applier.FlowThroughRep;
-import holt.applier.QueriesForRep;
-import holt.applier.QueryDefinitionRep;
-import holt.applier.TraverseRep;
 
 import javax.annotation.processing.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public class JavaFileGenerator {
 
@@ -40,7 +26,7 @@ public class JavaFileGenerator {
 
             for (int i = 0; i < traverseOutput.inputs().size(); i++) {
                 Connector connector = traverseOutput.inputs().get(i);
-                methodSpecBuilder.addParameter(toClassName(connector.type()), "input" + i);
+                methodSpecBuilder.addParameter(toTypeName(connector), "input" + i);
             }
 
             outputMethods.add(methodSpecBuilder.build());
@@ -87,11 +73,22 @@ public class JavaFileGenerator {
                 .build();
     }
 
-    public static ClassName toClassName(QualifiedName qualifiedName) {
+    public static TypeName toTypeName(QualifiedName qualifiedName) {
         return ClassName.bestGuess(qualifiedName.value());
     }
 
-    public static ClassName toClassName(String qualifiedName) {
+    public static TypeName toTypeName(Connector connector) {
+        TypeName connectorTypeName = toTypeName(connector.type());
+        if (connector.isCollection()) {
+            ClassName collection = ClassName.get(Collection.class);
+            return ParameterizedTypeName.get(collection, connectorTypeName);
+        } else {
+            return connectorTypeName;
+        }
+
+    }
+
+    public static TypeName toTypeName(String qualifiedName) {
         return ClassName.bestGuess(qualifiedName);
     }
 }

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static holt.JavaFileGenerator.getGeneratedAnnotation;
-import static holt.JavaFileGenerator.toClassName;
+import static holt.JavaFileGenerator.toTypeName;
 
 public final class ExternalEntityJavaFileGenerator {
 
@@ -202,7 +202,7 @@ public final class ExternalEntityJavaFileGenerator {
         String activatorReferenceVar = activatorVariableRef + "Ref";
         activatorToVariable.put(activatorAggregate, activatorReferenceVar);
 
-        ClassName activatorClassName = toClassName(connectedClass.qualifiedName());
+        TypeName activatorClassName = toTypeName(connectedClass.qualifiedName());
         FieldSpec fieldSpec = FieldSpec.builder(
                 activatorClassName,
                 activatorReferenceVar,
@@ -233,7 +233,7 @@ public final class ExternalEntityJavaFileGenerator {
             String queriesReferenceVar = databaseActivatorAggregate.getQueriesClassName().simpleName() + "Ref";
             queriesReferenceVar = queriesReferenceVar.substring(0, 1).toLowerCase() + queriesReferenceVar.substring(1);
             FieldSpec queriesFieldSpec = FieldSpec.builder(
-                    toClassName(databaseActivatorAggregate.getQueriesClassName()),
+                    toTypeName(databaseActivatorAggregate.getQueriesClassName()),
                     queriesReferenceVar,
                     Modifier.PRIVATE,
                     Modifier.FINAL
@@ -257,7 +257,7 @@ public final class ExternalEntityJavaFileGenerator {
         var activatorToVariable = state.activatorToVariable;
         var queryInputDefinitionToVariable = state.queryInputDefinitionToVariable;
 
-        ClassName parameterClassType = toClassName(input.type());
+        TypeName parameterClassType = toTypeName(input);
         String first;
         if (orderOfExecution.size() == 0) {
             first = "d";
@@ -298,7 +298,7 @@ public final class ExternalEntityJavaFileGenerator {
 
                 CodeBlock returnStatement = CodeBlock.builder().add("return " + returnVariable + ";").build();
                 methodSpecBuilder.addCode(returnStatement);
-                ClassName returnClassType = toClassName(lastConnector.type());
+                TypeName returnClassType = toTypeName(lastConnector);
                 methodSpecBuilder.returns(returnClassType);
             } else if (activatorAggregate instanceof ProcessActivatorAggregate processActivator) {
                 FlowThroughAggregate flowThrough = processActivator.flow(traverseName);

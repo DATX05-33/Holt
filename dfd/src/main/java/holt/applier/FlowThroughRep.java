@@ -10,6 +10,7 @@ public record FlowThroughRep(ProcessActivatorAggregate processActivator,
                              TraverseName traverseName,
                              String functionName,
                              QualifiedName outputType,
+                             boolean outputIsCollection,
                              List<QueryRep> queries,
                              List<QueryDefinitionRep> overrideQueries) {
 

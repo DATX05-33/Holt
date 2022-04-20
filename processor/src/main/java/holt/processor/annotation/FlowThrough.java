@@ -9,8 +9,10 @@ import java.lang.annotation.Target;
 @Repeatable(FlowThroughs.class)
 public @interface FlowThrough {
     Class<?> outputType() default Object.class;
+    boolean outputIsCollection() default false;
     String traverse();
     String functionName();
     Query[] queries() default {};
+
     QueryDefinition[] overrideQueries() default {};
 }

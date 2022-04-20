@@ -3,6 +3,7 @@ package holt;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import holt.activator.Connector;
 import holt.activator.DatabaseActivatorAggregate;
@@ -14,10 +15,9 @@ import holt.activator.QueryInputDefinition;
 import javax.lang.model.element.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static holt.JavaFileGenerator.getGeneratedAnnotation;
-import static holt.JavaFileGenerator.toClassName;
+import static holt.JavaFileGenerator.toTypeName;
 
 public final class ProcessJavaFileGenerator {
 
@@ -37,7 +37,7 @@ public final class ProcessJavaFileGenerator {
 
             int i = 0;
             for (Connector connector : flowThrough.inputs()) {
-                ClassName parameterClassName = toClassName(connector.type());
+                TypeName parameterClassName = toTypeName(connector);
                 methodSpecBuilder.addParameter(
                         parameterClassName,
                         "input" + i
@@ -46,12 +46,12 @@ public final class ProcessJavaFileGenerator {
             }
 
             for (QueryInput queryInput : flowThrough.queries()) {
-                ClassName parameterClassName = toClassName(queryInput.queryInputDefinition().output());
-                methodSpecBuilder.addParameter(parameterClassName, "dbInput" + i);
+                TypeName parameterTypeName = toTypeName(queryInput.queryInputDefinition().output());
+                methodSpecBuilder.addParameter(parameterTypeName, "dbInput" + i);
                 i++;
             }
 
-            ClassName returnClassName = toClassName(flowThrough.output().type());
+            TypeName returnClassName = JavaFileGenerator.toTypeName(flowThrough.output());
             methodSpecBuilder.returns(returnClassName);
 
             interfaceBuilder.addMethod(methodSpecBuilder.build());
@@ -62,20 +62,20 @@ public final class ProcessJavaFileGenerator {
                 DatabaseActivatorAggregate database = queryInputDefinition.database();
 
                 // Find what the type of db should be used. Either querier, db or db requirements
-                ClassName databaseClassname;
+                TypeName databaseTypeName;
                 if (database.getQueriesClassName() != null) {
-                    databaseClassname = toClassName(database.getQueriesClassName());
+                    databaseTypeName = toTypeName(database.getQueriesClassName());
                 } else if (database.connectedClass().isPresent()) {
-                    databaseClassname = toClassName(database.connectedClass().get().qualifiedName());
+                    databaseTypeName = toTypeName(database.connectedClass().get().qualifiedName());
                 } else {
                     String databaseRequirementsName = queryInputDefinition.database().requirementsName().value();
-                    databaseClassname = toClassName(dfdPackageName + "." + databaseRequirementsName);
+                    databaseTypeName = toTypeName(dfdPackageName + "." + databaseRequirementsName);
                 }
 
                 String queryInterfaceName = processActivator.getQueryInterfaceNameForDatabase(database, flowThrough);
 
                 // Generate the query interface
-                TypeSpec queryInterfaceSpec = generateQuery(queryInputDefinition, queryInterfaceName, databaseClassname);
+                TypeSpec queryInterfaceSpec = generateQuery(queryInputDefinition, queryInterfaceName, databaseTypeName);
                 newFiles.add(JavaFile.builder(dfdPackageName, queryInterfaceSpec).build());
 
                 ClassName returnClass = ClassName.bestGuess(dfdPackageName + "." + queryInterfaceSpec.name);
@@ -89,7 +89,7 @@ public final class ProcessJavaFileGenerator {
                 for (int j = 0; j < inputsForQueryDefinition.size(); j++) {
                     Connector connector = inputsForQueryDefinition.get(j);
                     queryMethodSpecBuilder.addParameter(
-                            toClassName(connector.type()),
+                            toTypeName(connector),
                             "input" + j
                     );
                 }
@@ -103,12 +103,12 @@ public final class ProcessJavaFileGenerator {
         return newFiles;
     }
 
-    private static TypeSpec generateQuery(QueryInputDefinition queryInputDefinition, String queryInterfaceName, ClassName databaseClassname) {
-        ClassName returnQueryType = toClassName(queryInputDefinition.output());
+    private static TypeSpec generateQuery(QueryInputDefinition queryInputDefinition, String queryInterfaceName, TypeName databaseTypeName) {
+        TypeName returnQueryType = toTypeName(queryInputDefinition.output());
 
         MethodSpec queryMethod = MethodSpec
                 .methodBuilder("createQuery")
-                .addParameter(databaseClassname, "db")
+                .addParameter(databaseTypeName, "db")
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .returns(returnQueryType)
                 .build();

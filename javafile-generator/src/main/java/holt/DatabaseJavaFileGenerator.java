@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static holt.JavaFileGenerator.getGeneratedAnnotation;
-import static holt.JavaFileGenerator.toClassName;
+import static holt.JavaFileGenerator.toTypeName;
 import static holt.JavaFileGenerator.toOutputMethods;
 
 public final class DatabaseJavaFileGenerator {
@@ -28,7 +28,7 @@ public final class DatabaseJavaFileGenerator {
         if (databaseActivator.getQueriesClassName() != null) {
             MethodSpec getQueriesInstance = MethodSpec.methodBuilder("getQuerierInstance")
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                    .returns(toClassName(databaseActivator.getQueriesClassName()))
+                    .returns(toTypeName(databaseActivator.getQueriesClassName()))
                     .build();
 
             databaseSpec.addMethod(getQueriesInstance);

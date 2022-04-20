@@ -17,7 +17,7 @@ public final class FlowThroughApplier {
         for (FlowThroughRep flowThroughRep : flowThroughReps) {
             TraverseName traverseName = flowThroughRep.traverseName();
             FlowThroughAggregate flowThrough = flowThroughRep.processActivator().flow(traverseName);
-            flowThrough.setOutputType(flowThroughRep.outputType());
+            flowThrough.setOutputType(flowThroughRep.outputType(), flowThroughRep.outputIsCollection());
             flowThrough.setFunctionName(new FunctionName(flowThroughRep.functionName()));
 
             flowThroughRep.queries().forEach(query -> {
