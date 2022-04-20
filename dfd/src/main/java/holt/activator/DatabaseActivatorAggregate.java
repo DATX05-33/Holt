@@ -1,5 +1,7 @@
 package holt.activator;
 
+import holt.Metadata;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -12,8 +14,8 @@ public final class DatabaseActivatorAggregate extends ActivatorAggregate impleme
     // for this database, then the following QualifiedName is not null.
     private QualifiedName queriesClassName;
 
-    public DatabaseActivatorAggregate(ActivatorName activatorName) {
-        super(activatorName, new ActivatorName(activatorName + "Requirements"));
+    public DatabaseActivatorAggregate(ActivatorName activatorName, Metadata metadata) {
+        super(activatorName, new ActivatorName(activatorName + "Requirements"), metadata);
         this.stores = new HashMap<>();
     }
 

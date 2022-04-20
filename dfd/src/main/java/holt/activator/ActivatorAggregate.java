@@ -1,5 +1,7 @@
 package holt.activator;
 
+import holt.Metadata;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -8,12 +10,18 @@ public abstract class ActivatorAggregate {
     private final ActivatorName requirementsName;
     private ActivatorName activatorName;
     private ConnectedClass connectedClass;
-
+    private final Metadata metadata;
     protected ActivatorAggregate(ActivatorName activatorName, ActivatorName requirementsName) {
+        this(activatorName, requirementsName, null);
+    }
+
+    protected ActivatorAggregate(ActivatorName activatorName, ActivatorName requirementsName, Metadata metadata) {
         Objects.requireNonNull(activatorName);
         this.activatorName = activatorName;
         this.requirementsName = requirementsName;
+        this.metadata = metadata;
     }
+
 
     // Only called when @Activator(graphName) is active
     public final void setActivatorName(ActivatorName activatorName) {
@@ -45,6 +53,10 @@ public abstract class ActivatorAggregate {
 
     public ActivatorName requirementsName() {
         return requirementsName;
+    }
+
+    public Metadata getMetadata() {
+        return metadata;
     }
 
     @Override

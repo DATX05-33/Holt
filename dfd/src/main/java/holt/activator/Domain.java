@@ -5,7 +5,12 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 // This is information per DFD.
-public record Domain(DFDName name, List<ActivatorAggregate> activators, Map<TraverseName, List<ActivatorAggregate>> traverses) {
+public record Domain(
+        DFDName name,
+        List<ActivatorAggregate> activators,
+        Map<TraverseName, List<ActivatorAggregate>> traverses,
+        boolean privacyAware
+) {
 
     public Stream<DatabaseActivatorAggregate> databases() {
         return activators.stream()

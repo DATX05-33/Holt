@@ -47,7 +47,8 @@ public class PADFDBuilder {
                         entry -> new DFDRep.Activator(
                                 entry.getValue().getId(),
                                 entry.getValue().getName(),
-                                toDFDActivatorType(entry.getValue().getType())
+                                toDFDActivatorType(entry.getValue().getType()),
+                                getMetadata(entry.getValue())
                         )
                 ));
 
@@ -81,6 +82,41 @@ public class PADFDBuilder {
         );
     }
 
+    private Metadata getMetadata(Activator value) {
+        switch (value.type) {
+            case EXTERNAL_ENTITY -> {
+            }
+            case PROCESS -> {
+            }
+            case DATABASE -> {
+            }
+            case REASON -> {
+            }
+            case REQUEST -> {
+            }
+            case LIMIT -> {
+            }
+            case LOG -> {
+            }
+            case LOG_DATABASE -> {
+            }
+            case POLICY_DATABASE -> {
+            }
+            case CLEAN -> {
+            }
+            case COMBINER -> {
+                return new CombineMetadata();
+            }
+            case REDUCE -> {
+            }
+            case GUARD -> {
+            }
+            case QUERIER -> {
+            }
+        }
+        return null;
+    }
+
     public List<Activator> activators() {
         return new ArrayList<>(this.idToActivator.values());
     }
@@ -112,7 +148,7 @@ public class PADFDBuilder {
             case EXTERNAL_ENTITY -> {
                 return DFDRep.Activator.Type.EXTERNAL_ENTITY;
             }
-            case PROCESS, CLEAN, LOG, LIMIT, REQUEST, REASON -> {
+            case PROCESS, CLEAN, LOG, LIMIT, REQUEST, REASON, COMBINER, REDUCE, GUARD, QUERIER -> {
                 return DFDRep.Activator.Type.PROCESS;
             }
             case DATABASE, POLICY_DATABASE, LOG_DATABASE -> {
@@ -165,7 +201,11 @@ public class PADFDBuilder {
             LOG,
             LOG_DATABASE,
             POLICY_DATABASE,
-            CLEAN;
+            CLEAN,
+            COMBINER,
+            REDUCE,
+            GUARD,
+            QUERIER;
 
             public static Type fromDFDActivatorType(DFDRep.Activator.Type dfdType) {
                 switch (dfdType) {

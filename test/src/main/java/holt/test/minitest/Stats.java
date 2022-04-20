@@ -12,9 +12,8 @@ import holt.processor.generation.minitest.AbstractStats;
 @Activator
 public class Stats extends AbstractStats {
 
-
     public Integer countAllWords() {
-        return super.CW(new CountWordsAction());
+        return 0;
     }
 
 

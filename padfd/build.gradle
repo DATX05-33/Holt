@@ -9,6 +9,7 @@ plugins {
 dependencies {
     implementation (
             project(':dfd'),
-            project(':graph')
+            project(':graph'),
+            project(':javafile-generator')
     )
 }

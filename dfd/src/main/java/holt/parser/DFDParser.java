@@ -75,7 +75,7 @@ public final class DFDParser {
                     continue;
                 }
 
-                DFDRep.Activator activator = new DFDRep.Activator(id, name, type);
+                DFDRep.Activator activator = new DFDRep.Activator(id, name, type, null);
                 idToActivator.put(id, activator);
             }
         }

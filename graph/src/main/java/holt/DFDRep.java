@@ -30,7 +30,7 @@ public record DFDRep(List<Activator> activators,
         }
     }
 
-    public record Activator(String id, String name, Type type) {
+    public record Activator(String id, String name, Type type, Metadata metadata) {
         public Activator {
             name = name
                     .substring(0, 1)

@@ -1,13 +1,15 @@
 package holt.activator;
 
+import holt.Metadata;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class ProcessActivatorAggregate extends ActivatorAggregate {
     private final Map<TraverseName, FlowThroughAggregate> flowThroughs;
-    public ProcessActivatorAggregate(ActivatorName activatorName) {
-        super(activatorName, new ActivatorName(activatorName + "Requirements"));
+    public ProcessActivatorAggregate(ActivatorName activatorName, Metadata metadata) {
+        super(activatorName, new ActivatorName(activatorName + "Requirements"), metadata);
         this.flowThroughs = new HashMap<>();
     }
 

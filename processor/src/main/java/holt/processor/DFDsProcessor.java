@@ -2,13 +2,14 @@ package holt.processor;
 
 import holt.DFDOrderedRep;
 import holt.DFDRep;
+import holt.PADFDEnhancer;
 import holt.activator.ActivatorAggregate;
 import holt.activator.ActivatorName;
 import holt.activator.ConnectedClass;
 import holt.activator.Connector;
 import holt.activator.DFDName;
 import holt.JavaFileGenerator;
-import holt.DFDToPADFDConverter;
+import holt.PADFDTransformater;
 import holt.activator.DatabaseActivatorAggregate;
 import holt.activator.Domain;
 import holt.activator.ExternalEntityActivatorAggregate;
@@ -101,6 +102,10 @@ public class DFDsProcessor extends AbstractProcessor {
                 QueriesForApplier.applyQueriesFor(queriesForRepMap.get(dfdName));
             }
 
+            if (domain.privacyAware()) {
+                PADFDEnhancer.enhance(domain, processingEnv);
+            }
+
             JavaFileGenerator.saveJavaFiles(domain, processingEnv);
         }
 
@@ -178,12 +183,12 @@ public class DFDsProcessor extends AbstractProcessor {
             var orderedDFD = DFDParser.fromDrawIO(dfd, getDFDTraverseOrders(dfd, environment));
 
             if (dfdData.privacyAware) {
-                orderedDFD = DFDToPADFDConverter.enhance(orderedDFD);
+                orderedDFD = PADFDTransformater.enhance(orderedDFD);
             }
 
-            orderedDFD.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivatorAggregate(new ActivatorName(node.name()))));
-            orderedDFD.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorName(node.name()))));
-            orderedDFD.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorName(node.name()))));
+            orderedDFD.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivatorAggregate(new ActivatorName(node.name()), node.metadata())));
+            orderedDFD.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorName(node.name()), node.metadata())));
+            orderedDFD.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorName(node.name()), node.metadata())));
 
             elementToActivatorAggregateMap.putAll(
                     connectAggregatesWithActivatorAnnotation(environment, idToActivator.values())
@@ -200,7 +205,8 @@ public class DFDsProcessor extends AbstractProcessor {
                     new Domain(
                             dfdName,
                             new ArrayList<>(idToActivator.values()),
-                            traverses.get(dfdName)
+                            traverses.get(dfdName),
+                            dfdData.privacyAware
                     )
             );
         }
@@ -364,8 +370,6 @@ public class DFDsProcessor extends AbstractProcessor {
             if (!dfdToFlowThroughRepMap.containsKey(dfdName)) {
                 dfdToFlowThroughRepMap.put(dfdName, new ArrayList<>());
             }
-
-
 
             dfdToFlowThroughRepMap
                     .get(dfdName)

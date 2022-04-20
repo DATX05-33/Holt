@@ -1,5 +1,7 @@
 package holt.activator;
 
+import holt.Metadata;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -10,8 +12,8 @@ public final class ExternalEntityActivatorAggregate extends ActivatorAggregate i
     private final Map<TraverseName, Connector> starts;
     private final Map<TraverseName, TraverseOutput> ends;
 
-    public ExternalEntityActivatorAggregate(ActivatorName activatorName) {
-        super(activatorName, new ActivatorName("Abstract" + activatorName.value()));
+    public ExternalEntityActivatorAggregate(ActivatorName activatorName, Metadata metadata) {
+        super(activatorName, new ActivatorName("Abstract" + activatorName.value()), metadata);
         starts = new HashMap<>();
         ends = new HashMap<>();
     }

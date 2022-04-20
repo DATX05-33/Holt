@@ -17,7 +17,7 @@ import java.util.List;
 
 public class JavaFileGenerator {
 
-    private static final String PACKAGE_NAME = "holt.processor.generation";
+    public static final String PACKAGE_NAME = "holt.processor.generation";
 
     public static List<MethodSpec> toOutputMethods(List<TraverseOutput> outputs) {
         List<MethodSpec> outputMethods = new ArrayList<>();
@@ -48,7 +48,7 @@ public class JavaFileGenerator {
     }
 
     private static List<JavaFile> convertToJavaFiles(Domain domain) {
-        String dfdPackageName = PACKAGE_NAME + "." + domain.name();
+        String dfdPackageName = packageOf(domain);
         List<JavaFile> javaFiles = new ArrayList<>();
 
         domain
@@ -94,5 +94,9 @@ public class JavaFileGenerator {
 
     public static TypeName toTypeName(String qualifiedName) {
         return ClassName.bestGuess(qualifiedName);
+    }
+
+    public static String packageOf(Domain domain) {
+        return PACKAGE_NAME + "." + domain.name().value();
     }
 }

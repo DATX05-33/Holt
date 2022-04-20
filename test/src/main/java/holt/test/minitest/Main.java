@@ -4,7 +4,8 @@ import holt.processor.annotation.DFD;
 
 @DFD(
         name = "minitest",
-        xml = "minitest.xml"
+        xml = "minitest.xml",
+        privacyAware = true
 )
 public class Main {
 

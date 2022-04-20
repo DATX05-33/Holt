@@ -4,17 +4,17 @@ import java.util.List;
 
 import static holt.PADFDBuilder.Activator;
 
-public final class DFDToPADFDConverter {
+public final class PADFDTransformater {
 
     private final PADFDBuilder builder;
 
-    private DFDToPADFDConverter(PADFDBuilder builder) {
+    private PADFDTransformater(PADFDBuilder builder) {
         this.builder = builder;
     }
 
     public static DFDOrderedRep enhance(DFDOrderedRep dfd) {
         PADFDBuilder builder = PADFDBuilder.fromDFD(dfd);
-        return new DFDToPADFDConverter(builder).internalEnhance();
+        return new PADFDTransformater(builder).internalEnhance();
     }
 
     public DFDOrderedRep internalEnhance() {
@@ -143,12 +143,17 @@ public final class DFDToPADFDConverter {
         processToLimit.setPartner(reasonToRequest);
         reasonToRequest.setPartner(processToLimit);
 
-        // Limit -> External Entity
-        var limitToEntity = flow(f.id() + "6", e.limit, t);
-        // Request -> External Entity
-        var requestToEntity = flow(f.id() + "7", e.request, t);
-        limitToEntity.setPartner(requestToEntity);
-        requestToEntity.setPartner(limitToEntity);
+        Activator combiner = new Activator(f.id() + "-combiner", t.getName() + "Combiner", Activator.Type.COMBINER);
+
+        // Limit -> Combiner
+        var limitToCombiner = flow(f.id() + "6", e.limit, combiner);
+        // Request -> Combiner
+        var requestToCombiner = flow(f.id() + "7", e.request, combiner);
+        limitToCombiner.setPartner(requestToCombiner);
+        requestToCombiner.setPartner(limitToCombiner);
+
+        // Combiner -> External Entity
+        var combinerToEntity = flow(f.id() + "8", combiner, t);
 
         builder.addFlow(f,
                 List.of(
@@ -157,8 +162,9 @@ public final class DFDToPADFDConverter {
                         e.requestToLimit,
                         e.limitToLog,
                         e.logToLogDB,
-                        limitToEntity,
-                        requestToEntity
+                        limitToCombiner,
+                        requestToCombiner,
+                        combinerToEntity
                 )
         );
     }
