@@ -3,6 +3,7 @@ package holt;
 import com.squareup.javapoet.*;
 import holt.activator.Connector;
 import holt.activator.Domain;
+import holt.activator.FlowOutput;
 import holt.activator.QualifiedName;
 import holt.activator.TraverseOutput;
 
@@ -77,15 +78,18 @@ public class JavaFileGenerator {
         return ClassName.bestGuess(qualifiedName.value());
     }
 
-    public static TypeName toTypeName(Connector connector) {
-        TypeName connectorTypeName = toTypeName(connector.type());
-        if (connector.isCollection()) {
+    public static TypeName toTypeName(FlowOutput flowOutput) {
+        TypeName connectorTypeName = toTypeName(flowOutput.type());
+        if (flowOutput.isCollection()) {
             ClassName collection = ClassName.get(Collection.class);
             return ParameterizedTypeName.get(collection, connectorTypeName);
         } else {
             return connectorTypeName;
         }
+    }
 
+    public static TypeName toTypeName(Connector connector) {
+        return toTypeName(connector.getFlowOutput());
     }
 
     public static TypeName toTypeName(String qualifiedName) {

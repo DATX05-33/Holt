@@ -116,8 +116,9 @@ public final class ExternalEntityJavaFileGenerator {
                 .toList();
 
         int connectorVariableIndex = 0;
+
+        boolean needToGenerateReflectionHelperMethod = false;
         for (ActivatorAggregate activatorAggregate : activatorsToInstantiate) {
-            boolean needToGenerateReflectionHelperMethod = false;
 
             if (!activatorAggregate.equals(state.externalEntityActivator)) {
                 var activatorCode = generateCodeForActivator(activatorAggregate, state);
@@ -133,28 +134,6 @@ public final class ExternalEntityJavaFileGenerator {
                 }
             }
 
-            if (needToGenerateReflectionHelperMethod) {
-                TypeVariableName t = TypeVariableName.get("T");
-
-                MethodSpec.Builder reflectionHelperMethodBuilder = MethodSpec.methodBuilder("reflect")
-                        .addModifiers(Modifier.PRIVATE)
-                        .addTypeVariable(t)
-                        .addParameter(ClassName.bestGuess("Class<?>"), "t")
-                        .returns(t);
-
-                CodeBlock.Builder codeBlockBuilder = CodeBlock.builder();
-                codeBlockBuilder.add("  try {\n");
-                codeBlockBuilder.add("    return (T) t.newInstance();\n");
-                codeBlockBuilder.add("  } catch (Exception e) {\n");
-                codeBlockBuilder.add("    e.printStackTrace();\n");
-                codeBlockBuilder.add("    throw new IllegalStateException(\"Could not instantiate...\");\n");
-                codeBlockBuilder.add("  }");
-                codeBlockBuilder.add("\n");
-
-                reflectionHelperMethodBuilder.addCode(codeBlockBuilder.build());
-
-                methods.add(reflectionHelperMethodBuilder.build());
-            }
 
             if (activatorAggregate instanceof ProcessActivatorAggregate processActivator) {
                 for (FlowThroughAggregate flowThroughAggregate : processActivator.flows()) {
@@ -175,6 +154,29 @@ public final class ExternalEntityJavaFileGenerator {
                     }
                 }
             }
+        }
+
+        if (needToGenerateReflectionHelperMethod) {
+            TypeVariableName t = TypeVariableName.get("T");
+
+            MethodSpec.Builder reflectionHelperMethodBuilder = MethodSpec.methodBuilder("reflect")
+                    .addModifiers(Modifier.PRIVATE)
+                    .addTypeVariable(t)
+                    .addParameter(ClassName.bestGuess("Class<?>"), "t")
+                    .returns(t);
+
+            CodeBlock.Builder codeBlockBuilder = CodeBlock.builder();
+            codeBlockBuilder.add("  try {\n");
+            codeBlockBuilder.add("    return (T) t.newInstance();\n");
+            codeBlockBuilder.add("  } catch (Exception e) {\n");
+            codeBlockBuilder.add("    e.printStackTrace();\n");
+            codeBlockBuilder.add("    throw new IllegalStateException(\"Could not instantiate...\");\n");
+            codeBlockBuilder.add("  }");
+            codeBlockBuilder.add("\n");
+
+            reflectionHelperMethodBuilder.addCode(codeBlockBuilder.build());
+
+            methods.add(reflectionHelperMethodBuilder.build());
         }
 
         return new ExternalEntityFieldsWithConstructor(

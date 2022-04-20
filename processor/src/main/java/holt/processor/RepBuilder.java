@@ -56,7 +56,8 @@ public final class RepBuilder {
                 ).toString()),
                 new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
                         processor, query, Query::type
-                ).toString())
+                ).toString()),
+                query.isCollection()
         );
     }
 
@@ -76,7 +77,8 @@ public final class RepBuilder {
                 processActivatorAggregate,
                 new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
                         processor, queryDefinition, QueryDefinition::type
-                ).toString())
+                ).toString()),
+                queryDefinition.isCollection()
         );
     }
 

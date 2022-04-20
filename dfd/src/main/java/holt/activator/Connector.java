@@ -4,34 +4,40 @@ import java.util.Objects;
 
 public final class Connector {
 
-    private boolean isCollection;
-    private QualifiedName type;
+    private FlowOutput flowOutput;
 
     public Connector() {
-        isCollection = false;
+        flowOutput = new FlowOutput(
+                QualifiedName.OBJECT,
+                false
+        );
     }
 
-    public boolean isCollection() {
-        return isCollection;
+    public FlowOutput getFlowOutput() {
+        return flowOutput;
     }
 
-    public void setCollection(boolean collection) {
-        isCollection = collection;
+    public void setIsCollection(boolean collection) {
+        this.flowOutput = new FlowOutput(
+                flowOutput.type(),
+                collection
+        );
     }
 
     public void setType(QualifiedName type) {
-        this.type = type;
+        Objects.requireNonNull(type);
+        this.flowOutput = new FlowOutput(
+                type,
+                this.flowOutput.isCollection()
+        );
     }
 
-    public QualifiedName type() {
-        return Objects.requireNonNullElseGet(this.type, () -> QualifiedName.OBJECT);
-    }
 
     @Override
     public String toString() {
         return "Connector{" +
                 "hashcode=" + super.hashCode() +
-                ", type=" + type +
+                ", flowOutput=" + this.flowOutput +
                 '}';
     }
 }

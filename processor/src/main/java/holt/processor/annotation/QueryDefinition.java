@@ -8,4 +8,5 @@ public @interface QueryDefinition {
     Class<?> db();
     Class<?> process();
     Class<?> type();
+    boolean isCollection() default false;
 }

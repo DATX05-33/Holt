@@ -2,6 +2,7 @@ package holt.applier;
 
 import holt.activator.DatabaseActivatorAggregate;
 import holt.activator.Domain;
+import holt.activator.FlowOutput;
 import holt.activator.FlowThroughAggregate;
 import holt.activator.FunctionName;
 import holt.activator.QueryInput;
@@ -24,7 +25,12 @@ public final class FlowThroughApplier {
                 for (QueryInput queryInput : flowThrough.queries()) {
                     DatabaseActivatorAggregate databaseActivator = queryInput.queryInputDefinition().database();
                     if (databaseActivator.name().value().equals(query.db().simpleName())) {
-                        queryInput.queryInputDefinition().setOutput(query.type());
+                        queryInput.queryInputDefinition().setOutput(
+                                new FlowOutput(
+                                        query.type(),
+                                        query.isCollection()
+                                )
+                        );
                     }
                 }
             });
@@ -32,7 +38,11 @@ public final class FlowThroughApplier {
             for (QueryDefinitionRep queryDefinitionRep : flowThroughRep.overrideQueries()) {
                 queryDefinitionRep.process().flow(traverseName).moveQueryInputDefinitionTo(
                         queryDefinitionRep.db(),
-                        flowThrough
+                        flowThrough,
+                        new FlowOutput(
+                                queryDefinitionRep.type(),
+                                queryDefinitionRep.isCollection()
+                        )
                 );
             }
         }

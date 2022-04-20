@@ -53,11 +53,15 @@ public final class FlowThroughAggregate {
      * Given the database, finds the relevant query input definition,
      * removes it from this FlowThrough and adds it to the given FlowThrough.
      */
-    public void moveQueryInputDefinitionTo(DatabaseActivatorAggregate database, FlowThroughAggregate otherFlowThroughAggregate) {
+    public void moveQueryInputDefinitionTo(DatabaseActivatorAggregate database, FlowThroughAggregate otherFlowThroughAggregate, FlowOutput newFlowOutput) {
         for (QueryInputDefinition queryInputDefinition : this.queryInputDefinitions) {
             if (queryInputDefinition.database().equals(database)) {
                 this.queryInputDefinitions.remove(queryInputDefinition);
                 otherFlowThroughAggregate.queryInputDefinitions.add(queryInputDefinition);
+                //TODO: Any scenario where it's not null?
+                if (newFlowOutput != null) {
+                    queryInputDefinition.setOutput(newFlowOutput);
+                }
                 return;
             }
         }
@@ -79,7 +83,7 @@ public final class FlowThroughAggregate {
 
     public void setOutputType(QualifiedName output, boolean isCollection) {
         this.output.setType(output);
-        this.output.setCollection(isCollection);
+        this.output.setIsCollection(isCollection);
     }
 
     public Connector output() {

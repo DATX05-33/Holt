@@ -1,4 +1,4 @@
 package holt.activator;
 
-public record FlowOutput(QualifiedName type, boolean collection) {
+public record FlowOutput(QualifiedName type, boolean isCollection) {
 }

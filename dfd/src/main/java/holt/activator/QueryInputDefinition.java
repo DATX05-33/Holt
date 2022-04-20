@@ -2,22 +2,22 @@ package holt.activator;
 
 public final class QueryInputDefinition {
     private final DatabaseActivatorAggregate database;
-    private QualifiedName output;
+    private FlowOutput output;
 
     public QueryInputDefinition(DatabaseActivatorAggregate database) {
         this.database = database;
-        this.output = QualifiedName.OBJECT;
+        this.output = new FlowOutput(QualifiedName.OBJECT, false);
     }
 
     public DatabaseActivatorAggregate database() {
         return database;
     }
 
-    public QualifiedName output() {
+    public FlowOutput output() {
         return output;
     }
 
-    public void setOutput(QualifiedName output) {
+    public void setOutput(FlowOutput output) {
         this.output = output;
     }
 }

@@ -7,4 +7,5 @@ import java.lang.annotation.Target;
 public @interface Query {
     Class<?> db();
     Class<?> type() default Object.class;
+    boolean isCollection() default false;
 }
