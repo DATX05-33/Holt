@@ -152,7 +152,6 @@ public class DFDsProcessor extends AbstractProcessor {
 
     private ProcessorResults readBaseAnnotations(RoundEnvironment environment) throws DFDParser.NotWellFormedDFDException {
         List<Domain> domains = new ArrayList<>();
-        List<ActivatorAggregate> allActivatorAggregates = new ArrayList<>();
         Map<Element, ActivatorAggregate> elementToActivatorAggregateMap = new HashMap<>();
         Map<ActivatorName, DFDName> activatorToDFDMap = new HashMap<>();
         Map<DFDName, Map<TraverseName, List<ActivatorAggregate>>> traverses = new HashMap<>();
@@ -190,7 +189,6 @@ public class DFDsProcessor extends AbstractProcessor {
                     connectAggregatesWithActivatorAnnotation(environment, idToActivator.values())
             );
 
-            allActivatorAggregates.addAll(idToActivator.values());
             idToActivator.values().forEach(activator -> activatorToDFDMap.put(activator.name(), dfdName));
 
             traverses.put(
@@ -231,6 +229,7 @@ public class DFDsProcessor extends AbstractProcessor {
                     if (activatorFromGraphName.equals(activatorAggregate.name().value())) {
                         elementToActivatorAggregateMap.put(element, activatorAggregate);
                         activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
+                        System.out.println("?:" + activator.instantiateWithReflection());
                         activatorAggregate.setConnectedClass(
                                 new ConnectedClass(
                                         new QualifiedName(typeElement.getQualifiedName().toString()),
@@ -356,12 +355,6 @@ public class DFDsProcessor extends AbstractProcessor {
             TypeElement typeElement = flowThroughPair.typeElement;
 
             ProcessActivatorAggregate processActivator = (ProcessActivatorAggregate) processorResults.getActivatorAggregate(typeElement);
-            processActivator.setConnectedClass(
-                    new ConnectedClass(
-                            new QualifiedName(typeElement.getQualifiedName().toString()),
-                            false
-                    )
-            );
 
             DFDName dfdName = activatorToDFDMap.get(processActivator.name());
             if (dfdName == null) {
