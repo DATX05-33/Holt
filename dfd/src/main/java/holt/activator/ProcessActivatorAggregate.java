@@ -23,6 +23,10 @@ public final class ProcessActivatorAggregate extends ActivatorAggregate {
         return this.flowThroughs.values().stream().toList();
     }
 
+    public Map<TraverseName, FlowThroughAggregate> flowsMap() {
+        return this.flowThroughs;
+    }
+
     public FlowThroughAggregate flow(TraverseName traverseName) {
         if (!this.flowThroughs.containsKey(traverseName)) {
             throw new IllegalArgumentException("In " + name() + ", there's no flow for the traverse name " + traverseName);

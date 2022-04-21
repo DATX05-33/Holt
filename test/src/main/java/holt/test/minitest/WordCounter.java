@@ -4,6 +4,7 @@ import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Output;
 import holt.processor.annotation.Query;
+import holt.processor.generation.minitest.NotesDatabaseToWordCounterCountWordsQuery;
 import holt.processor.generation.minitest.WordCounterRequirements;
 
 @FlowThrough(
@@ -22,6 +23,11 @@ public class WordCounter implements WordCounterRequirements {
 
     @Override
     public Integer countWords(Object input0, Object input1) {
+        return null;
+    }
+
+    @Override
+    public NotesDatabaseToWordCounterCountWordsQuery queryNotesDatabaseCountWords(Object input0, Object input1) {
         return null;
     }
 }

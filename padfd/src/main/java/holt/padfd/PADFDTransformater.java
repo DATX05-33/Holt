@@ -242,7 +242,8 @@ public final class PADFDTransformater {
         PADFDBuilder.Activator t = a(f.to());
 
         //TODO: Name not unique enough
-        PADFDBuilder.Activator querier = new PADFDBuilder.Activator(f.id() + "querier",
+        PADFDBuilder.Activator querier = new PADFDBuilder.Activator(
+                f.id() + "querier",
                 s.getName() + "Querier",
                 PADFDBuilder.Activator.Type.QUERIER,
                 new QuerierMetadata(

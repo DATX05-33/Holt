@@ -20,4 +20,12 @@ public final class QueryInputDefinition {
     public void setOutput(FlowOutput output) {
         this.output = output;
     }
+
+    @Override
+    public String toString() {
+        return "QueryInputDefinition{" +
+                "database=" + database +
+                ", output=" + output +
+                '}';
+    }
 }

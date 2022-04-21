@@ -1,5 +1,6 @@
 package holt.applier;
 
+import holt.activator.ActivatorId;
 import holt.activator.DatabaseActivatorAggregate;
 import holt.activator.FlowOutput;
 import holt.activator.FlowThroughAggregate;
@@ -7,13 +8,17 @@ import holt.activator.FunctionName;
 import holt.activator.QueryInput;
 import holt.activator.TraverseName;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class FlowThroughApplier {
 
     private FlowThroughApplier() { }
 
     public static void applyFlowThrough(List<FlowThroughRep> flowThroughReps) {
+        Map<ActivatorId, List<QueryDefinitionRep>> activatorToQueryDefinitions = new HashMap<>();
+
         for (FlowThroughRep flowThroughRep : flowThroughReps) {
             TraverseName traverseName = flowThroughRep.traverseName();
             OutputRep outputRep = flowThroughRep.outputRep();

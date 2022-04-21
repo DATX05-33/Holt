@@ -11,7 +11,7 @@ public abstract class ActivatorAggregate {
     private final ActivatorName requirementsName;
     private ActivatorName activatorName;
     private ConnectedClass connectedClass;
-    private final Metadata metadata;
+    private Metadata metadata;
     protected ActivatorAggregate(ActivatorId activatorId, ActivatorName activatorName, ActivatorName requirementsName) {
         this(activatorId, activatorName, requirementsName, null);
     }
@@ -62,6 +62,15 @@ public abstract class ActivatorAggregate {
         return metadata;
     }
 
+    public void setMetadata(Metadata metadata) {
+        if (this.metadata != null) {
+            throw new IllegalStateException("There already exists metadata. You cannot replace it"
+                    + this.metadata
+            );
+        }
+        this.metadata = metadata;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -80,5 +89,9 @@ public abstract class ActivatorAggregate {
         return "[activatorName=" + activatorName +
                 ", qualifiedName=" + connectedClass +
                 ']';
+    }
+
+    public ActivatorId id() {
+        return this.activatorId;
     }
 }

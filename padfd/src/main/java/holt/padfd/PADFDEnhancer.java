@@ -3,11 +3,14 @@ package holt.padfd;
 import holt.JavaFileGenerator;
 import holt.PrivacyActivatorJavaFileGenerator;
 import holt.activator.ActivatorAggregate;
+import holt.activator.ActivatorId;
 import holt.activator.Connector;
+import holt.activator.DatabaseActivatorAggregate;
 import holt.activator.Domain;
 import holt.activator.ExternalEntityActivatorAggregate;
 import holt.activator.FlowThroughAggregate;
 import holt.activator.ProcessActivatorAggregate;
+import holt.activator.TraverseName;
 import holt.padfd.metadata.CombineMetadata;
 import holt.padfd.metadata.LimitMetadata;
 import holt.padfd.metadata.QuerierMetadata;
@@ -17,6 +20,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class PADFDEnhancer {
 
@@ -63,16 +67,29 @@ public final class PADFDEnhancer {
             });
         });
 
-        // Move queries
+        /*
+         *
+         */
         for (ActivatorAggregate activator : domain.activators()) {
             if (activator instanceof ProcessActivatorAggregate processActivatorAggregate) {
                 if (activator.metadata() instanceof CombineMetadata) {
                     PrivacyActivatorJavaFileGenerator.generateCombine(processActivatorAggregate, processingEnvironment, dfdPackageName);
                 } else if (activator.metadata() instanceof QuerierMetadata querierMetadata) {
                     if (processActivatorAggregate.flows().size() != 1) {
-                        throw new IllegalStateException("Limit can only have one flow");
+                        throw new IllegalStateException("Querier process must only have one input");
                     }
-                    FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
+                    Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();
+                    TraverseName traverseName = flowThroughEntry.getKey();
+                    FlowThroughAggregate flow = flowThroughEntry.getValue();
+
+                    // Move the query definition
+                    DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) getActivatorAggregate(querierMetadata.database(), domain.activators());
+                    ProcessActivatorAggregate placeForQueryDefinition = (ProcessActivatorAggregate) getActivatorAggregate(querierMetadata.process(), domain.activators());
+
+
+
+                    flow.moveQueryInputDefinitionTo(databaseActivatorAggregate, placeForQueryDefinition.flow(traverseName), null);
+
 
                     PrivacyActivatorJavaFileGenerator.generateQuerier(processActivatorAggregate, processingEnvironment, dfdPackageName);
                 } else if (activator.metadata() instanceof LimitMetadata) {
@@ -95,6 +112,11 @@ public final class PADFDEnhancer {
             return outputElement.getInterfaces().stream().anyMatch(typeMirror -> typeMirror.toString().equals(Policy.class.getName()));
         }
         return false;
+    }
+
+    private static ActivatorAggregate getActivatorAggregate(ActivatorId activatorId, List<ActivatorAggregate> activatorAggregates) {
+        return activatorAggregates.stream().filter(activatorAggregate -> activatorAggregate.id().equals(activatorId)).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("Expected to find activator id by " + activatorId + " from " + activatorAggregates.stream().map(ActivatorAggregate::toString).collect(Collectors.joining(", "))));
     }
 
 

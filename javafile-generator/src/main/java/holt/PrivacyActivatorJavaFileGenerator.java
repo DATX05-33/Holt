@@ -31,7 +31,6 @@ public final class PrivacyActivatorJavaFileGenerator {
      * Second one is the combine process that extends the given requirements and combines the two.
      */
     public static void generateCombine(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
-        // Must only be one flow
         if (processActivatorAggregate.flows().size() != 1) {
             throw new IllegalStateException("Can only be one flow for a Combine process");
         }
@@ -126,11 +125,19 @@ public final class PrivacyActivatorJavaFileGenerator {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
     }
 
-    public static void generateQuerier(ProcessActivatorAggregate querier, ProcessingEnvironment env, String dfdPackageName) {
+    public static void generateQuerier(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
+        if (processActivatorAggregate.flows().size() != 1) {
+            throw new IllegalStateException("Can only be one flow for a Combine process");
+        }
+
+        FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
+//
+//        if (flow.inputs().size() != 1) {
+//            throw new IllegalStateException("Can only be one input for the querier flow");
+//        }
+
 
     }
 
