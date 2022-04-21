@@ -1,4 +1,8 @@
-package holt;
+package holt.padfd;
+
+import holt.DFDOrderedRep;
+import holt.DFDRep;
+import holt.Metadata;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +34,8 @@ public class PADFDBuilder {
                                 activator -> new Activator(
                                         activator.id(),
                                         activator.name(),
-                                        Activator.Type.fromDFDActivatorType(activator.type())
+                                        Activator.Type.fromDFDActivatorType(activator.type()),
+                                        activator.metadata()
                                 )
                         )
                 );
@@ -83,38 +88,7 @@ public class PADFDBuilder {
     }
 
     private Metadata getMetadata(Activator value) {
-        switch (value.type) {
-            case EXTERNAL_ENTITY -> {
-            }
-            case PROCESS -> {
-            }
-            case DATABASE -> {
-            }
-            case REASON -> {
-            }
-            case REQUEST -> {
-            }
-            case LIMIT -> {
-            }
-            case LOG -> {
-            }
-            case LOG_DATABASE -> {
-            }
-            case POLICY_DATABASE -> {
-            }
-            case CLEAN -> {
-            }
-            case COMBINER -> {
-                return new CombineMetadata();
-            }
-            case REDUCE -> {
-            }
-            case GUARD -> {
-            }
-            case QUERIER -> {
-            }
-        }
-        return null;
+        return value.metadata();
     }
 
     public List<Activator> activators() {
@@ -148,7 +122,7 @@ public class PADFDBuilder {
             case EXTERNAL_ENTITY -> {
                 return DFDRep.Activator.Type.EXTERNAL_ENTITY;
             }
-            case PROCESS, CLEAN, LOG, LIMIT, REQUEST, REASON, COMBINER, REDUCE, GUARD, QUERIER -> {
+            case PROCESS, CLEAN, LOG, LIMIT, REQUEST, REASON, COMBINER, GUARD, QUERIER -> {
                 return DFDRep.Activator.Type.PROCESS;
             }
             case DATABASE, POLICY_DATABASE, LOG_DATABASE -> {
@@ -163,12 +137,21 @@ public class PADFDBuilder {
         private final String id;
         private final String name;
         private final Type type;
+        private final Metadata metadata;
         private Activator partner;
 
         public Activator(String id, String name, Type type) {
             this.id = id;
             this.name = name;
             this.type = type;
+            this.metadata = null;
+        }
+
+        public Activator(String id, String name, Type type, Metadata metadata) {
+            this.id = id;
+            this.name = name;
+            this.type = type;
+            this.metadata = metadata;
         }
 
         public String getId() {
@@ -191,6 +174,10 @@ public class PADFDBuilder {
             this.partner = partner;
         }
 
+        public Metadata metadata() {
+            return this.metadata;
+        }
+
         public enum Type {
             EXTERNAL_ENTITY,
             PROCESS,
@@ -203,7 +190,6 @@ public class PADFDBuilder {
             POLICY_DATABASE,
             CLEAN,
             COMBINER,
-            REDUCE,
             GUARD,
             QUERIER;
 

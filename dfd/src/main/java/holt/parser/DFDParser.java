@@ -1,6 +1,7 @@
 package holt.parser;
 
 import holt.DFDOrderedRep;
+import holt.DFDRep;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -13,15 +14,16 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import holt.DFDRep;
-import static holt.DFDRep.Activator.*;
 import static holt.DFDRep.Activator.Type.DATABASE;
 import static holt.DFDRep.Activator.Type.EXTERNAL_ENTITY;
 import static holt.DFDRep.Activator.Type.PROCESS;
-import static holt.DFDRep.Flow.*;
 import static holt.DFDRep.Flow.Type.COMP;
 import static holt.DFDRep.Flow.Type.DELETE;
 import static holt.DFDRep.Flow.Type.IN;

@@ -33,6 +33,10 @@ public final class FlowThroughAggregate {
         return inputs.stream().toList();
     }
 
+    public void removeInput(Connector input) {
+        this.inputs.remove(input);
+    }
+
     public void addQueryInput(QueryInput queryInput) {
         if (this.queries.contains(queryInput)) {
             throw new IllegalArgumentException("Input is already added: " + queryInput);

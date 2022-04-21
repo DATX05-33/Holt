@@ -1,12 +1,13 @@
 package holt.applier;
 
 import holt.activator.ExternalEntityActivatorAggregate;
-import holt.activator.QualifiedName;
 import holt.activator.TraverseName;
+
+import java.util.List;
 
 public record TraverseRep(
         TraverseName name,
-        QualifiedName flowStartType,
+        List<OutputRep> startTypes,
         String[] dataflows,
         ExternalEntityActivatorAggregate externalEntityActivator) {
 

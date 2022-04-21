@@ -7,6 +7,5 @@ import java.lang.annotation.Target;
 public @interface QueryDefinition {
     Class<?> db();
     Class<?> process();
-    Class<?> type();
-    boolean isCollection() default false;
+    Output output();
 }

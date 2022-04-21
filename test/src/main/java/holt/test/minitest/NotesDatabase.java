@@ -4,7 +4,6 @@ package holt.test.minitest;
 import holt.processor.annotation.Activator;
 import holt.processor.generation.minitest.NotesDatabaseRequirements;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Activator(instantiateWithReflection = true)

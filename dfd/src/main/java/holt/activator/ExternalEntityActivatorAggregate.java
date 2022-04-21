@@ -2,33 +2,34 @@ package holt.activator;
 
 import holt.Metadata;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public final class ExternalEntityActivatorAggregate extends ActivatorAggregate implements OutputActivator {
 
-    private final Map<TraverseName, Connector> starts;
+    private final Map<TraverseName, List<Connector>> starts;
     private final Map<TraverseName, TraverseOutput> ends;
+    private final Map<TraverseName, List<AddConnectors>> addConnectorsMap;
 
-    public ExternalEntityActivatorAggregate(ActivatorName activatorName, Metadata metadata) {
-        super(activatorName, new ActivatorName("Abstract" + activatorName.value()), metadata);
+    public ExternalEntityActivatorAggregate(ActivatorId activatorId, ActivatorName activatorName, Metadata metadata) {
+        super(activatorId, activatorName, new ActivatorName("Abstract" + activatorName.value()), metadata);
         starts = new HashMap<>();
         ends = new HashMap<>();
+        addConnectorsMap = new HashMap<>();
     }
 
-    public void addStart(TraverseName traverseName) {
-        Connector connector = new Connector();
-        this.starts.put(traverseName, connector);
-    }
-
-    public Connector getStartConnector(TraverseName traverseName) {
-        return this.starts.get(traverseName);
-    }
-
-    public void setOutputType(TraverseName traverseName, QualifiedName startOutput) {
-        this.starts.get(traverseName).setType(startOutput);
+    public void addStart(TraverseName traverseName, List<FlowOutput> flowOutputs) {
+        this.starts.put(traverseName, new ArrayList<>());
+        for (FlowOutput flowOutput : flowOutputs) {
+            this.starts.get(traverseName).add(new Connector(flowOutput));
+        }
+        for (AddConnectors addConnectors : this.addConnectorsMap.get(traverseName)) {
+            addConnectors.add(this.starts.get(traverseName));
+        }
     }
 
     public void addOutput(TraverseName traverseName) {
@@ -57,7 +58,7 @@ public final class ExternalEntityActivatorAggregate extends ActivatorAggregate i
                 ));
     }
 
-    public Map<TraverseName, Connector> starts() {
+    public Map<TraverseName, List<Connector>> starts() {
         return this.starts;
     }
 
@@ -72,4 +73,16 @@ public final class ExternalEntityActivatorAggregate extends ActivatorAggregate i
                 ", ends=" + ends +
                 '}';
     }
+
+    public void addLateConnector(TraverseName traverseName, AddConnectors addConnectors) {
+        if (!addConnectorsMap.containsKey(traverseName)) {
+            addConnectorsMap.put(traverseName, new ArrayList<>());
+        }
+        addConnectorsMap.get(traverseName).add(addConnectors);
+    }
+
+    public interface AddConnectors {
+        void add(List<Connector> connectors);
+    }
+
 }

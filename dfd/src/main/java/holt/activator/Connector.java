@@ -13,7 +13,11 @@ public final class Connector {
         );
     }
 
-    public FlowOutput getFlowOutput() {
+    public Connector(FlowOutput flowOutput) {
+        this.flowOutput = flowOutput;
+    }
+
+    public FlowOutput flowOutput() {
         return flowOutput;
     }
 

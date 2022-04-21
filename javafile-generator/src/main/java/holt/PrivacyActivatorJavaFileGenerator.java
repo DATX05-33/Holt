@@ -1,5 +1,6 @@
 package holt;
 
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -8,21 +9,17 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import holt.activator.ActivatorAggregate;
 import holt.activator.Connector;
 import holt.activator.FlowThroughAggregate;
 import holt.activator.ProcessActivatorAggregate;
 import holt.activator.QualifiedName;
 
+import javax.annotation.processing.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static holt.JavaFileGenerator.PACKAGE_NAME;
-import static holt.JavaFileGenerator.toTypeName;
 
 public final class PrivacyActivatorJavaFileGenerator {
 
@@ -47,7 +44,7 @@ public final class PrivacyActivatorJavaFileGenerator {
         List<CodeBlock> codeBlocks = new ArrayList<>();
         for (int i = 0; i < flow.inputs().size(); i++) {
             Connector connector = flow.inputs().get(i);
-            TypeName typeName = toTypeName(connector);
+            TypeName typeName = JavaFileGenerator.toTypeName(connector);
             String varName = "v" + i;
             fieldSpecs.add(
                     FieldSpec
@@ -74,6 +71,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                 .addFields(fieldSpecs)
                 .addMethod(comboConstructor)
+                .addAnnotation(getGeneratedAnnotation())
                 .build();
 
         // Modify the activator aggregate so the requirements file is generated correctly
@@ -88,7 +86,7 @@ public final class PrivacyActivatorJavaFileGenerator {
             String varName = "input" + i;
             parameters.add(
                     ParameterSpec
-                            .builder(toTypeName(connector), varName)
+                            .builder(JavaFileGenerator.toTypeName(connector), varName)
                             .build()
             );
             returnSB
@@ -110,7 +108,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addParameters(parameters)
                 .addAnnotation(Override.class)
-                .returns(toTypeName(flow.output()))
+                .returns(JavaFileGenerator.toTypeName(flow.output()))
                 .addCode(returnCodeBlock)
                 .build();
 
@@ -119,6 +117,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addSuperinterface(ClassName.bestGuess(dfdPackageName + "." + processActivatorAggregate.requirementsName().value()))
                 .addMethod(combineMethodSpec)
                 .addType(comboClass)
+                .addAnnotation(getGeneratedAnnotation())
                 .build();
 
         JavaFile combineActivatorJavaFile = JavaFile.builder(dfdPackageName, combineActivatorTypeSpec).build();
@@ -131,6 +130,15 @@ public final class PrivacyActivatorJavaFileGenerator {
 
     }
 
+    public static void generateQuerier(ProcessActivatorAggregate querier, ProcessingEnvironment env, String dfdPackageName) {
+
+    }
+
+    private static AnnotationSpec getGeneratedAnnotation() {
+        return AnnotationSpec.builder(Generated.class)
+                .addMember("value", CodeBlock.of("\"" + PrivacyActivatorJavaFileGenerator.class.getName() + "\""))
+                .build();
+    }
 
 
 }

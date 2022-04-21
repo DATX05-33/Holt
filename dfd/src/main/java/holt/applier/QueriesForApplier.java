@@ -1,7 +1,5 @@
 package holt.applier;
 
-import holt.activator.Domain;
-
 import java.util.List;
 
 public final class QueriesForApplier {

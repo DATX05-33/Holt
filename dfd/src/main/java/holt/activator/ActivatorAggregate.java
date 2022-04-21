@@ -7,16 +7,19 @@ import java.util.Optional;
 
 public abstract class ActivatorAggregate {
 
+    private final ActivatorId activatorId;
     private final ActivatorName requirementsName;
     private ActivatorName activatorName;
     private ConnectedClass connectedClass;
     private final Metadata metadata;
-    protected ActivatorAggregate(ActivatorName activatorName, ActivatorName requirementsName) {
-        this(activatorName, requirementsName, null);
+    protected ActivatorAggregate(ActivatorId activatorId, ActivatorName activatorName, ActivatorName requirementsName) {
+        this(activatorId, activatorName, requirementsName, null);
     }
 
-    protected ActivatorAggregate(ActivatorName activatorName, ActivatorName requirementsName, Metadata metadata) {
+    protected ActivatorAggregate(ActivatorId activatorId, ActivatorName activatorName, ActivatorName requirementsName, Metadata metadata) {
+        Objects.requireNonNull(activatorId);
         Objects.requireNonNull(activatorName);
+        this.activatorId = activatorId;
         this.activatorName = activatorName;
         this.requirementsName = requirementsName;
         this.metadata = metadata;
@@ -55,7 +58,7 @@ public abstract class ActivatorAggregate {
         return requirementsName;
     }
 
-    public Metadata getMetadata() {
+    public Metadata metadata() {
         return metadata;
     }
 
@@ -64,12 +67,12 @@ public abstract class ActivatorAggregate {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ActivatorAggregate that = (ActivatorAggregate) o;
-        return Objects.equals(requirementsName, that.requirementsName) && Objects.equals(activatorName, that.activatorName) && Objects.equals(connectedClass, that.connectedClass);
+        return activatorId.equals(that.activatorId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(requirementsName, activatorName, connectedClass);
+        return Objects.hash(activatorId);
     }
 
     @Override

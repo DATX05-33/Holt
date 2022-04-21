@@ -1,6 +1,12 @@
 package holt;
 
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.AnnotationSpec;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
 import holt.activator.Connector;
 import holt.activator.Domain;
 import holt.activator.FlowOutput;
@@ -70,7 +76,7 @@ public class JavaFileGenerator {
 
     public static AnnotationSpec getGeneratedAnnotation() {
         return AnnotationSpec.builder(Generated.class)
-                .addMember("value", CodeBlock.of("\"holt.processor.DFDsProcessor\""))
+                .addMember("value", CodeBlock.of("\"" + JavaFileGenerator.class.getName() + "\""))
                 .build();
     }
 
@@ -89,7 +95,7 @@ public class JavaFileGenerator {
     }
 
     public static TypeName toTypeName(Connector connector) {
-        return toTypeName(connector.getFlowOutput());
+        return toTypeName(connector.flowOutput());
     }
 
     public static TypeName toTypeName(String qualifiedName) {

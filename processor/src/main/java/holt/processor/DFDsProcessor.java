@@ -2,14 +2,14 @@ package holt.processor;
 
 import holt.DFDOrderedRep;
 import holt.DFDRep;
-import holt.PADFDEnhancer;
+import holt.JavaFileGenerator;
+import holt.padfd.PADFDEnhancer;
 import holt.activator.ActivatorAggregate;
+import holt.activator.ActivatorId;
 import holt.activator.ActivatorName;
 import holt.activator.ConnectedClass;
 import holt.activator.Connector;
 import holt.activator.DFDName;
-import holt.JavaFileGenerator;
-import holt.PADFDTransformater;
 import holt.activator.DatabaseActivatorAggregate;
 import holt.activator.Domain;
 import holt.activator.ExternalEntityActivatorAggregate;
@@ -18,13 +18,21 @@ import holt.activator.ProcessActivatorAggregate;
 import holt.activator.QualifiedName;
 import holt.activator.TraverseName;
 import holt.applier.FlowThroughApplier;
-import holt.applier.QueriesForApplier;
-import holt.applier.TraverseApplier;
-import holt.parser.DFDParser;
-import holt.processor.annotation.*;
 import holt.applier.FlowThroughRep;
+import holt.applier.QueriesForApplier;
 import holt.applier.QueriesForRep;
+import holt.applier.TraverseApplier;
 import holt.applier.TraverseRep;
+import holt.padfd.PADFDTransformater;
+import holt.parser.DFDParser;
+import holt.processor.annotation.Activator;
+import holt.processor.annotation.DFD;
+import holt.processor.annotation.DFDs;
+import holt.processor.annotation.FlowThrough;
+import holt.processor.annotation.FlowThroughs;
+import holt.processor.annotation.QueriesFor;
+import holt.processor.annotation.Traverse;
+import holt.processor.annotation.Traverses;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -36,14 +44,18 @@ import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static holt.processor.AnnotationValueUtils.getAnnotationClassValue;
-import static holt.processor.RepBuilder.createFlowThroughRep;
-import static holt.processor.RepBuilder.createTraverseRep;
 
 public class DFDsProcessor extends AbstractProcessor {
 
@@ -186,9 +198,13 @@ public class DFDsProcessor extends AbstractProcessor {
                 orderedDFD = PADFDTransformater.enhance(orderedDFD);
             }
 
-            orderedDFD.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivatorAggregate(new ActivatorName(node.name()), node.metadata())));
-            orderedDFD.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorName(node.name()), node.metadata())));
-            orderedDFD.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorName(node.name()), node.metadata())));
+            orderedDFD.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivatorAggregate(new ActivatorId(node.id()), new ActivatorName(node.name()), node.metadata())));
+            orderedDFD.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorId(node.id()), new ActivatorName(node.name()), node.metadata())));
+            orderedDFD.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorId(node.id()), new ActivatorName(node.name()), node.metadata())));
+
+            if (orderedDFD.activators().size() != idToActivator.size()) {
+                throw new IllegalStateException("One or more of the ids are not unique");
+            }
 
             elementToActivatorAggregateMap.putAll(
                     connectAggregatesWithActivatorAnnotation(environment, idToActivator.values())
@@ -235,7 +251,6 @@ public class DFDsProcessor extends AbstractProcessor {
                     if (activatorFromGraphName.equals(activatorAggregate.name().value())) {
                         elementToActivatorAggregateMap.put(element, activatorAggregate);
                         activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
-                        System.out.println("?:" + activator.instantiateWithReflection());
                         activatorAggregate.setConnectedClass(
                                 new ConnectedClass(
                                         new QualifiedName(typeElement.getQualifiedName().toString()),
@@ -277,8 +292,6 @@ public class DFDsProcessor extends AbstractProcessor {
                 // Add to traverses
                 if (from instanceof ProcessActivatorAggregate fromProcessActivator) {
                     fromProcessActivator.createFlowThrough(traverseName);
-                } else if (from instanceof ExternalEntityActivatorAggregate fromExternalEntityActivator) {
-                    fromExternalEntityActivator.addStart(traverseName);
                 }
 
                 if (to instanceof OutputActivator outputActivator) {
@@ -311,25 +324,29 @@ public class DFDsProcessor extends AbstractProcessor {
                 ActivatorAggregate toActivatorAggregate = idToActivator.get(dataflow.to().id());
                 Objects.requireNonNull(fromActivatorAggregate);
 
-                Connector connector = null;
-                if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate fromExternalEntityActivator) {
-                    connector = fromExternalEntityActivator.getStartConnector(traverseName);
-                } else if (fromActivatorAggregate instanceof ProcessActivatorAggregate fromProcessActivator) {
-                    connector = fromProcessActivator.getOutput(traverseName);
+                if (fromActivatorAggregate instanceof ProcessActivatorAggregate fromProcessActivator) {
+                    Connector connector = fromProcessActivator.getOutput(traverseName);
+                    if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
+                        toProcessActivator.addInputToFlow(traverseName, connector);
+                    } else if (toActivatorAggregate instanceof OutputActivator outputActivator) {
+                        outputActivator.addInputToTraverseOutput(traverseName, connector);
+                    }
                 } else if (fromActivatorAggregate instanceof DatabaseActivatorAggregate fromDatabaseActivator) {
                     // If fromActivatorAggregate is a database, then the 'to' must be a Process.
                     ProcessActivatorAggregate toProcessActivator = (ProcessActivatorAggregate) toActivatorAggregate;
                     toProcessActivator.addQueryInputToFlow(traverseName, fromDatabaseActivator);
-                }
-
-                if (connector == null) {
-                    continue;
-                }
-
-                if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
-                    toProcessActivator.addInputToFlow(traverseName, connector);
-                } else if (toActivatorAggregate instanceof OutputActivator outputActivator) {
-                    outputActivator.addInputToTraverseOutput(traverseName, connector);
+                } else if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivatorAggregate) {
+                    externalEntityActivatorAggregate.addLateConnector(traverseName, connectors -> {
+                        if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
+                            for (Connector connector : connectors) {
+                                toProcessActivator.addInputToFlow(traverseName, connector);
+                            }
+                        } else if (toActivatorAggregate instanceof OutputActivator outputActivator) {
+                            for (Connector connector : connectors) {
+                                outputActivator.addInputToTraverseOutput(traverseName, connector);
+                            }
+                        }
+                    });
                 }
             }
         }
@@ -374,7 +391,7 @@ public class DFDsProcessor extends AbstractProcessor {
             dfdToFlowThroughRepMap
                     .get(dfdName)
                     .add(
-                            createFlowThroughRep(
+                            RepBuilder.createFlowThroughRep(
                                     processActivator,
                                     processorResults,
                                     flowThrough,
@@ -540,7 +557,7 @@ public class DFDsProcessor extends AbstractProcessor {
             dfdTraverseRepMap
                     .get(dfdName)
                     .add(
-                            createTraverseRep(
+                            RepBuilder.createTraverseRep(
                                     annotation,
                                     externalEntityActivator,
                                     this

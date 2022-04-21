@@ -1,6 +1,14 @@
 package holt;
 
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.TypeVariableName;
 import holt.activator.ActivatorAggregate;
 import holt.activator.ConnectedClass;
 import holt.activator.Connector;
@@ -119,7 +127,6 @@ public final class ExternalEntityJavaFileGenerator {
 
         boolean needToGenerateReflectionHelperMethod = false;
         for (ActivatorAggregate activatorAggregate : activatorsToInstantiate) {
-
             if (!activatorAggregate.equals(state.externalEntityActivator)) {
                 var activatorCode = generateCodeForActivator(activatorAggregate, state);
                 fieldSpecs.addAll(activatorCode.fieldSpecs);
@@ -134,7 +141,6 @@ public final class ExternalEntityJavaFileGenerator {
                 }
             }
 
-
             if (activatorAggregate instanceof ProcessActivatorAggregate processActivator) {
                 for (FlowThroughAggregate flowThroughAggregate : processActivator.flows()) {
                     if (!connectorToVariable.containsKey(flowThroughAggregate.output())) {
@@ -143,13 +149,6 @@ public final class ExternalEntityJavaFileGenerator {
                     }
                     for (QueryInputDefinition queryInputDefinition : flowThroughAggregate.queryInputDefinitions()) {
                         queryInputDefinitionToVariable.put(queryInputDefinition, "qd" + connectorVariableIndex);
-                        connectorVariableIndex++;
-                    }
-                }
-            } else if (activatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                for (Connector startConnector : externalEntityActivator.starts().values()) {
-                    if (!connectorToVariable.containsKey(startConnector)) {
-                        connectorToVariable.put(startConnector, "v" + connectorVariableIndex);
                         connectorVariableIndex++;
                     }
                 }
@@ -253,30 +252,33 @@ public final class ExternalEntityJavaFileGenerator {
         );
     }
 
-    private static MethodSpec generateTraverse(TraverseName traverseName, Connector input, State state) {
+    private static MethodSpec generateTraverse(TraverseName traverseName, List<Connector> inputs, State state) {
         var orderOfExecution = state.domain.traverses().get(traverseName);
         var connectorToVariable = state.connectorToVariable;
         var activatorToVariable = state.activatorToVariable;
         var queryInputDefinitionToVariable = state.queryInputDefinitionToVariable;
 
-        TypeName parameterClassType = toTypeName(input);
-        String first;
-        if (orderOfExecution.size() == 0) {
-            first = "d";
-        } else {
-            first = connectorToVariable.get(input);
-        }
+        List<ParameterSpec> inputParameters = new ArrayList<>();
+        for (int i = 0; i < inputs.size(); i++) {
+            Connector input = inputs.get(i);
+            String varName = "input" + i;
+            inputParameters.add(
+                    ParameterSpec
+                            .builder(toTypeName(input), varName)
+                            .build()
+            );
 
-        ParameterSpec dataParameterSpec = ParameterSpec.builder(parameterClassType, first).build();
+            connectorToVariable.put(input, varName);
+        }
 
         MethodSpec.Builder methodSpecBuilder = MethodSpec
                 .methodBuilder(traverseName.value())
                 .addModifiers(Modifier.PROTECTED, Modifier.FINAL)
-                .addParameter(dataParameterSpec);
+                .addParameters(inputParameters);
 
         ActivatorAggregate firstActivatorAggregate = orderOfExecution.get(0);
 
-        if (!(firstActivatorAggregate instanceof ExternalEntityActivatorAggregate)) {
+        if (!(firstActivatorAggregate instanceof ExternalEntityActivatorAggregate) ) {
             throw new IllegalStateException("First activator aggregate must be an external entity activator aggregate");
         }
 

@@ -11,4 +11,9 @@ public record QualifiedName(String value) {
         String[] split = value.split("\\.");
         return split[Math.max(split.length - 1, 0)];
     }
+
+    @Override
+    public String toString() {
+        return value;
+    }
 }

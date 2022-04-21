@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static holt.JavaFileGenerator.getGeneratedAnnotation;
-import static holt.JavaFileGenerator.toTypeName;
 import static holt.JavaFileGenerator.toOutputMethods;
+import static holt.JavaFileGenerator.toTypeName;
 
 public final class DatabaseJavaFileGenerator {
 

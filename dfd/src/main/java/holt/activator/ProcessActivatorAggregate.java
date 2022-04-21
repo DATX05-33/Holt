@@ -8,8 +8,8 @@ import java.util.Map;
 
 public final class ProcessActivatorAggregate extends ActivatorAggregate {
     private final Map<TraverseName, FlowThroughAggregate> flowThroughs;
-    public ProcessActivatorAggregate(ActivatorName activatorName, Metadata metadata) {
-        super(activatorName, new ActivatorName(activatorName + "Requirements"), metadata);
+    public ProcessActivatorAggregate(ActivatorId activatorId, ActivatorName activatorName, Metadata metadata) {
+        super(activatorId, activatorName, new ActivatorName(activatorName + "Requirements"), metadata);
         this.flowThroughs = new HashMap<>();
     }
 

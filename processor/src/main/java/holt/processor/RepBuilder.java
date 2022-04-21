@@ -5,14 +5,16 @@ import holt.activator.ExternalEntityActivatorAggregate;
 import holt.activator.ProcessActivatorAggregate;
 import holt.activator.QualifiedName;
 import holt.activator.TraverseName;
-import holt.processor.annotation.FlowThrough;
-import holt.processor.annotation.Query;
-import holt.processor.annotation.QueryDefinition;
-import holt.processor.annotation.Traverse;
 import holt.applier.FlowThroughRep;
+import holt.applier.OutputRep;
 import holt.applier.QueryDefinitionRep;
 import holt.applier.QueryRep;
 import holt.applier.TraverseRep;
+import holt.processor.annotation.FlowThrough;
+import holt.processor.annotation.Output;
+import holt.processor.annotation.Query;
+import holt.processor.annotation.QueryDefinition;
+import holt.processor.annotation.Traverse;
 
 import java.util.Arrays;
 
@@ -23,9 +25,9 @@ public final class RepBuilder {
     public static TraverseRep createTraverseRep(Traverse traverse, ExternalEntityActivatorAggregate externalEntityActivator, DFDsProcessor processor) {
         return new TraverseRep(
                 new TraverseName(traverse.name()),
-                new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
-                        processor, traverse, Traverse::flowStartType
-                ).toString()),
+                Arrays.stream(traverse.startTypes())
+                        .map(output -> createOutputRep(output, processor))
+                        .toList(),
                 traverse.order(),
                 externalEntityActivator
         );
@@ -36,10 +38,7 @@ public final class RepBuilder {
                 processActivator,
                 new TraverseName(flowThrough.traverse()),
                 flowThrough.functionName(),
-                new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
-                        processor, flowThrough, FlowThrough::outputType
-                ).toString()),
-                flowThrough.outputIsCollection(),
+                createOutputRep(flowThrough.output(), processor),
                 Arrays.stream(flowThrough.queries())
                         .map(query -> createQueryRep(query, processor))
                         .toList(),
@@ -54,10 +53,7 @@ public final class RepBuilder {
                 new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
                         processor, query, Query::db
                 ).toString()),
-                new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
-                        processor, query, Query::type
-                ).toString()),
-                query.isCollection()
+                createOutputRep(query.output(), processor)
         );
     }
 
@@ -75,11 +71,20 @@ public final class RepBuilder {
         return new QueryDefinitionRep(
                 databaseActivatorAggregate,
                 processActivatorAggregate,
-                new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
-                        processor, queryDefinition, QueryDefinition::type
-                ).toString()),
-                queryDefinition.isCollection()
+                createOutputRep(queryDefinition.output(), processor)
+        );
+    }
+
+    public static OutputRep createOutputRep(Output output, DFDsProcessor processor) {
+        return new OutputRep(
+                new QualifiedName(
+                        AnnotationValueUtils.getAnnotationClassValue(
+                                processor, output, Output::type
+                        ).toString()
+                ),
+                output.collection()
         );
     }
 
 }
+

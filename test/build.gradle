@@ -11,6 +11,7 @@ tasks.register("move-xml-files", Copy) {
 tasks.compileJava.dependsOn("move-xml-files")
 
 dependencies {
+    implementation project(':padfd')
     implementation project(':processor')
     annotationProcessor project(':processor')
 }
