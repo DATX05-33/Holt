@@ -4,6 +4,8 @@ import holt.DFDOrderedRep;
 import holt.DFDRep;
 import holt.activator.ActivatorId;
 import holt.padfd.metadata.CombineMetadata;
+import holt.padfd.metadata.GuardMetadata;
+import holt.padfd.metadata.LimitMetadata;
 import holt.padfd.metadata.QuerierMetadata;
 import holt.padfd.metadata.RequestMetadata;
 
@@ -63,16 +65,26 @@ public final class PADFDTransformater {
             PADFDBuilder.Activator request,
             PADFDBuilder.Activator log,
             PADFDBuilder.Activator logDB,
+            PADFDBuilder.Activator guard,
             PADFDBuilder.Flow requestToLimit,
             PADFDBuilder.Flow limitToLog,
-            PADFDBuilder.Flow logToLogDB
+            PADFDBuilder.Flow logToLogDB,
+            PADFDBuilder.Flow limitToGuard
     ) { }
 
     private NewCommonElements addCommonElements(DFDRep.Flow flow) {
+        PADFDBuilder.Activator guard = new PADFDBuilder.Activator(
+                flow.to().id() + "-guard-" + flow.id(),
+                flow.to().name() + "Guard" + flow.id(),
+                PADFDBuilder.Activator.Type.GUARD,
+                new GuardMetadata()
+        );
         PADFDBuilder.Activator limit = new PADFDBuilder.Activator(
                 flow.to().id() + "-limit-" + flow.id(),
                 flow.to().name() + "Limit" + flow.id(),
-                PADFDBuilder.Activator.Type.LIMIT);
+                PADFDBuilder.Activator.Type.LIMIT,
+                new LimitMetadata()
+        );
         PADFDBuilder.Activator request = new PADFDBuilder.Activator(
                 flow.to().id() + "-request-" + flow.id(),
                 flow.to().name() + "Request" + flow.id(),
@@ -91,13 +103,25 @@ public final class PADFDTransformater {
                 PADFDBuilder.Activator.Type.LOG_DATABASE);
 
         // Request -> Limit
-        var requestToLimit = flow(flow.id() + "1", request, limit);
+        var requestToLimit = flow(flow.id() + "111", request, limit);
         // Limit -> Log
-        var limitToLog = flow(flow.id() + "2", limit, log);
+        var limitToLog = flow(flow.id() + "222", limit, log);
         // Log -> Database
-        var logToLogDB = flow(flow.id() + "3", log, logDB);
+        var logToLogDB = flow(flow.id() + "333", log, logDB);
+        // Limit -> Guard
+        var limitToGuard = flow(flow.id() + "444", limit, guard);
 
-        return new NewCommonElements(limit, request, log, logDB, requestToLimit, limitToLog, logToLogDB);
+        return new NewCommonElements(
+                limit,
+                request,
+                log,
+                logDB,
+                guard,
+                requestToLimit,
+                limitToLog,
+                logToLogDB,
+                limitToGuard
+        );
     }
 
     private void addInElements(DFDRep.Flow f) {
@@ -114,10 +138,13 @@ public final class PADFDTransformater {
 
         // Request -> Reason
         var requestToReason = flow(f.id() + "5", e.request, t.getPartner());
-        // Limit -> Process
-        var limitToProcess = flow(f.id() + "6", e.limit, t);
-        limitToProcess.setPartner(requestToReason);
-        requestToReason.setPartner(limitToProcess);
+        // Guard -> Process
+        var guardToProcess = flow(f.id() + "6", e.guard, t);
+//        guardToProcess.setPartner(requestToReason);
+//        requestToReason.setPartner(guardToProcess);
+
+        // Entity -> Guard
+        var entityToGuard = flow(f.id() + "7", s, e.guard);
 
         builder.addFlow(f,
                 List.of(
@@ -126,7 +153,9 @@ public final class PADFDTransformater {
                         e.requestToLimit,
                         e.limitToLog,
                         e.logToLogDB,
-                        limitToProcess,
+                        e.limitToGuard,
+                        entityToGuard,
+                        guardToProcess,
                         requestToReason
                 )
         );
@@ -147,15 +176,18 @@ public final class PADFDTransformater {
         //TODO: This is not a unique id or name
         PADFDBuilder.Activator combiner = new PADFDBuilder.Activator(f.id() + "-combiner", t.getName() + "Combiner", PADFDBuilder.Activator.Type.COMBINER, new CombineMetadata());
 
-        // Limit -> Combiner
-        var limitToCombiner = flow(f.id() + "6", e.limit, combiner);
+        // Guard -> Combiner
+        var guardToCombiner = flow(f.id() + "6", e.guard, combiner);
         // Request -> Combiner
         var requestToCombiner = flow(f.id() + "7", e.request, combiner);
-        limitToCombiner.setPartner(requestToCombiner);
-        requestToCombiner.setPartner(limitToCombiner);
+        guardToCombiner.setPartner(requestToCombiner);
+        requestToCombiner.setPartner(guardToCombiner);
 
         // Combiner -> External Entity
         var combinerToEntity = flow(f.id() + "8", combiner, t);
+
+        // Process -> Guard
+        var processToGuard = flow(f.id() + "9", s, e.guard);
 
         builder.addFlow(f,
                 List.of(
@@ -164,7 +196,9 @@ public final class PADFDTransformater {
                         e.requestToLimit,
                         e.limitToLog,
                         e.logToLogDB,
-                        limitToCombiner,
+                        e.limitToGuard,
+                        processToGuard,
+                        guardToCombiner,
                         requestToCombiner,
                         combinerToEntity
                 )
@@ -183,12 +217,14 @@ public final class PADFDTransformater {
         process1ToLimit.setPartner(reason1ToRequest);
         reason1ToRequest.setPartner(process1ToLimit);
 
-        // Limit -> Process 2
-        var limitToProcess2 = flow(f.id() + "6", e.limit, t);
+        // Guard -> Process 2
+        var guardToProcess2 = flow(f.id() + "6", e.guard, t);
         // Request -> Reason 2
         var requestToReason2 = flow(f.id() + "7", e.request, t.getPartner());
-        limitToProcess2.setPartner(requestToReason2);
-        requestToReason2.setPartner(limitToProcess2);
+        guardToProcess2.setPartner(requestToReason2);
+        requestToReason2.setPartner(guardToProcess2);
+
+        var process1ToGuard = flow(f.id() + "8", s, e.guard);
 
         builder.addFlow(f,
                 List.of(
@@ -197,7 +233,9 @@ public final class PADFDTransformater {
                         e.requestToLimit,
                         e.limitToLog,
                         e.logToLogDB,
-                        limitToProcess2,
+                        e.limitToGuard,
+                        process1ToGuard,
+                        guardToProcess2,
                         requestToReason2
                 )
         );
@@ -216,12 +254,14 @@ public final class PADFDTransformater {
         processToLimit.setPartner(reasonToRequest);
         reasonToRequest.setPartner(processToLimit);
 
-        // Limit -> Database
-        var limitToDatabase = flow(f.id() + "6", e.limit, t);
+        // Guard -> Database
+        var guardToDatabase = flow(f.id() + "6", e.guard, t);
         // Request -> Policy Database
         var requestToPolicyDB = flow(f.id() + "7", e.request, t.getPartner());
-        limitToDatabase.setPartner(requestToPolicyDB);
-        requestToPolicyDB.setPartner(limitToDatabase);
+        guardToDatabase.setPartner(requestToPolicyDB);
+        requestToPolicyDB.setPartner(guardToDatabase);
+
+        var processToGuard = flow(f.id() + "8", s, e.guard);
 
         builder.addFlow(f,
                 List.of(
@@ -230,7 +270,9 @@ public final class PADFDTransformater {
                         e.requestToLimit,
                         e.limitToLog,
                         e.logToLogDB,
-                        limitToDatabase,
+                        e.limitToGuard,
+                        processToGuard,
+                        guardToDatabase,
                         requestToPolicyDB
                 )
         );
@@ -261,12 +303,14 @@ public final class PADFDTransformater {
 //        dbToLimit.setPartner(policyDBToRequest);
 //        policyDBToRequest.setPartner(dbToLimit);
 
-        // Limit -> Process
-        var limitToProcess = flow(f.id() + "6", e.limit, t);
+        // Guard -> Process
+        var guardToProcess = flow(f.id() + "6", e.guard, t);
         // Request -> Reason
         var requestToReason = flow(f.id() + "7", e.request, t.getPartner());
-        limitToProcess.setPartner(requestToReason);
-        requestToReason.setPartner(limitToProcess);
+        guardToProcess.setPartner(requestToReason);
+        requestToReason.setPartner(guardToProcess);
+
+        var querierToGuard = flow(f.id() + "8", querier, e.guard);
 
         builder.addFlow(f,
                 List.of(
@@ -276,7 +320,9 @@ public final class PADFDTransformater {
                         e.requestToLimit,
                         e.limitToLog,
                         e.logToLogDB,
-                        limitToProcess,
+                        e.limitToGuard,
+                        querierToGuard,
+                        guardToProcess,
                         requestToReason
                 )
         );

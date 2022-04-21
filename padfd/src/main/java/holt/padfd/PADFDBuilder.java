@@ -105,6 +105,9 @@ public class PADFDBuilder {
 
     public void addFlow(DFDRep.Flow toReplace, List<Flow> newFlows) {
         this.toReplaceFlows.put(toReplace, newFlows);
+//        System.out.println("Adding...");
+//        System.out.println(newFlows.stream().map(flow -> flow.from.name + " --> " + flow.to.name).collect(Collectors.joining("\n")));
+//        System.out.println("done");
         newFlows.forEach(flow -> {
             Activator a1 = flow.from;
             Activator a2 = flow.to;

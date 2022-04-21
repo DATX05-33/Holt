@@ -10,6 +10,7 @@ import holt.activator.Domain;
 import holt.activator.ExternalEntityActivatorAggregate;
 import holt.activator.FlowThroughAggregate;
 import holt.activator.ProcessActivatorAggregate;
+import holt.activator.QualifiedName;
 import holt.activator.TraverseName;
 import holt.padfd.metadata.CombineMetadata;
 import holt.padfd.metadata.LimitMetadata;
@@ -98,8 +99,7 @@ public final class PADFDEnhancer {
                     }
                     FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
 
-                    //TODO: This doesn't handle collection atm
-//                    flow.setOutputType(new QualifiedName("java.lang.Boolean"), false);
+                    flow.setOutputType(new QualifiedName("java.lang.Boolean"), false);
                 }
             }
         }

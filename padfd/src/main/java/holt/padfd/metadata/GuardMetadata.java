@@ -1,4 +1,6 @@
 package holt.padfd.metadata;
 
-public class GuardMetadata {
+import holt.Metadata;
+
+public class GuardMetadata implements Metadata {
 }
