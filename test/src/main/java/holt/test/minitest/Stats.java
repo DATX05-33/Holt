@@ -22,5 +22,4 @@ public class Stats extends AbstractStats {
         return 0;
     }
 
-
 }

@@ -19,7 +19,7 @@ import java.util.Map;
         queries = {
                 @Query(
                         db = NotesPolicyDatabase.class,
-                        output = @Output(type = NotePolicy.class, collection = true)
+                        output = @Output(type = NotePolicy.class)
                 )
         }
 )
