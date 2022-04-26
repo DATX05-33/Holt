@@ -259,10 +259,10 @@ public final class PrivacyActivatorJavaFileGenerator {
         if (qualifiedName.types() == null) {
             return ClassName.bestGuess(qualifiedName.value());
         } else{
-            TypeName[] types = new TypeName[qualifiedName.types().length];
-            QualifiedName[] qualifiedNames = qualifiedName.types();
-            for (int i = 0; i < qualifiedNames.length; i++) {
-                QualifiedName type = qualifiedNames[i];
+            TypeName[] types = new TypeName[qualifiedName.types().size()];
+            List<QualifiedName> qualifiedNames = qualifiedName.types();
+            for (int i = 0; i < qualifiedNames.size(); i++) {
+                QualifiedName type = qualifiedNames.get(i);
                 types[i] = ClassName.bestGuess(type.value());
             }
             return ParameterizedTypeName.get(

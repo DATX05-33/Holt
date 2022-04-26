@@ -73,8 +73,10 @@ public final class PADFDEnhancer {
                         flow.setOutputType(
                                 QualifiedName.of(
                                         Map.class.getName(),
-                                        dataQualifiedName,
-                                        processActivatorAggregate.getOutput(traverseName).flowOutput().type()
+                                        List.of(
+                                                dataQualifiedName,
+                                                processActivatorAggregate.getOutput(traverseName).flowOutput().type()
+                                        )
                                 ),
                                 false
                         );
@@ -147,7 +149,7 @@ public final class PADFDEnhancer {
                         throw new IllegalStateException();
                     }
 
-                    flow.setOutputType(QualifiedName.of(Predicate.class.getName(), sourceQualifiedName), false);
+                    flow.setOutputType(QualifiedName.of(Predicate.class.getName(), List.of(sourceQualifiedName)), false);
                 } else if (processActivatorAggregate.metadata() instanceof GuardMetadata guardMetadata) {
                     if (processActivatorAggregate.flows().size() != 1) {
                         throw new IllegalStateException("Guard can only have one flow");

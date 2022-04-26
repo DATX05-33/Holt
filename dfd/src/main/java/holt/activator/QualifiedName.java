@@ -1,7 +1,10 @@
 package holt.activator;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 //TODO: Adding a type here feels like a hack.
@@ -10,7 +13,7 @@ public interface QualifiedName {
         return new QualifiedNameRecord(value);
     }
 
-    static QualifiedName of(String value, QualifiedName... type) {
+    static QualifiedName of(String value, List<QualifiedName> type) {
         return new QualifiedNameRecord(value, type);
     }
 
@@ -37,10 +40,10 @@ public interface QualifiedName {
             }
 
             @Override
-            public QualifiedName[] types() {
+            public List<QualifiedName> types() {
                 FlowOutput flowOutput = connector.flowOutput();
                 return flowOutput.isCollection()
-                        ? new QualifiedName[] { flowOutput.type() }
+                        ? List.of(flowOutput.type())
                         : null;
             }
 
@@ -54,6 +57,10 @@ public interface QualifiedName {
     QualifiedName OBJECT = new QualifiedNameRecord("java.lang.Object");
 
     static QualifiedName of(Connector connector, boolean ignoreCollections) {
+        if (!ignoreCollections) {
+            return of(connector);
+        }
+
         return new QualifiedName() {
             @Override
             public String simpleName() {
@@ -70,8 +77,8 @@ public interface QualifiedName {
             }
 
             @Override
-            public QualifiedName[] types() {
-                return null;
+            public List<QualifiedName> types() {
+                return Collections.emptyList();
             }
 
             @Override
@@ -85,9 +92,9 @@ public interface QualifiedName {
 
     String value();
 
-    QualifiedName[] types();
+    List<QualifiedName> types();
 
-    record QualifiedNameRecord(String value, QualifiedName[] types) implements QualifiedName {
+    record QualifiedNameRecord(String value, List<QualifiedName> types) implements QualifiedName {
 
 
         public QualifiedNameRecord(String value) {
@@ -105,7 +112,7 @@ public interface QualifiedName {
         public String toString() {
             return "QualifiedNameRecord{" +
                     "value='" + value + '\'' +
-                    ", types=" + Arrays.toString(types) +
+                    ", types=" + types +
                     '}';
         }
     }
