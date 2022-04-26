@@ -3,6 +3,7 @@ package holt.padfd;
 import holt.DFDOrderedRep;
 import holt.DFDRep;
 import holt.activator.ActivatorId;
+import holt.activator.TraverseName;
 import holt.padfd.metadata.CombineMetadata;
 import holt.padfd.metadata.GuardMetadata;
 import holt.padfd.metadata.LimitMetadata;
@@ -10,6 +11,7 @@ import holt.padfd.metadata.QuerierMetadata;
 import holt.padfd.metadata.RequestMetadata;
 
 import java.util.List;
+import java.util.Map;
 
 public final class PADFDTransformater {
 
@@ -22,6 +24,17 @@ public final class PADFDTransformater {
     public static DFDOrderedRep enhance(DFDOrderedRep dfd) {
         PADFDBuilder builder = PADFDBuilder.fromDFD(dfd);
         return new PADFDTransformater(builder).internalEnhance();
+    }
+
+    private String getTraverseName(DFDRep.Flow flow) {
+        for (Map.Entry<String, List<DFDRep.Flow>> traverseEntry : this.builder.baseDFD.traverses().entrySet()) {
+            for (DFDRep.Flow flow1 : traverseEntry.getValue()) {
+                if (flow.equals(flow1)) {
+                    return traverseEntry.getKey();
+                }
+            }
+        }
+        throw new IllegalStateException();
     }
 
     public DFDOrderedRep internalEnhance() {
@@ -73,21 +86,23 @@ public final class PADFDTransformater {
     ) { }
 
     private NewCommonElements addCommonElements(DFDRep.Flow flow, ActivatorId dataSourceActivator) {
+        String traverseName = getTraverseName(flow);
+        String comboName = flow.from().name() + "To" + flow.to().name() + traverseName;
         PADFDBuilder.Activator guard = new PADFDBuilder.Activator(
                 flow.to().id() + "-guard-" + flow.formattedId(),
-                flow.to().name() + "Guard" + flow.formattedId(),
+                comboName + "Guard",
                 PADFDBuilder.Activator.Type.GUARD,
                 new GuardMetadata()
         );
         PADFDBuilder.Activator limit = new PADFDBuilder.Activator(
                 flow.to().id() + "-limit-" + flow.formattedId(),
-                flow.to().name() + "Limit" + flow.formattedId(),
+                comboName + "Limit",
                 PADFDBuilder.Activator.Type.LIMIT,
                 new LimitMetadata(dataSourceActivator)
         );
         PADFDBuilder.Activator request = new PADFDBuilder.Activator(
                 flow.to().id() + "-request-" + flow.formattedId(),
-                flow.to().name() + "Request" + flow.formattedId(),
+                comboName  + "Request",
                 PADFDBuilder.Activator.Type.REQUEST,
                 new RequestMetadata(dataSourceActivator)
         );
@@ -95,11 +110,11 @@ public final class PADFDTransformater {
         request.setPartner(limit);
         PADFDBuilder.Activator log = new PADFDBuilder.Activator(
                 flow.to().id() + "-log-" + flow.formattedId(),
-                limit.getName() + "Log" + flow.formattedId(),
+                limit.getName() + "Log",
                 PADFDBuilder.Activator.Type.LOG);
         PADFDBuilder.Activator logDB = new PADFDBuilder.Activator(
                 flow.to().id() + "-log_db-" + flow.formattedId(),
-                log.getName() + "Database" + flow.formattedId(),
+                log.getName() + "Database",
                 PADFDBuilder.Activator.Type.LOG_DATABASE);
 
         // Request -> Limit
@@ -173,8 +188,10 @@ public final class PADFDTransformater {
         processToLimit.setPartner(reasonToRequest);
         reasonToRequest.setPartner(processToLimit);
 
+        String traverseName = getTraverseName(f);
+
         //TODO: This is not a unique id or name
-        PADFDBuilder.Activator combiner = new PADFDBuilder.Activator(f.id() + "-combiner", t.getName() + "Combiner", PADFDBuilder.Activator.Type.COMBINER, new CombineMetadata());
+        PADFDBuilder.Activator combiner = new PADFDBuilder.Activator(f.id() + "-combiner", t.getName() + traverseName + "Combiner", PADFDBuilder.Activator.Type.COMBINER, new CombineMetadata());
 
         // Guard -> Combiner
         var guardToCombiner = flow(f.id() + "6", e.guard, combiner);
@@ -284,10 +301,12 @@ public final class PADFDTransformater {
         PADFDBuilder.Activator s = a(f.from());
         PADFDBuilder.Activator t = a(f.to());
 
+        String traverseName = getTraverseName(f);
+
         //TODO: Name not unique enough
         PADFDBuilder.Activator querier = new PADFDBuilder.Activator(
                 querierId,
-                s.getName() + "Querier" + f.formattedId(),
+                s.getName() + traverseName + "Querier",
                 PADFDBuilder.Activator.Type.QUERIER,
                 new QuerierMetadata(
                         new ActivatorId(s.getId()),

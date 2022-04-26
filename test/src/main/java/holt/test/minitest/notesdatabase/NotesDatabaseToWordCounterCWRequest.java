@@ -4,8 +4,8 @@ import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Output;
 import holt.processor.annotation.Query;
-import holt.processor.generation.minitest.NotesPolicyDatabaseToNotesDatabaseToWordCounterRequestCWQuery;
-import holt.processor.generation.minitest.WordCounterRequestNotesRequirements;
+import holt.processor.generation.minitest.NotesDatabasePolicyToNotesDatabaseToWordCounterCWRequestCWQuery;
+import holt.processor.generation.minitest.NotesDatabaseToWordCounterCWRequestRequirements;
 import holt.test.minitest.data.Note;
 import holt.test.minitest.data.NotePolicy;
 
@@ -23,16 +23,16 @@ import java.util.Map;
                 )
         }
 )
-@Activator(instantiateWithReflection = true, graphName = "WordCounterRequestNotes")
-public class NotesDatabaseToWordCounterRequest implements WordCounterRequestNotesRequirements {
+@Activator(instantiateWithReflection = true)
+public class NotesDatabaseToWordCounterCWRequest implements NotesDatabaseToWordCounterCWRequestRequirements {
 
     @Override
-    public Map<Note, NotePolicy> CW(Collection<Note> input0, Collection<NotePolicy> dbInput1) {
+    public Map<Note, NotePolicy> CW(Collection<Note> input0, Object dbInput1) {
         return null;
     }
 
     @Override
-    public NotesPolicyDatabaseToNotesDatabaseToWordCounterRequestCWQuery queryNotesPolicyDatabaseCW(Collection<Note> input0) {
+    public NotesDatabasePolicyToNotesDatabaseToWordCounterCWRequestCWQuery queryNotesDatabasePolicyCW(Collection<Note> input0) {
         return null;
     }
 }

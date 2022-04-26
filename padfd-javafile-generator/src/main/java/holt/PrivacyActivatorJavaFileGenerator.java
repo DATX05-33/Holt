@@ -51,13 +51,12 @@ public final class PrivacyActivatorJavaFileGenerator {
                     files.addAll(generateCombine(processActivatorAggregate, processingEnvironment, dfdPackageName));
                 } else if (processActivatorAggregate.metadata() instanceof QuerierMetadata querierMetadata) {
                     Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();
-                    TraverseName traverseName = flowThroughEntry.getKey();
                     FlowThroughAggregate flow = flowThroughEntry.getValue();
 
                     QueryInput queryInput = flow.queries().get(0);
                     flow.setOutputType(queryInput.queryInputDefinition().output().type(), queryInput.queryInputDefinition().output().isCollection());
 
-                    generateQuerier(processActivatorAggregate, processingEnvironment, dfdPackageName);
+                    files.addAll(generateQuerier(processActivatorAggregate, processingEnvironment, dfdPackageName));
                 }
             }
         }
@@ -168,12 +167,37 @@ public final class PrivacyActivatorJavaFileGenerator {
         }
 
         FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
-//
-//        if (flow.inputs().size() != 1) {
-//            throw new IllegalStateException("Can only be one input for the querier flow");
-//        }
 
-        return Collections.emptyList();
+        if (flow.queries().size() != 1 && flow.inputs().size() == 0) {
+            throw new IllegalStateException("Can only be one query input for the querier flow");
+        }
+
+        QueryInput queryInput = flow.queries().get(0);
+        TypeName queryInputTypeName = toTypeName(queryInput.queryInputDefinition().output());
+
+        ParameterSpec queryInputParameterSpec = ParameterSpec
+                .builder(queryInputTypeName, "queryResult")
+                .build();
+
+        MethodSpec querierMethodSpec = MethodSpec
+                .methodBuilder(flow.functionName().value())
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(queryInputParameterSpec)
+                .addCode(CodeBlock.of("return queryResult;"))
+                .returns(queryInputTypeName)
+                .build();
+
+        TypeSpec querierTypeSpec = TypeSpec.classBuilder(processActivatorAggregate.name().value())
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addSuperinterface(ClassName.bestGuess(dfdPackageName + "." + processActivatorAggregate.requirementsName().value()))
+                .addMethod(querierMethodSpec)
+                .addAnnotation(getGeneratedAnnotation())
+                .build();
+
+
+
+        return Collections.singletonList(JavaFile.builder(dfdPackageName, querierTypeSpec).build());
     }
 
     private static List<JavaFile> generateCombiner(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {

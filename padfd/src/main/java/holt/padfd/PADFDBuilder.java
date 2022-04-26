@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class PADFDBuilder {
 
     private final Map<String, Activator> idToActivator;
-    private final DFDOrderedRep baseDFD;
+    public final DFDOrderedRep baseDFD;
     private final List<DFDRep.Flow> dfdFlowsQueue;
     private final Map<DFDRep.Flow, List<Flow>> toReplaceFlows;
 
