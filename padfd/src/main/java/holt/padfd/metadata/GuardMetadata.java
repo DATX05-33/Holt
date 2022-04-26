@@ -1,6 +1,7 @@
 package holt.padfd.metadata;
 
 import holt.Metadata;
+import holt.activator.ActivatorId;
 
-public class GuardMetadata implements Metadata {
+public record GuardMetadata(ActivatorId dataSourceActivator) implements Metadata {
 }

@@ -7,8 +7,11 @@ import holt.processor.annotation.Query;
 import holt.processor.generation.minitest.NotesDatabaseToWordCounterCountWordsQuery;
 import holt.processor.generation.minitest.WordCounterRequirements;
 import holt.test.minitest.NotesDatabase;
+import holt.test.minitest.data.CountWordsAction;
 import holt.test.minitest.data.CountWordsActionPolicy;
 import holt.test.minitest.data.Note;
+
+import java.util.Collection;
 
 @FlowThrough(
         traverse = "CW",
@@ -25,13 +28,12 @@ import holt.test.minitest.data.Note;
 public class WordCounter implements WordCounterRequirements {
 
     @Override
-    public Integer countWords(Object input0, Object input1) {
+    public Integer countWords(CountWordsAction input0, Collection<Note> input1) {
         return null;
     }
 
     @Override
-    public NotesDatabaseToWordCounterCountWordsQuery queryNotesDatabaseCountWords(Object input0, Object input1) {
+    public NotesDatabaseToWordCounterCountWordsQuery queryNotesDatabaseCountWords(CountWordsAction input0, Collection<Note> input1) {
         return null;
     }
-
 }

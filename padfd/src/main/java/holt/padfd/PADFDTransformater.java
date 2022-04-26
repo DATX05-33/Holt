@@ -93,7 +93,7 @@ public final class PADFDTransformater {
                 flow.to().id() + "-guard-" + flow.formattedId(),
                 comboName + "Guard",
                 PADFDBuilder.Activator.Type.GUARD,
-                new GuardMetadata()
+                new GuardMetadata(dataSourceActivator)
         );
         PADFDBuilder.Activator limit = new PADFDBuilder.Activator(
                 flow.to().id() + "-limit-" + flow.formattedId(),
@@ -198,7 +198,6 @@ public final class PADFDTransformater {
 
         String traverseName = getTraverseName(f);
 
-        //TODO: This is not a unique id or name
         PADFDBuilder.Activator combiner = new PADFDBuilder.Activator(f.id() + "-combiner", t.getName() + traverseName + "Combiner", PADFDBuilder.Activator.Type.COMBINER, new CombineMetadata());
 
         // Guard -> Combiner
@@ -320,7 +319,6 @@ public final class PADFDTransformater {
 
         String traverseName = getTraverseName(f);
 
-        //TODO: Name not unique enough
         PADFDBuilder.Activator querier = new PADFDBuilder.Activator(
                 querierId,
                 s.getName() + traverseName + "Querier",

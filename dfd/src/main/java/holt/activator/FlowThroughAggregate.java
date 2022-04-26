@@ -14,7 +14,7 @@ public final class FlowThroughAggregate {
     private final List<QueryInputDefinition> queryInputDefinitions;
     private final Connector output;
     private FunctionName functionName;
-    private List<QueryRep> laterQueryRep;
+    private final List<QueryRep> laterQueryRep;
 
     public FlowThroughAggregate() {
         this.inputs = new ArrayList<>();

@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static holt.DatabaseJavaFileGenerator.generate;
+import static holt.ExternalEntityJavaFileGenerator.generate;
+import static holt.ProcessJavaFileGenerator.generate;
+
 public class JavaFileGenerator {
 
     public static final String PACKAGE_NAME = "holt.processor.generation";
@@ -61,17 +65,15 @@ public class JavaFileGenerator {
 
         domain
                 .databases()
-                .forEach(database -> javaFiles.add(DatabaseJavaFileGenerator.generate(database, dfdPackageName)));
+                .forEach(database -> javaFiles.add(generate(database, dfdPackageName)));
 
         domain
                 .externalEntities()
-                .forEach(externalEntity -> javaFiles.add(ExternalEntityJavaFileGenerator.generate(domain, dfdPackageName, externalEntity)));
+                .forEach(externalEntity -> javaFiles.add(generate(domain, dfdPackageName, externalEntity)));
 
         domain
                 .processes()
-                .forEach(process -> javaFiles.addAll(
-                        ProcessJavaFileGenerator.generate(process, dfdPackageName)
-                ));
+                .forEach(process -> javaFiles.addAll(generate(process, dfdPackageName)));
 
         return javaFiles;
     }

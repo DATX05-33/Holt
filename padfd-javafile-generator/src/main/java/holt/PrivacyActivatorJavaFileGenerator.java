@@ -22,6 +22,7 @@ import holt.activator.QualifiedName;
 import holt.activator.QueryInput;
 import holt.activator.TraverseName;
 import holt.padfd.metadata.CombineMetadata;
+import holt.padfd.metadata.GuardMetadata;
 import holt.padfd.metadata.QuerierMetadata;
 
 import javax.annotation.processing.Generated;
@@ -31,10 +32,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 public final class PrivacyActivatorJavaFileGenerator {
 
@@ -57,6 +56,8 @@ public final class PrivacyActivatorJavaFileGenerator {
                     flow.setOutputType(queryInput.queryInputDefinition().output().type(), queryInput.queryInputDefinition().output().isCollection());
 
                     files.addAll(generateQuerier(processActivatorAggregate, processingEnvironment, dfdPackageName));
+                } else if (processActivatorAggregate.metadata() instanceof GuardMetadata) {
+                    files.addAll(generateGuard(processActivatorAggregate, processingEnvironment, dfdPackageName));
                 }
             }
         }
@@ -195,13 +196,51 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addAnnotation(getGeneratedAnnotation())
                 .build();
 
-
-
         return Collections.singletonList(JavaFile.builder(dfdPackageName, querierTypeSpec).build());
     }
 
-    private static List<JavaFile> generateCombiner(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
-        return Collections.emptyList();
+    private static List<JavaFile> generateGuard(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
+        if (processActivatorAggregate.flows().size() != 1) {
+            throw new IllegalStateException("Can only be one flow for a Guard process");
+        }
+
+        FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
+
+        if (flow.queries().size() == 0 && flow.inputs().size() != 2) {
+            throw new IllegalStateException("Can only be two inputs for the guard flow");
+        }
+
+        Connector predicateConnector = flow.inputs().get(0);
+        Connector dataConnector = flow.inputs().get(1);
+
+        TypeName predicateTypeName = toTypeName(predicateConnector);
+        TypeName dataTypeName = toTypeName(dataConnector);
+
+        ParameterSpec predicateParameterSpec = ParameterSpec
+                .builder(predicateTypeName, "test")
+                .build();
+
+        ParameterSpec dataParameterSpec = ParameterSpec
+                .builder(dataTypeName, "data")
+                .build();
+
+        MethodSpec guardMethodSpec = MethodSpec
+                .methodBuilder(flow.functionName().value())
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addCode(CodeBlock.of("return null;"))
+                .addParameters(List.of(predicateParameterSpec, dataParameterSpec))
+                .returns(dataTypeName)
+                .build();
+
+        TypeSpec guardTypeSpec = TypeSpec.classBuilder(processActivatorAggregate.name().value())
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addSuperinterface(ClassName.bestGuess(dfdPackageName + "." + processActivatorAggregate.requirementsName().value()))
+                .addMethod(guardMethodSpec)
+                .addAnnotation(getGeneratedAnnotation())
+                .build();
+
+        return Collections.singletonList(JavaFile.builder(dfdPackageName, guardTypeSpec).build());
     }
 
     private static AnnotationSpec getGeneratedAnnotation() {

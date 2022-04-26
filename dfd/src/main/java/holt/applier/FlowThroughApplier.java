@@ -17,8 +17,6 @@ public final class FlowThroughApplier {
     private FlowThroughApplier() { }
 
     public static void applyFlowThrough(List<FlowThroughRep> flowThroughReps) {
-        Map<ActivatorId, List<QueryDefinitionRep>> activatorToQueryDefinitions = new HashMap<>();
-
         for (FlowThroughRep flowThroughRep : flowThroughReps) {
             TraverseName traverseName = flowThroughRep.traverseName();
             OutputRep outputRep = flowThroughRep.outputRep();

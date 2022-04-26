@@ -73,6 +73,11 @@ public interface QualifiedName {
             public QualifiedName[] types() {
                 return null;
             }
+
+            @Override
+            public String toString() {
+                return simpleName();
+            }
         };
     }
 

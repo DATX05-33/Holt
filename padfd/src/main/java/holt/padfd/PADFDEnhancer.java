@@ -140,7 +140,7 @@ public final class PADFDEnhancer {
                     if (sourceActivator instanceof ProcessActivatorAggregate p) {
                         sourceQualifiedName = QualifiedName.of(p.getOutput(traverseName), true);
                     } else if (sourceActivator instanceof ExternalEntityActivatorAggregate e) {
-                        sourceQualifiedName = QualifiedName.of(e.starts().get(traverseName).stream().filter(connector -> !isPolicyConnector(connector, processingEnvironment)).findFirst().orElseThrow());
+                        sourceQualifiedName = QualifiedName.of(e.starts().get(traverseName).stream().filter(connector -> !isPolicyConnector(connector, processingEnvironment)).findFirst().orElseThrow(), true);
                     }
 
                     if (sourceQualifiedName == null) {
@@ -148,8 +148,28 @@ public final class PADFDEnhancer {
                     }
 
                     flow.setOutputType(QualifiedName.of(Predicate.class.getName(), sourceQualifiedName), false);
-                } else if (processActivatorAggregate.metadata() instanceof GuardMetadata) {
+                } else if (processActivatorAggregate.metadata() instanceof GuardMetadata guardMetadata) {
+                    if (processActivatorAggregate.flows().size() != 1) {
+                        throw new IllegalStateException("Guard can only have one flow");
+                    }
 
+                    Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();
+                    TraverseName traverseName = flowThroughEntry.getKey();
+                    FlowThroughAggregate flow = flowThroughEntry.getValue();
+
+                    ActivatorAggregate sourceActivator = getActivatorAggregate(guardMetadata.dataSourceActivator(), domain.activators());
+                    QualifiedName sourceQualifiedName = null;
+                    if (sourceActivator instanceof ProcessActivatorAggregate p) {
+                        sourceQualifiedName = QualifiedName.of(p.getOutput(traverseName));
+                    } else if (sourceActivator instanceof ExternalEntityActivatorAggregate e) {
+                        sourceQualifiedName = QualifiedName.of(e.starts().get(traverseName).stream().filter(connector -> !isPolicyConnector(connector, processingEnvironment)).findFirst().orElseThrow());
+                    }
+
+                    if (sourceQualifiedName == null) {
+                        throw new IllegalStateException();
+                    }
+
+                    flow.setOutputType(sourceQualifiedName, false);
                 }
             }
         }
