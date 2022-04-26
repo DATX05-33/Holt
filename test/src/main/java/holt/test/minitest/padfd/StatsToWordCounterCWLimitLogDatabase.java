@@ -1,12 +1,14 @@
 package holt.test.minitest.padfd;
 
 import holt.processor.annotation.Activator;
+import holt.processor.generation.minitest.StatsToWordCounterCWLimitLog;
 import holt.processor.generation.minitest.StatsToWordCounterCWLimitLogDatabaseRequirements;
 
 @Activator(instantiateWithReflection = true)
 public class StatsToWordCounterCWLimitLogDatabase implements StatsToWordCounterCWLimitLogDatabaseRequirements {
-    @Override
-    public void CW(Object input0) {
 
+    @Override
+    public void CW(StatsToWordCounterCWLimitLog.Row log) {
+        System.out.println(log);
     }
 }

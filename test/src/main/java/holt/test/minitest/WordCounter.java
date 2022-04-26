@@ -12,6 +12,7 @@ import holt.test.minitest.data.CountWordsActionPolicy;
 import holt.test.minitest.data.Note;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 @FlowThrough(
         traverse = "CW",
@@ -29,12 +30,12 @@ public class WordCounter implements WordCounterRequirements {
 
     @Override
     public Integer countWords(CountWordsAction input0, Collection<Note> input1) {
-        return null;
+        return input1.stream().map(Note::text).collect(Collectors.joining()).split(" ").length;
     }
 
     @Override
     public NotesDatabaseToWordCounterCountWordsQuery queryNotesDatabaseCountWords(CountWordsAction input0) {
-        return null;
+        return db -> null;
     }
 
 }

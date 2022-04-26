@@ -20,6 +20,7 @@ public class Stats extends AbstractStats {
 
     public Integer countAllWords() {
         return 0;
+//        return super.CW(new CountWordsAction(), new CountWordsActionPolicy()).v0;
     }
 
 }

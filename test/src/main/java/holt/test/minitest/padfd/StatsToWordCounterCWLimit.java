@@ -15,6 +15,6 @@ import java.util.function.Predicate;
 public class StatsToWordCounterCWLimit implements StatsToWordCounterCWLimitRequirements {
     @Override
     public Predicate<CountWordsAction> CW(Map<CountWordsAction, CountWordsActionPolicy> input0) {
-        return null;
+        return countWordsAction -> true;
     }
 }

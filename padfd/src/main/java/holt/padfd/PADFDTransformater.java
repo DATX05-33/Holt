@@ -7,6 +7,7 @@ import holt.activator.TraverseName;
 import holt.padfd.metadata.CombineMetadata;
 import holt.padfd.metadata.GuardMetadata;
 import holt.padfd.metadata.LimitMetadata;
+import holt.padfd.metadata.LogMetadata;
 import holt.padfd.metadata.QuerierMetadata;
 import holt.padfd.metadata.RequestMetadata;
 
@@ -112,7 +113,9 @@ public final class PADFDTransformater {
         PADFDBuilder.Activator log = new PADFDBuilder.Activator(
                 flow.to().id() + "-log-" + flow.formattedId(),
                 limit.getName() + "Log",
-                PADFDBuilder.Activator.Type.LOG);
+                PADFDBuilder.Activator.Type.LOG,
+                new LogMetadata()
+        );
         PADFDBuilder.Activator logDB = new PADFDBuilder.Activator(
                 flow.to().id() + "-log_db-" + flow.formattedId(),
                 log.getName() + "Database",
@@ -346,6 +349,7 @@ public final class PADFDTransformater {
         requestToReason.setPartner(guardToProcess);
 
         var querierToGuard = flow(f.id() + "9", querier, e.guard);
+        var querierToLog = flow(f.id() + "10", querier, e.log);
 
         builder.addFlow(f,
                 List.of(
@@ -355,6 +359,7 @@ public final class PADFDTransformater {
                         e.requestToLimit,
                         e.limitToLog,
                         e.requestToLog,
+                        querierToLog,
                         e.logToLogDB,
                         e.limitToGuard,
                         querierToGuard,

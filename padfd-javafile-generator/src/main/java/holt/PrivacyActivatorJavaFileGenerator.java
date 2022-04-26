@@ -24,6 +24,7 @@ import holt.activator.QueryInput;
 import holt.activator.TraverseName;
 import holt.padfd.metadata.CombineMetadata;
 import holt.padfd.metadata.GuardMetadata;
+import holt.padfd.metadata.LogMetadata;
 import holt.padfd.metadata.QuerierMetadata;
 
 import javax.annotation.processing.Generated;
@@ -59,6 +60,8 @@ public final class PrivacyActivatorJavaFileGenerator {
                     files.addAll(generateQuerier(processActivatorAggregate, processingEnvironment, dfdPackageName));
                 } else if (processActivatorAggregate.metadata() instanceof GuardMetadata) {
                     files.addAll(generateGuard(processActivatorAggregate, processingEnvironment, dfdPackageName));
+                } else if (processActivatorAggregate.metadata() instanceof LogMetadata) {
+                    files.addAll(generateLog(processActivatorAggregate, processingEnvironment, dfdPackageName));
                 }
             }
         }
@@ -78,41 +81,7 @@ public final class PrivacyActivatorJavaFileGenerator {
 
         FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
 
-        // Class that combines stuff.
-        List<FieldSpec> fieldSpecs = new ArrayList<>();
-        List<ParameterSpec> parameterSpecs = new ArrayList<>();
-        List<CodeBlock> codeBlocks = new ArrayList<>();
-        for (int i = 0; i < flow.inputs().size(); i++) {
-            Connector connector = flow.inputs().get(i);
-            TypeName typeName = toTypeName(connector);
-            String varName = "v" + i;
-            fieldSpecs.add(
-                    FieldSpec
-                            .builder(typeName, varName)
-                            .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                            .build()
-            );
-            parameterSpecs.add(
-                    ParameterSpec
-                            .builder(typeName, varName)
-                            .build()
-            );
-            codeBlocks.add(CodeBlock.of("this." + varName + " = " + varName + ";"));
-        }
-
-        MethodSpec comboConstructor = MethodSpec
-                .constructorBuilder()
-                .addParameters(parameterSpecs)
-                .addCode(CodeBlock.join(codeBlocks, "\n"))
-                .build();
-
-        TypeSpec comboClass = TypeSpec
-                .classBuilder("Combo")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-                .addFields(fieldSpecs)
-                .addMethod(comboConstructor)
-                .addAnnotation(getGeneratedAnnotation())
-                .build();
+        TypeSpec comboTypeSpec = createCombo("Combo", flow.inputs().stream().map(Connector::flowOutput).toList());
 
         // Modify the activator aggregate so the requirements file is generated correctly
         flow.setOutputType(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value() +  ".Combo"), false);
@@ -156,7 +125,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addSuperinterface(ClassName.bestGuess(dfdPackageName + "." + processActivatorAggregate.requirementsName().value()))
                 .addMethod(combineMethodSpec)
-                .addType(comboClass)
+                .addType(comboTypeSpec)
                 .addAnnotation(getGeneratedAnnotation())
                 .build();
 
@@ -259,6 +228,136 @@ public final class PrivacyActivatorJavaFileGenerator {
 
         processActivatorAggregate.setConnectedClass(new ConnectedClass(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value()), true));
         return Collections.singletonList(JavaFile.builder(dfdPackageName, guardTypeSpec).build());
+    }
+
+    private static List<JavaFile> generateLog(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
+        if (processActivatorAggregate.flows().size() != 1) {
+            throw new IllegalStateException("Can only be one flow for a Guard process");
+        }
+
+        FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
+        if (flow.queries().size() == 0 && flow.inputs().size() != 3) {
+            throw new IllegalStateException("Can only be three inputs for the log flow");
+        }
+
+        Connector predicateConnector = flow.inputs().get(0);
+        Connector policyMapConnector = flow.inputs().get(1);
+        Connector dataConnector = flow.inputs().get(2);
+
+        TypeName predicateTypeName = toTypeName(predicateConnector);
+        TypeName policyMapTypeName = toTypeName(policyMapConnector);
+        TypeName dataTypeName = toTypeName(dataConnector);
+
+        ParameterSpec predicateParameterSpec = ParameterSpec
+                .builder(predicateTypeName, "tester")
+                .build();
+
+        ParameterSpec policyMapParameterSpec = ParameterSpec
+                .builder(policyMapTypeName, "policyMap")
+                .build();
+
+        ParameterSpec dataParameterSpec = ParameterSpec
+                .builder(dataTypeName, "data")
+                .build();
+
+        String comboName = "Row";
+        TypeSpec rowTypeSpec = createCombo(
+                comboName,
+                List.of(
+                        new FlowOutput(dataConnector.flowOutput().type(), false),
+                        new FlowOutput(policyMapConnector.flowOutput().type().types().get(1), false),
+                        new FlowOutput(QualifiedName.of("java.lang.Boolean"), false),
+                        new FlowOutput(QualifiedName.of("java.time.Instant"), false)
+                )
+        );
+
+        flow.setOutputType(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value() + "." + comboName), dataConnector.flowOutput().isCollection());
+
+        StringBuilder logSB = new StringBuilder();
+        if (dataConnector.flowOutput().isCollection()) {
+            logSB.append("return data\n");
+            logSB.append("  .stream()\n");
+            logSB.append("   .map(d -> new Row(d, policyMap.get(d), tester.test(d), Instant.now()))\n");
+            logSB.append("  .toList();\n");
+        } else {
+            logSB.append("return new Row(data, policyMap.get(data), tester.test(data), Instant.now());");
+        }
+
+        MethodSpec logMethodSpec = MethodSpec
+                .methodBuilder(flow.functionName().value())
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameters(List.of(predicateParameterSpec, policyMapParameterSpec, dataParameterSpec))
+                .returns(toTypeName(flow.output()))
+                .addCode(logSB.toString())
+                .build();
+
+        TypeSpec logTypeSpec = TypeSpec.classBuilder(processActivatorAggregate.name().value())
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addSuperinterface(ClassName.bestGuess(dfdPackageName + "." + processActivatorAggregate.requirementsName().value()))
+                .addMethod(logMethodSpec)
+                .addAnnotation(getGeneratedAnnotation())
+                .addType(rowTypeSpec)
+                .build();
+
+        processActivatorAggregate.setConnectedClass(new ConnectedClass(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value()), true));
+        return Collections.singletonList(JavaFile.builder(dfdPackageName, logTypeSpec).build());
+    }
+
+    private static TypeSpec createCombo(String name, List<FlowOutput> inputs) {
+        // Class that combines stuff.
+        List<FieldSpec> fieldSpecs = new ArrayList<>();
+        List<ParameterSpec> parameterSpecs = new ArrayList<>();
+        List<CodeBlock> codeBlocks = new ArrayList<>();
+        for (int i = 0; i < inputs.size(); i++) {
+            FlowOutput flowOutput = inputs.get(i);
+            TypeName typeName = toTypeName(flowOutput);
+            String varName = "v" + i;
+            fieldSpecs.add(
+                    FieldSpec
+                            .builder(typeName, varName)
+                            .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                            .build()
+            );
+            parameterSpecs.add(
+                    ParameterSpec
+                            .builder(typeName, varName)
+                            .build()
+            );
+            codeBlocks.add(CodeBlock.of("this." + varName + " = " + varName + ";"));
+        }
+
+        StringBuilder toStringSB = new StringBuilder();
+
+        toStringSB.append("return ");
+        for (int i = 0; i < inputs.size(); i++) {
+            String varName = "v" + i;
+            toStringSB.append(varName + " + \", \" + ");
+        }
+        toStringSB.setLength(toStringSB.length() - 10);
+        toStringSB.append(";");
+
+        MethodSpec toStringMethodSpec = MethodSpec
+                .methodBuilder("toString")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(ClassName.get(String.class))
+                .addCode(toStringSB.toString())
+                .addAnnotation(Override.class)
+                .build();
+
+        MethodSpec comboConstructor = MethodSpec
+                .constructorBuilder()
+                .addParameters(parameterSpecs)
+                .addCode(CodeBlock.join(codeBlocks, "\n"))
+                .build();
+
+        return TypeSpec
+                .classBuilder(name)
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+                .addFields(fieldSpecs)
+                .addMethods(List.of(comboConstructor, toStringMethodSpec))
+                .addAnnotation(getGeneratedAnnotation())
+                .build();
     }
 
     private static AnnotationSpec getGeneratedAnnotation() {

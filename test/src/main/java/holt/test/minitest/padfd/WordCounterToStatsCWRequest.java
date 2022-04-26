@@ -18,6 +18,6 @@ import java.util.Map;
 public class WordCounterToStatsCWRequest implements WordCounterToStatsCWRequestRequirements {
     @Override
     public Map<Integer, CountedWordsPolicy> CW(CountedWordsPolicy input0) {
-        return null;
+        return new HashMap<>();
     }
 }
