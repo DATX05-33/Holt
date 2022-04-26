@@ -19,8 +19,7 @@ import holt.test.minitest.data.CountWordsActionPolicy;
 public class Stats extends AbstractStats {
 
     public Integer countAllWords() {
-        return 0;
-//        return super.CW(new CountWordsAction(), new CountWordsActionPolicy()).v0;
+        return super.CW(new CountWordsAction(), new CountWordsActionPolicy()).v0;
     }
 
 }

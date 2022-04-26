@@ -10,6 +10,7 @@ import holt.test.minitest.data.Note;
 import holt.test.minitest.data.NotePolicy;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 @FlowThrough(
@@ -28,11 +29,11 @@ public class NotesDatabaseToWordCounterCWRequest implements NotesDatabaseToWordC
 
     @Override
     public Map<Note, NotePolicy> CW(Collection<Note> input0, NotePolicy dbInput1) {
-        return null;
+        return new HashMap<>();
     }
 
     @Override
     public NotesDatabasePolicyToNotesDatabaseToWordCounterCWRequestCWQuery queryNotesDatabasePolicyCW(Collection<Note> input0) {
-        return null;
+        return db -> null;
     }
 }

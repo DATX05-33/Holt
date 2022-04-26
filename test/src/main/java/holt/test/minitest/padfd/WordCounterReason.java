@@ -21,6 +21,6 @@ import java.util.Map;
 public class WordCounterReason implements WordCounterReasonRequirements {
     @Override
     public CountedWordsPolicy CW(Map<CountWordsAction, CountWordsActionPolicy> input0, Map<Note, NotePolicy> input1) {
-        return null;
+        return new CountedWordsPolicy();
     }
 }

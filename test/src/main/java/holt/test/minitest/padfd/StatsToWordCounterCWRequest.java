@@ -7,6 +7,7 @@ import holt.processor.generation.minitest.StatsToWordCounterCWRequestRequirement
 import holt.test.minitest.data.CountWordsAction;
 import holt.test.minitest.data.CountWordsActionPolicy;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @FlowThrough(
@@ -18,6 +19,6 @@ import java.util.Map;
 public class StatsToWordCounterCWRequest implements StatsToWordCounterCWRequestRequirements {
     @Override
     public Map<CountWordsAction, CountWordsActionPolicy> CW(CountWordsActionPolicy input0) {
-        return null;
+        return new HashMap<>();
     }
 }

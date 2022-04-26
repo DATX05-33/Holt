@@ -81,7 +81,7 @@ public final class PrivacyActivatorJavaFileGenerator {
 
         FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
 
-        TypeSpec comboTypeSpec = createCombo("Combo", flow.inputs().stream().map(Connector::flowOutput).toList());
+        TypeSpec comboTypeSpec = createCombo("Combo", flow.inputs().stream().map(Connector::flowOutput).toList(), null);
 
         // Modify the activator aggregate so the requirements file is generated correctly
         flow.setOutputType(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value() +  ".Combo"), false);
@@ -268,7 +268,8 @@ public final class PrivacyActivatorJavaFileGenerator {
                         new FlowOutput(policyMapConnector.flowOutput().type().types().get(1), false),
                         new FlowOutput(QualifiedName.of("java.lang.Boolean"), false),
                         new FlowOutput(QualifiedName.of("java.time.Instant"), false)
-                )
+                ),
+                List.of("data", "policy", "result", "time")
         );
 
         flow.setOutputType(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value() + "." + comboName), dataConnector.flowOutput().isCollection());
@@ -304,7 +305,14 @@ public final class PrivacyActivatorJavaFileGenerator {
         return Collections.singletonList(JavaFile.builder(dfdPackageName, logTypeSpec).build());
     }
 
-    private static TypeSpec createCombo(String name, List<FlowOutput> inputs) {
+    private static TypeSpec createCombo(String name, List<FlowOutput> inputs, List<String> varNames) {
+        if (varNames == null) {
+            varNames = new ArrayList<>();
+            for (int i = 0; i < inputs.size(); i++) {
+                varNames.add("v" + i);
+            }
+        }
+
         // Class that combines stuff.
         List<FieldSpec> fieldSpecs = new ArrayList<>();
         List<ParameterSpec> parameterSpecs = new ArrayList<>();
@@ -312,7 +320,7 @@ public final class PrivacyActivatorJavaFileGenerator {
         for (int i = 0; i < inputs.size(); i++) {
             FlowOutput flowOutput = inputs.get(i);
             TypeName typeName = toTypeName(flowOutput);
-            String varName = "v" + i;
+            String varName = varNames.get(i);
             fieldSpecs.add(
                     FieldSpec
                             .builder(typeName, varName)
@@ -331,8 +339,8 @@ public final class PrivacyActivatorJavaFileGenerator {
 
         toStringSB.append("return ");
         for (int i = 0; i < inputs.size(); i++) {
-            String varName = "v" + i;
-            toStringSB.append(varName + " + \", \" + ");
+            String varName = varNames.get(i);
+            toStringSB.append("\"" + varName + ": \" + " + varName + " + \", \" + ");
         }
         toStringSB.setLength(toStringSB.length() - 10);
         toStringSB.append(";");
