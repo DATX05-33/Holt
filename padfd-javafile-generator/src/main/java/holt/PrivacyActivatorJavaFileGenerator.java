@@ -48,7 +48,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 processActivatorAggregate.flows();
                 if (processActivatorAggregate.metadata() instanceof CombineMetadata) {
                     files.addAll(generateCombine(processActivatorAggregate, processingEnvironment, dfdPackageName));
-                } else if (processActivatorAggregate.metadata() instanceof QuerierMetadata querierMetadata) {
+                } else if (processActivatorAggregate.metadata() instanceof QuerierMetadata) {
                     Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();
                     FlowThroughAggregate flow = flowThroughEntry.getValue();
 

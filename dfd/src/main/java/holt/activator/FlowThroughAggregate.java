@@ -114,17 +114,6 @@ public final class FlowThroughAggregate {
     public void runLaterQuerySetup() {
         for (QueryRep query : this.laterQueryRep) {
             OutputRep queryOutputRep = query.outputRep();
-            for (QueryInput queryInput : this.queries) {
-                DatabaseActivatorAggregate databaseActivator = queryInput.queryInputDefinition().database();
-                if (databaseActivator.name().value().equals(query.db().simpleName())) {
-                    queryInput.queryInputDefinition().setOutput(
-                            new FlowOutput(
-                                    queryOutputRep.type(),
-                                    queryOutputRep.collection()
-                            )
-                    );
-                }
-            }
             for (QueryInputDefinition queryInputDefinition : this.queryInputDefinitions) {
                 if (queryInputDefinition.database().name().value().equals(query.db().simpleName())) {
                     queryInputDefinition.setOutput(

@@ -124,10 +124,6 @@ public final class PADFDEnhancer {
                     ProcessActivatorAggregate placeForQueryDefinition = (ProcessActivatorAggregate) getActivatorAggregate(querierMetadata.process(), domain.activators());
 
                     flow.moveQueryInputDefinitionTo(databaseActivatorAggregate, placeForQueryDefinition.flow(traverseName), null);
-
-                    FlowOutput flowOutput = flow.queries().get(0).queryInputDefinition().output();
-
-                    flow.setOutputType(flowOutput.type(), flowOutput.isCollection());
                 } else if (processActivatorAggregate.metadata() instanceof LimitMetadata limitMetadata) {
                     if (processActivatorAggregate.flows().size() != 1) {
                         throw new IllegalStateException("Limit can only have one flow");
