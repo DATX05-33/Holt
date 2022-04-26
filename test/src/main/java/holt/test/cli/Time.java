@@ -1,7 +1,5 @@
 package holt.test.cli;
 
-import com.sun.jdi.IntegerType;
-
 public class Time {
 
     private static int hours = 0;

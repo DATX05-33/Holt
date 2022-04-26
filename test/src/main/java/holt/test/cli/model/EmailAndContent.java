@@ -1,4 +1,4 @@
 package holt.test.cli.model;
 
-public record EmailAndContent(String email, String Content) {
+public record EmailAndContent(Email email, EmailContent content) {
 }

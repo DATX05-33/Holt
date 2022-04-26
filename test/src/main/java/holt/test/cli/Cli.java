@@ -14,31 +14,48 @@ import java.util.Scanner;
 @DFD(name = "cli", xml = "cli.xml")
 public class Cli {
 
-    private static final User user = new User();
-    private static final Company company = new Company();
-    private static final UserDB userDB = new UserDB();
+    private static User user;
+    private static Company company;
+    private static UserDB userDB = new UserDB();
 
     public static void main(String[] args) {
+        user = new User();
+        company = new Company();
+        new Cli();
+    }
 
+    public static UserDB getUserDB() {
+        return userDB;
+    }
+
+    public Cli() {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Cli started");
 
-        String input = scanner.next();
+        while (true) {
+            System.out.print(">: ");
+            String input = scanner.nextLine();
 
-        String[] command = input.split(" ");
+            String[] command = input.split(" ");
 
-        switch (command[0]) {
-            case "user" -> userCases(command);
-            case "company" -> companyCases(command);
-            case "timeforward" -> Time.fastForward(command[1]);
-            case "help" -> printHelp(true);
-            //case "helpPA" -> printHelp(true);
-            default -> throw new IllegalArgumentException("Illegal first argument " + command[0]);
+            try {
+                switch (command[0]) {
+                    case "user" -> userCases(command);
+                    case "company" -> companyCases(command);
+                    case "timeforward" -> Time.fastForward(command[1]);
+                    case "help" -> printHelp(true);
+                    case "exit" -> System.exit(0);
+                    //case "helpPA" -> printHelp(true);
+                    default -> System.out.println("Illegal first argument " + command[0]);
+                }
+            } catch (NullPointerException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
-    private static void printHelp(boolean b) {
+    private void printHelp(boolean b) {
         StringBuilder help = new StringBuilder();
 
         help.append("example: > user add me@email.com");
@@ -49,7 +66,7 @@ public class Cli {
 
         help.append("example: > user remove me@email.com\n");
 
-        help.append("example: > company marketing \"Buy our product\"\n");
+        help.append("example: > company marketing me@mail.com Buy Our Product\n");
         help.append("example: > company resetpwd user@email.com\n");
 
         help.append("example: > timeforward 3h\n");
@@ -57,43 +74,53 @@ public class Cli {
         System.out.println(help.toString());
     }
 
-    private static void userCases(String[] args) {
+    private void userCases(String[] args) {
         switch (args[1]) {
             case "add" -> addUser(args);
             case "remove" -> removeUser(args);
+            default -> System.out.println("Illegal first argument " + args[1]);
         }
     }
 
-    private static void companyCases(String[] args) {
+    private void companyCases(String[] args) {
         switch (args[1]) {
             case "marketing" -> sendMarketing(args);
             case "resetpwd" -> resetpwd(args);
+            default -> System.out.println("Illegal first argument " + args[1]);
         }
     }
 
-    private static void resetpwd(String[] args) {
+    private void resetpwd(String[] args) {
         String email = args[2];
-        // TODO: Via Company
+        company.resetPassword(email);
     }
 
-    private static void sendMarketing(String[] args) {
-        String content = args[2];
-        // TODO: Via Company
-    }
-
-    private static void removeUser(String[] args) {
+    private void sendMarketing(String[] args) {
         String email = args[2];
 
-        // TODO: Go via User
-        userDB.deleteUser(email);
+        List<String> argsList = new java.util.ArrayList<>(Arrays.stream(args).toList());
+        argsList.subList(0, 3).clear();
+
+        StringBuilder content = new StringBuilder();
+        for (String s : argsList) {
+            content.append(s).append(" ");
+        }
+        company.sendMarketing(email, content.toString());
     }
 
-    private static void addUser(String[] args) {
+    private void removeUser(String[] args) {
         String email = args[2];
-        String time = args[3];
+
+        user.deleteUser(email);
+    }
+
+    private void addUser(String[] args) {
+        String email = args[2];
+        String time = args[3].substring(0, args[3].length()-1);
+
 
         List<Agreement> agreements = new ArrayList<>();
-        agreements.add(new DeleteBefore(Integer.getInteger(time)));
+        agreements.add(new DeleteBefore(Integer.parseInt(time)));
 
         List<String> argsList = new java.util.ArrayList<>(Arrays.stream(args).toList());
         argsList.subList(0, 4).clear();
@@ -103,11 +130,10 @@ public class Cli {
             switch (pol) {
                 case "\"login\"" -> agreements.add(new AccountManagement(true, true));
                 case "\"marketing\"" -> agreements.add(new Marketing(true));
-                default -> throw new IllegalArgumentException("Policy " + pol + " not allowed");
+                default -> System.out.println("Policy " + pol + " not available");
             }
         }
 
-        // TODO: Go via User
-        userDB.addUser(email);
+        user.addUser(email);
     }
 }

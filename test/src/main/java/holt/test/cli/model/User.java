@@ -1,4 +1,4 @@
 package holt.test.cli.model;
 
-public record User(String email) {
+public record User(Email email) {
 }
