@@ -40,8 +40,7 @@ public final class Connector {
     @Override
     public String toString() {
         return "Connector{" +
-                "hashcode=" + super.hashCode() +
-                ", flowOutput=" + this.flowOutput +
+                "flowOutput=" + flowOutput +
                 '}';
     }
 }

@@ -7,30 +7,70 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import holt.activator.ActivatorAggregate;
 import holt.activator.Connector;
+import holt.activator.DatabaseActivatorAggregate;
+import holt.activator.Domain;
+import holt.activator.ExternalEntityActivatorAggregate;
+import holt.activator.FlowOutput;
 import holt.activator.FlowThroughAggregate;
 import holt.activator.ProcessActivatorAggregate;
 import holt.activator.QualifiedName;
+import holt.activator.QueryInput;
+import holt.activator.TraverseName;
+import holt.padfd.metadata.CombineMetadata;
+import holt.padfd.metadata.QuerierMetadata;
 
 import javax.annotation.processing.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 
 public final class PrivacyActivatorJavaFileGenerator {
 
     private PrivacyActivatorJavaFileGenerator() {}
+
+    public static List<JavaFile> convertToJavaFiles(Domain domain, ProcessingEnvironment processingEnvironment) {
+        String dfdPackageName = packageOf(domain);
+        List<JavaFile> files = new ArrayList<>();
+
+        for (ActivatorAggregate activator : domain.activators()) {
+            if (activator instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                processActivatorAggregate.flows();
+                if (processActivatorAggregate.metadata() instanceof CombineMetadata) {
+                    files.addAll(generateCombine(processActivatorAggregate, processingEnvironment, dfdPackageName));
+                } else if (processActivatorAggregate.metadata() instanceof QuerierMetadata querierMetadata) {
+                    Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();
+                    TraverseName traverseName = flowThroughEntry.getKey();
+                    FlowThroughAggregate flow = flowThroughEntry.getValue();
+
+                    QueryInput queryInput = flow.queries().get(0);
+                    flow.setOutputType(queryInput.queryInputDefinition().output().type(), queryInput.queryInputDefinition().output().isCollection());
+
+                    generateQuerier(processActivatorAggregate, processingEnvironment, dfdPackageName);
+                }
+            }
+        }
+
+        return files;
+    }
 
     /**
      * Generates and saves two files.
      * First is a class that combines all the input connectors to one record
      * Second one is the combine process that extends the given requirements and combines the two.
      */
-    public static void generateCombine(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
+    private static List<JavaFile> generateCombine(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
         if (processActivatorAggregate.flows().size() != 1) {
             throw new IllegalStateException("Can only be one flow for a Combine process");
         }
@@ -43,7 +83,7 @@ public final class PrivacyActivatorJavaFileGenerator {
         List<CodeBlock> codeBlocks = new ArrayList<>();
         for (int i = 0; i < flow.inputs().size(); i++) {
             Connector connector = flow.inputs().get(i);
-            TypeName typeName = JavaFileGenerator.toTypeName(connector);
+            TypeName typeName = toTypeName(connector);
             String varName = "v" + i;
             fieldSpecs.add(
                     FieldSpec
@@ -74,7 +114,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .build();
 
         // Modify the activator aggregate so the requirements file is generated correctly
-        flow.setOutputType(new QualifiedName(dfdPackageName + "." + processActivatorAggregate.name().value() +  ".Combo"), false);
+        flow.setOutputType(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value() +  ".Combo"), false);
 
         StringBuilder returnSB = new StringBuilder();
         returnSB.append("return new Combo(");
@@ -85,7 +125,7 @@ public final class PrivacyActivatorJavaFileGenerator {
             String varName = "input" + i;
             parameters.add(
                     ParameterSpec
-                            .builder(JavaFileGenerator.toTypeName(connector), varName)
+                            .builder(toTypeName(connector), varName)
                             .build()
             );
             returnSB
@@ -107,7 +147,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addParameters(parameters)
                 .addAnnotation(Override.class)
-                .returns(JavaFileGenerator.toTypeName(flow.output()))
+                .returns(toTypeName(flow.output()))
                 .addCode(returnCodeBlock)
                 .build();
 
@@ -119,15 +159,10 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addAnnotation(getGeneratedAnnotation())
                 .build();
 
-        JavaFile combineActivatorJavaFile = JavaFile.builder(dfdPackageName, combineActivatorTypeSpec).build();
-        try {
-            combineActivatorJavaFile.writeTo(env.getFiler());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return Collections.singletonList(JavaFile.builder(dfdPackageName, combineActivatorTypeSpec).build());
     }
 
-    public static void generateQuerier(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
+    private static List<JavaFile> generateQuerier(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
         if (processActivatorAggregate.flows().size() != 1) {
             throw new IllegalStateException("Can only be one flow for a Combine process");
         }
@@ -138,7 +173,11 @@ public final class PrivacyActivatorJavaFileGenerator {
 //            throw new IllegalStateException("Can only be one input for the querier flow");
 //        }
 
+        return Collections.emptyList();
+    }
 
+    private static List<JavaFile> generateCombiner(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
+        return Collections.emptyList();
     }
 
     private static AnnotationSpec getGeneratedAnnotation() {
@@ -147,5 +186,45 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .build();
     }
 
+    public static String packageOf(Domain domain) {
+        return PACKAGE_NAME + "." + domain.name().value();
+    }
+
+    public static final String PACKAGE_NAME = "holt.processor.generation";
+
+    public static TypeName toTypeName(QualifiedName qualifiedName) {
+        if (qualifiedName.types() == null) {
+            return ClassName.bestGuess(qualifiedName.value());
+        } else{
+            TypeName[] types = new TypeName[qualifiedName.types().length];
+            QualifiedName[] qualifiedNames = qualifiedName.types();
+            for (int i = 0; i < qualifiedNames.length; i++) {
+                QualifiedName type = qualifiedNames[i];
+                types[i] = ClassName.bestGuess(type.value());
+            }
+            return ParameterizedTypeName.get(
+                    ClassName.bestGuess(qualifiedName.value()),
+                    types
+            );
+        }
+    }
+
+    public static TypeName toTypeName(FlowOutput flowOutput) {
+        TypeName connectorTypeName = toTypeName(flowOutput.type());
+        if (flowOutput.isCollection()) {
+            ClassName collection = ClassName.get(Collection.class);
+            return ParameterizedTypeName.get(collection, connectorTypeName);
+        } else {
+            return connectorTypeName;
+        }
+    }
+
+    public static TypeName toTypeName(Connector connector) {
+        return toTypeName(connector.flowOutput());
+    }
+
+    public static TypeName toTypeName(String qualifiedName) {
+        return ClassName.bestGuess(qualifiedName);
+    }
 
 }

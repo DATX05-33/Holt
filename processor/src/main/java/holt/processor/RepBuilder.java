@@ -50,7 +50,7 @@ public final class RepBuilder {
 
     public static QueryRep createQueryRep(Query query, DFDsProcessor processor) {
         return new QueryRep(
-                new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
+                QualifiedName.of(AnnotationValueUtils.getAnnotationClassValue(
                         processor, query, Query::db
                 ).toString()),
                 createOutputRep(query.output(), processor)
@@ -58,10 +58,10 @@ public final class RepBuilder {
     }
 
     public static QueryDefinitionRep createQueryDefinitionRep(QueryDefinition queryDefinition, DFDsProcessor.ProcessorResults processorResults, DFDsProcessor processor) {
-        QualifiedName processClassName = new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
+        QualifiedName processClassName = QualifiedName.of(AnnotationValueUtils.getAnnotationClassValue(
                 processor, queryDefinition, QueryDefinition::process
         ).toString());
-        QualifiedName dbClassName = new QualifiedName(AnnotationValueUtils.getAnnotationClassValue(
+        QualifiedName dbClassName = QualifiedName.of(AnnotationValueUtils.getAnnotationClassValue(
                 processor, queryDefinition, QueryDefinition::db
         ).toString());
 
@@ -77,7 +77,7 @@ public final class RepBuilder {
 
     public static OutputRep createOutputRep(Output output, DFDsProcessor processor) {
         return new OutputRep(
-                new QualifiedName(
+                QualifiedName.of(
                         AnnotationValueUtils.getAnnotationClassValue(
                                 processor, output, Output::type
                         ).toString()

@@ -1,6 +1,7 @@
 package holt.padfd.metadata;
 
 import holt.Metadata;
+import holt.activator.ActivatorId;
 
-public class RequestMetadata implements Metadata {
+public record RequestMetadata(ActivatorId dataSourceActivator) implements Metadata {
 }

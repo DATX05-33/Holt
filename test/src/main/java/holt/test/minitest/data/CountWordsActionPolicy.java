@@ -1,4 +1,4 @@
-package holt.test.minitest;
+package holt.test.minitest.data;
 
 import holt.padfd.Policy;
 

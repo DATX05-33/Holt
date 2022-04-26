@@ -28,9 +28,11 @@ public final class FlowThroughApplier {
 
             flowThroughRep.queries().forEach(query -> {
                 OutputRep queryOutputRep = query.outputRep();
+                boolean found = false;
                 for (QueryInput queryInput : flowThrough.queries()) {
                     DatabaseActivatorAggregate databaseActivator = queryInput.queryInputDefinition().database();
                     if (databaseActivator.name().value().equals(query.db().simpleName())) {
+                        found = true;
                         queryInput.queryInputDefinition().setOutput(
                                 new FlowOutput(
                                         queryOutputRep.type(),
@@ -39,6 +41,13 @@ public final class FlowThroughApplier {
                         );
                     }
                 }
+
+                if (!found) {
+                    // Then, this flow through is setting something that might be moved to this process after the PADFDEnhancer.
+                    // The following is sort of a cache
+                    flowThrough.addLaterQuerySetup(query);
+                }
+
             });
 
             for (QueryDefinitionRep queryDefinitionRep : flowThroughRep.overrideQueries()) {

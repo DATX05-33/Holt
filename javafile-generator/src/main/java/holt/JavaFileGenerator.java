@@ -43,7 +43,7 @@ public class JavaFileGenerator {
     }
 
     public static void saveJavaFiles(Domain domain, ProcessingEnvironment processingEnv) {
-        List<JavaFile> javaFiles = convertToJavaFiles(domain);
+        List<JavaFile> javaFiles = convertToJavaFiles(domain, processingEnv);
         for (JavaFile javaFile : javaFiles) {
             try {
                 javaFile.writeTo(processingEnv.getFiler());
@@ -53,9 +53,11 @@ public class JavaFileGenerator {
         }
     }
 
-    private static List<JavaFile> convertToJavaFiles(Domain domain) {
+    public static List<JavaFile> convertToJavaFiles(Domain domain, ProcessingEnvironment processingEnvironment) {
         String dfdPackageName = packageOf(domain);
         List<JavaFile> javaFiles = new ArrayList<>();
+
+        javaFiles.addAll(PrivacyActivatorJavaFileGenerator.convertToJavaFiles(domain, processingEnvironment));
 
         domain
                 .databases()
@@ -81,7 +83,20 @@ public class JavaFileGenerator {
     }
 
     public static TypeName toTypeName(QualifiedName qualifiedName) {
-        return ClassName.bestGuess(qualifiedName.value());
+        if (qualifiedName.types() == null) {
+            return ClassName.bestGuess(qualifiedName.value());
+        } else{
+            TypeName[] types = new TypeName[qualifiedName.types().length];
+            QualifiedName[] qualifiedNames = qualifiedName.types();
+            for (int i = 0; i < qualifiedNames.length; i++) {
+                QualifiedName type = qualifiedNames[i];
+                types[i] = ClassName.bestGuess(type.value());
+            }
+            return ParameterizedTypeName.get(
+                    ClassName.bestGuess(qualifiedName.value()),
+                    types
+            );
+        }
     }
 
     public static TypeName toTypeName(FlowOutput flowOutput) {

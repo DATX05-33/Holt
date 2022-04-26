@@ -3,6 +3,7 @@ package holt.processor;
 import holt.DFDOrderedRep;
 import holt.DFDRep;
 import holt.JavaFileGenerator;
+import holt.activator.FlowThroughAggregate;
 import holt.padfd.PADFDEnhancer;
 import holt.activator.ActivatorAggregate;
 import holt.activator.ActivatorId;
@@ -118,6 +119,13 @@ public class DFDsProcessor extends AbstractProcessor {
                 PADFDEnhancer.enhance(domain, processingEnv);
             }
 
+            domain.processes().forEach(processActivatorAggregate ->
+                    processActivatorAggregate.flows().forEach(FlowThroughAggregate::runLaterQuerySetup)
+            );
+
+            //TODO:
+//            logUnannotatedActivators(elementToActivatorAggregateMap, allActivatorAggregates);
+
             JavaFileGenerator.saveJavaFiles(domain, processingEnv);
         }
 
@@ -227,9 +235,6 @@ public class DFDsProcessor extends AbstractProcessor {
             );
         }
 
-        //TODO: This should be logged after padfd enhancer s
-        //logUnannotatedActivators(elementToActivatorAggregateMap, allActivatorAggregates);
-
         return new ProcessorResults(
                 domains,
                 activatorToDFDMap,
@@ -253,7 +258,7 @@ public class DFDsProcessor extends AbstractProcessor {
                         activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
                         activatorAggregate.setConnectedClass(
                                 new ConnectedClass(
-                                        new QualifiedName(typeElement.getQualifiedName().toString()),
+                                        QualifiedName.of(typeElement.getQualifiedName().toString()),
                                         activator.instantiateWithReflection()
                                 )
                         );
@@ -411,14 +416,14 @@ public class DFDsProcessor extends AbstractProcessor {
         for (Element element : environment.getElementsAnnotatedWith(QueriesFor.class)) {
             TypeElement typeElement = (TypeElement) element;
             QueriesFor queriesFor = element.getAnnotation(QueriesFor.class);
-            QualifiedName queriesForClassName = new QualifiedName(
+            QualifiedName queriesForClassName = QualifiedName.of(
                     getAnnotationClassValue(
                             this, queriesFor, QueriesFor::value
                     ).toString()
             );
 
             DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) processorResults.getActivatorAggregateByClassName(queriesForClassName);
-            QueriesForRep queriesForRep = new QueriesForRep(databaseActivatorAggregate, new QualifiedName(typeElement.getQualifiedName().toString()));
+            QueriesForRep queriesForRep = new QueriesForRep(databaseActivatorAggregate, QualifiedName.of(typeElement.getQualifiedName().toString()));
 
             DFDName dfdName = activatorToDFDMap.get(databaseActivatorAggregate.name());
 
@@ -544,7 +549,7 @@ public class DFDsProcessor extends AbstractProcessor {
             ExternalEntityActivatorAggregate externalEntityActivator = (ExternalEntityActivatorAggregate) processorResults.getActivatorAggregate(typeElement);
             externalEntityActivator.setConnectedClass(
                     new ConnectedClass(
-                            new QualifiedName(typeElement.getQualifiedName().toString()),
+                            QualifiedName.of(typeElement.getQualifiedName().toString()),
                             false
                     )
             );

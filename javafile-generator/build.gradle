@@ -9,6 +9,7 @@ plugins {
 dependencies {
     implementation (
             project(':dfd'),
+            project(':padfd-javafile-generator'),
             'com.squareup:javapoet:1.13.0'
     )
 }

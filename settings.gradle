@@ -14,5 +14,6 @@ include(
         'dfd',
         'graph',
         'padfd',
-        'javafile-generator'
+        'javafile-generator',
+        'padfd-javafile-generator'
 )

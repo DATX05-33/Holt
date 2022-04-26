@@ -4,6 +4,8 @@ import holt.processor.annotation.Activator;
 import holt.processor.annotation.Output;
 import holt.processor.annotation.Traverse;
 import holt.processor.generation.minitest.AbstractStats;
+import holt.test.minitest.data.CountWordsAction;
+import holt.test.minitest.data.CountWordsActionPolicy;
 
 @Traverse(
         name = "CW",

@@ -72,44 +72,44 @@ public final class PADFDTransformater {
             PADFDBuilder.Flow limitToGuard
     ) { }
 
-    private NewCommonElements addCommonElements(DFDRep.Flow flow) {
+    private NewCommonElements addCommonElements(DFDRep.Flow flow, ActivatorId dataSourceActivator) {
         PADFDBuilder.Activator guard = new PADFDBuilder.Activator(
-                flow.to().id() + "-guard-" + flow.id(),
-                flow.to().name() + "Guard" + flow.id(),
+                flow.to().id() + "-guard-" + flow.formattedId(),
+                flow.to().name() + "Guard" + flow.formattedId(),
                 PADFDBuilder.Activator.Type.GUARD,
                 new GuardMetadata()
         );
         PADFDBuilder.Activator limit = new PADFDBuilder.Activator(
-                flow.to().id() + "-limit-" + flow.id(),
-                flow.to().name() + "Limit" + flow.id(),
+                flow.to().id() + "-limit-" + flow.formattedId(),
+                flow.to().name() + "Limit" + flow.formattedId(),
                 PADFDBuilder.Activator.Type.LIMIT,
-                new LimitMetadata()
+                new LimitMetadata(dataSourceActivator)
         );
         PADFDBuilder.Activator request = new PADFDBuilder.Activator(
-                flow.to().id() + "-request-" + flow.id(),
-                flow.to().name() + "Request" + flow.id(),
+                flow.to().id() + "-request-" + flow.formattedId(),
+                flow.to().name() + "Request" + flow.formattedId(),
                 PADFDBuilder.Activator.Type.REQUEST,
-                new RequestMetadata()
+                new RequestMetadata(dataSourceActivator)
         );
         limit.setPartner(request);
         request.setPartner(limit);
         PADFDBuilder.Activator log = new PADFDBuilder.Activator(
-                flow.to().id() + "-log-" + flow.id(),
-                limit.getName() + "Log" + flow.id(),
+                flow.to().id() + "-log-" + flow.formattedId(),
+                limit.getName() + "Log" + flow.formattedId(),
                 PADFDBuilder.Activator.Type.LOG);
         PADFDBuilder.Activator logDB = new PADFDBuilder.Activator(
-                flow.to().id() + "-log_db-" + flow.id(),
-                log.getName() + "Database" + flow.id(),
+                flow.to().id() + "-log_db-" + flow.formattedId(),
+                log.getName() + "Database" + flow.formattedId(),
                 PADFDBuilder.Activator.Type.LOG_DATABASE);
 
         // Request -> Limit
-        var requestToLimit = flow(flow.id() + "111", request, limit);
+        var requestToLimit = flow(flow.formattedId() + "111", request, limit);
         // Limit -> Log
-        var limitToLog = flow(flow.id() + "222", limit, log);
+        var limitToLog = flow(flow.formattedId() + "222", limit, log);
         // Log -> Database
-        var logToLogDB = flow(flow.id() + "333", log, logDB);
+        var logToLogDB = flow(flow.formattedId() + "333", log, logDB);
         // Limit -> Guard
-        var limitToGuard = flow(flow.id() + "444", limit, guard);
+        var limitToGuard = flow(flow.formattedId() + "444", limit, guard);
 
         return new NewCommonElements(
                 limit,
@@ -125,8 +125,8 @@ public final class PADFDTransformater {
     }
 
     private void addInElements(DFDRep.Flow f) {
-        NewCommonElements e = addCommonElements(f);
         PADFDBuilder.Activator s = a(f.from());
+        NewCommonElements e = addCommonElements(f, new ActivatorId(s.getId()));
         PADFDBuilder.Activator t = a(f.to());
 
         // External Entity -> Limit
@@ -148,7 +148,7 @@ public final class PADFDTransformater {
 
         builder.addFlow(f,
                 List.of(
-                        entityToLimit,
+//                        entityToLimit,
                         entityToRequest,
                         e.requestToLimit,
                         e.limitToLog,
@@ -162,8 +162,8 @@ public final class PADFDTransformater {
     }
 
     private void addOutElements(DFDRep.Flow f) {
-        NewCommonElements e = addCommonElements(f);
         PADFDBuilder.Activator s = a(f.from());
+        NewCommonElements e = addCommonElements(f, new ActivatorId(s.getId()));
         PADFDBuilder.Activator t = a(f.to());
 
         // Process -> Limit
@@ -191,7 +191,7 @@ public final class PADFDTransformater {
 
         builder.addFlow(f,
                 List.of(
-                        processToLimit,
+//                        processToLimit,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,
@@ -206,8 +206,8 @@ public final class PADFDTransformater {
     }
 
     private void addCompElements(DFDRep.Flow f) {
-        NewCommonElements e = addCommonElements(f);
         PADFDBuilder.Activator s = a(f.from());
+        NewCommonElements e = addCommonElements(f, new ActivatorId(s.getId()));
         PADFDBuilder.Activator t = a(f.to());
 
         // Process 1 -> Limit
@@ -228,7 +228,7 @@ public final class PADFDTransformater {
 
         builder.addFlow(f,
                 List.of(
-                        process1ToLimit,
+//                        process1ToLimit,
                         reason1ToRequest,
                         e.requestToLimit,
                         e.limitToLog,
@@ -243,8 +243,8 @@ public final class PADFDTransformater {
 
     //TODO: Add clean node
     private void addStoreElements(DFDRep.Flow f) {
-        NewCommonElements e = addCommonElements(f);
         PADFDBuilder.Activator s = a(f.from());
+        NewCommonElements e = addCommonElements(f, new ActivatorId(s.getId()));
         PADFDBuilder.Activator t = a(f.to());
 
         // Process -> Limit
@@ -265,7 +265,7 @@ public final class PADFDTransformater {
 
         builder.addFlow(f,
                 List.of(
-                        processToLimit,
+//                        processToLimit,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,
@@ -279,14 +279,15 @@ public final class PADFDTransformater {
     }
 
     private void addReadElements(DFDRep.Flow f) {
-        NewCommonElements e = addCommonElements(f);
+        String querierId = f.id() + "querier";
+        NewCommonElements e = addCommonElements(f, new ActivatorId(querierId));
         PADFDBuilder.Activator s = a(f.from());
         PADFDBuilder.Activator t = a(f.to());
 
         //TODO: Name not unique enough
         PADFDBuilder.Activator querier = new PADFDBuilder.Activator(
-                f.id() + "querier",
-                s.getName() + "Querier",
+                querierId,
+                s.getName() + "Querier" + f.formattedId(),
                 PADFDBuilder.Activator.Type.QUERIER,
                 new QuerierMetadata(
                         new ActivatorId(s.getId()),
@@ -296,8 +297,8 @@ public final class PADFDTransformater {
 
         // Database -> Querier
         var dbToQuerier = flow(f.id() + "3", s, querier);
-        // Querier -> Limit
-        var querierToLimit = flow(f.id() + "8", querier, e.limit);
+        // Querier -> Request
+        var querierToRequest = flow(f.id() + "8", querier, e.request);
         // Policy Database -> Request
         var policyDBToRequest = flow(f.id() + "4", s.getPartner(), e.request);
 //        dbToLimit.setPartner(policyDBToRequest);
@@ -315,7 +316,7 @@ public final class PADFDTransformater {
         builder.addFlow(f,
                 List.of(
                         dbToQuerier,
-                        querierToLimit,
+                        querierToRequest,
                         policyDBToRequest,
                         e.requestToLimit,
                         e.limitToLog,

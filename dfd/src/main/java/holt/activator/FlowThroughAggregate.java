@@ -1,5 +1,8 @@
 package holt.activator;
 
+import holt.applier.OutputRep;
+import holt.applier.QueryRep;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,11 +14,13 @@ public final class FlowThroughAggregate {
     private final List<QueryInputDefinition> queryInputDefinitions;
     private final Connector output;
     private FunctionName functionName;
+    private List<QueryRep> laterQueryRep;
 
     public FlowThroughAggregate() {
         this.inputs = new ArrayList<>();
         this.queries = new ArrayList<>();
         this.queryInputDefinitions = new ArrayList<>();
+        this.laterQueryRep = new ArrayList<>();
         this.output = new Connector();
     }
 
@@ -100,6 +105,37 @@ public final class FlowThroughAggregate {
 
     public FunctionName functionName() {
         return functionName;
+    }
+
+    public void addLaterQuerySetup(QueryRep queryRep) {
+        this.laterQueryRep.add(queryRep);
+    }
+
+    public void runLaterQuerySetup() {
+        for (QueryRep query : this.laterQueryRep) {
+            OutputRep queryOutputRep = query.outputRep();
+            for (QueryInput queryInput : this.queries) {
+                DatabaseActivatorAggregate databaseActivator = queryInput.queryInputDefinition().database();
+                if (databaseActivator.name().value().equals(query.db().simpleName())) {
+                    queryInput.queryInputDefinition().setOutput(
+                            new FlowOutput(
+                                    queryOutputRep.type(),
+                                    queryOutputRep.collection()
+                            )
+                    );
+                }
+            }
+            for (QueryInputDefinition queryInputDefinition : this.queryInputDefinitions) {
+                if (queryInputDefinition.database().name().value().equals(query.db().simpleName())) {
+                    queryInputDefinition.setOutput(
+                            new FlowOutput(
+                                    queryOutputRep.type(),
+                                    queryOutputRep.collection()
+                            )
+                    );
+                }
+            }
+        }
     }
 
     @Override

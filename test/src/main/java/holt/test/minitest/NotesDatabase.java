@@ -3,6 +3,7 @@ package holt.test.minitest;
 
 import holt.processor.annotation.Activator;
 import holt.processor.generation.minitest.NotesDatabaseRequirements;
+import holt.test.minitest.data.Note;
 
 import java.util.List;
 

@@ -11,7 +11,8 @@ dependencies {
             project(':dfd'),
             project(':padfd'),
             project(':graph'),
-            project(':javafile-generator')
+            project(':javafile-generator'),
+            project(':padfd-javafile-generator')
     )
 }
 
