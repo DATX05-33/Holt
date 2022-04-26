@@ -85,6 +85,7 @@ public final class ProcessJavaFileGenerator {
                         .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                         .returns(returnClass);
 
+                // ??
                 List<Connector> inputsForQueryDefinition = flowThrough.inputs();
                 for (int j = 0; j < inputsForQueryDefinition.size(); j++) {
                     Connector connector = inputsForQueryDefinition.get(j);

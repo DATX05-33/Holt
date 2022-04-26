@@ -11,6 +11,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import holt.activator.ActivatorAggregate;
+import holt.activator.ConnectedClass;
 import holt.activator.Connector;
 import holt.activator.DatabaseActivatorAggregate;
 import holt.activator.Domain;
@@ -159,6 +160,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addAnnotation(getGeneratedAnnotation())
                 .build();
 
+        processActivatorAggregate.setConnectedClass(new ConnectedClass(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value()), true));
         return Collections.singletonList(JavaFile.builder(dfdPackageName, combineActivatorTypeSpec).build());
     }
 
@@ -196,6 +198,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addAnnotation(getGeneratedAnnotation())
                 .build();
 
+        processActivatorAggregate.setConnectedClass(new ConnectedClass(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value()), true));
         return Collections.singletonList(JavaFile.builder(dfdPackageName, querierTypeSpec).build());
     }
 
@@ -217,18 +220,32 @@ public final class PrivacyActivatorJavaFileGenerator {
         TypeName dataTypeName = toTypeName(dataConnector);
 
         ParameterSpec predicateParameterSpec = ParameterSpec
-                .builder(predicateTypeName, "test")
+                .builder(predicateTypeName, "tester")
                 .build();
 
         ParameterSpec dataParameterSpec = ParameterSpec
                 .builder(dataTypeName, "data")
                 .build();
 
+        StringBuilder methodSB = new StringBuilder();
+        if (dataConnector.flowOutput().isCollection()) {
+            methodSB.append("return data\n");
+            methodSB.append("  .stream()\n");
+            methodSB.append("  .filter(tester::test)\n");
+            methodSB.append("  .toList();\n");
+        } else {
+            methodSB.append("if (tester.test(data)) {\n");
+            methodSB.append("  return data;\n");
+            methodSB.append("} else {\n");
+            methodSB.append("  throw new IllegalStateException();\n");
+            methodSB.append("}");
+        }
+
         MethodSpec guardMethodSpec = MethodSpec
                 .methodBuilder(flow.functionName().value())
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .addCode(CodeBlock.of("return null;"))
+                .addCode(methodSB.toString())
                 .addParameters(List.of(predicateParameterSpec, dataParameterSpec))
                 .returns(dataTypeName)
                 .build();
@@ -240,6 +257,7 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .addAnnotation(getGeneratedAnnotation())
                 .build();
 
+        processActivatorAggregate.setConnectedClass(new ConnectedClass(QualifiedName.of(dfdPackageName + "." + processActivatorAggregate.name().value()), true));
         return Collections.singletonList(JavaFile.builder(dfdPackageName, guardTypeSpec).build());
     }
 

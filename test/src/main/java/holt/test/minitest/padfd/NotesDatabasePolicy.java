@@ -4,5 +4,5 @@ import holt.processor.annotation.Activator;
 import holt.processor.generation.minitest.NotesDatabasePolicyRequirements;
 
 @Activator(instantiateWithReflection = true)
-public class NotesPolicyDatabase implements NotesDatabasePolicyRequirements {
+public class NotesDatabasePolicy implements NotesDatabasePolicyRequirements {
 }

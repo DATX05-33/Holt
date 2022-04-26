@@ -80,6 +80,12 @@ public final class ExternalEntityJavaFileGenerator {
     }
 
     private static boolean activatorsAreValid(Domain domain) {
+        for (ActivatorAggregate activator : domain.activators()) {
+            if (activator.connectedClass().isEmpty()) {
+                System.out.println(activator.requirementsName() + " have no connected class to it");
+            }
+        }
+
         return domain.activators().stream()
                 .map(activatorAggregates -> activatorAggregates.connectedClass().isPresent())
                 .reduce(true, (b1, b2) -> b1 && b2);
@@ -315,6 +321,7 @@ public final class ExternalEntityJavaFileGenerator {
                 // First, check if this process has any queries
                 // If it does, then call for all the query definitions
 
+                int finalI = i;
                 flowThrough.queryInputDefinitions()
                                 .forEach(queryInputDefinition -> {
                                     processorCallSB.append("final var ")
@@ -326,13 +333,18 @@ public final class ExternalEntityJavaFileGenerator {
                                             .append(processActivator.getQueryMethodNameForDatabase(queryInputDefinition.database(), flowThrough))
                                             .append("(");
 
-                                    List<Connector> queryInputs = flowThrough.inputs();
-                                    for (Connector queryInput : queryInputs) {
-                                        processorCallSB.append(connectorToVariable.get(queryInput)).append(",");
+                                    // ??
+                                    List<Connector> queryDefinitionInputs = flowThrough.inputs();
+                                    System.out.println("? - " + activatorAggregate.name() + " - " + finalI);
+                                    for (Connector queryDefinitionInput : queryDefinitionInputs) {
+                                        ActivatorAggregate a = getActivatorAggregateByOutputConnector(queryDefinitionInput, traverseName, orderOfExecution);
+                                        int j = orderOfExecution.indexOf(a);
+                                        System.out.println(j + " what " + a.name());
+                                        processorCallSB.append(connectorToVariable.get(queryDefinitionInput)).append(",");
                                     }
 
                                     //Removes the last , from the previous forEach, if there was any input to the query
-                                    if (queryInputs.size() > 0) {
+                                    if (queryDefinitionInputs.size() > 0) {
                                         processorCallSB.setLength(processorCallSB.length() - 1);
                                     }
 
@@ -402,6 +414,21 @@ public final class ExternalEntityJavaFileGenerator {
         }
 
         return methodSpecBuilder.build();
+    }
+
+    private static ActivatorAggregate getActivatorAggregateByOutputConnector(Connector connector, TraverseName traverseName, List<ActivatorAggregate> activatorAggregates) {
+        for (ActivatorAggregate activatorAggregate : activatorAggregates) {
+            if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                if (processActivatorAggregate.flow(traverseName).output().equals(connector)) {
+                    return processActivatorAggregate;
+                }
+            } else if (activatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivatorAggregate) {
+                if (externalEntityActivatorAggregate.starts().get(traverseName).contains(connector)) {
+                    return externalEntityActivatorAggregate;
+                }
+            }
+        }
+        throw new IllegalStateException("Nope");
     }
 
 }

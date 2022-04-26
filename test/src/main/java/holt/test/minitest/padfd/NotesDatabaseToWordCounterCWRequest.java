@@ -18,7 +18,7 @@ import java.util.Map;
         functionName = "CW",
         queries = {
                 @Query(
-                        db = NotesPolicyDatabase.class,
+                        db = NotesDatabasePolicy.class,
                         output = @Output(type = NotePolicy.class)
                 )
         }
@@ -27,7 +27,7 @@ import java.util.Map;
 public class NotesDatabaseToWordCounterCWRequest implements NotesDatabaseToWordCounterCWRequestRequirements {
 
     @Override
-    public Map<Note, NotePolicy> CW(Collection<Note> input0, Object dbInput1) {
+    public Map<Note, NotePolicy> CW(Collection<Note> input0, NotePolicy dbInput1) {
         return null;
     }
 
