@@ -138,9 +138,9 @@ public final class PADFDEnhancer {
                     ActivatorAggregate sourceActivator = getActivatorAggregate(limitMetadata.dataSourceActivator(), domain.activators());
                     QualifiedName sourceQualifiedName = null;
                     if (sourceActivator instanceof ProcessActivatorAggregate p) {
-                        sourceQualifiedName = QualifiedName.of(p.getOutput(traverseName));
+                        sourceQualifiedName = QualifiedName.of(p.getOutput(traverseName), true);
                     } else if (sourceActivator instanceof ExternalEntityActivatorAggregate e) {
-                        sourceQualifiedName = QualifiedName.of(e.starts().get(traverseName).stream().filter(connector -> isPolicyConnector(connector, processingEnvironment)).findFirst().orElseThrow());
+                        sourceQualifiedName = QualifiedName.of(e.starts().get(traverseName).stream().filter(connector -> !isPolicyConnector(connector, processingEnvironment)).findFirst().orElseThrow());
                     }
 
                     if (sourceQualifiedName == null) {

@@ -1,4 +1,4 @@
-package holt.test.minitest.wordcounter;
+package holt.test.minitest;
 
 import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;

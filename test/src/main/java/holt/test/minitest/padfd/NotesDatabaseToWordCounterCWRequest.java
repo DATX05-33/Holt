@@ -1,4 +1,4 @@
-package holt.test.minitest.notesdatabase;
+package holt.test.minitest.padfd;
 
 import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;

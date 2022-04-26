@@ -1,4 +1,4 @@
-package holt.test.minitest.wordcounter;
+package holt.test.minitest.padfd;
 
 import holt.processor.annotation.Activator;
 import holt.processor.generation.minitest.StatsToWordCounterCWLimitRequirements;
@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 @Activator(instantiateWithReflection = true)
 public class StatsToWordCounterCWLimit implements StatsToWordCounterCWLimitRequirements {
     @Override
-    public Predicate<CountWordsActionPolicy> CW(Map<CountWordsAction, Object> input0) {
+    public Predicate<CountWordsAction> CW(Map<CountWordsAction, CountWordsActionPolicy> input0) {
         return null;
     }
 }
