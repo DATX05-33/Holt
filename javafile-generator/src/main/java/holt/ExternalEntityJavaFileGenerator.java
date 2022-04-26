@@ -264,6 +264,8 @@ public final class ExternalEntityJavaFileGenerator {
         var activatorToVariable = state.activatorToVariable;
         var queryInputDefinitionToVariable = state.queryInputDefinitionToVariable;
 
+        List<QueryInputDefinition> queryInputDefinitionDefined = new ArrayList<>();
+
         List<ParameterSpec> inputParameters = new ArrayList<>();
         for (int i = 0; i < inputs.size(); i++) {
             Connector input = inputs.get(i);
@@ -322,34 +324,23 @@ public final class ExternalEntityJavaFileGenerator {
                 // If it does, then call for all the query definitions
 
                 int finalI = i;
-                flowThrough.queryInputDefinitions()
-                                .forEach(queryInputDefinition -> {
-                                    processorCallSB.append("final var ")
-                                            .append(queryInputDefinitionToVariable.get(queryInputDefinition))
-                                            .append(" = ")
-                                            .append("this.")
-                                            .append(activatorReferenceVar)
-                                            .append(".")
-                                            .append(processActivator.getQueryMethodNameForDatabase(queryInputDefinition.database(), flowThrough))
-                                            .append("(");
-
-                                    // ??
-                                    List<Connector> queryDefinitionInputs = flowThrough.inputs();
-                                    System.out.println("? - " + activatorAggregate.name() + " - " + finalI);
-                                    for (Connector queryDefinitionInput : queryDefinitionInputs) {
-                                        ActivatorAggregate a = getActivatorAggregateByOutputConnector(queryDefinitionInput, traverseName, orderOfExecution);
-                                        int j = orderOfExecution.indexOf(a);
-                                        System.out.println(j + " what " + a.name());
-                                        processorCallSB.append(connectorToVariable.get(queryDefinitionInput)).append(",");
-                                    }
-
-                                    //Removes the last , from the previous forEach, if there was any input to the query
-                                    if (queryDefinitionInputs.size() > 0) {
-                                        processorCallSB.setLength(processorCallSB.length() - 1);
-                                    }
-
-                                    processorCallSB.append(");\n");
-                                });
+                for (QueryInput query : flowThrough.queries()) {
+                    QueryInputDefinition queryInputDefinition = query.queryInputDefinition();
+                    if (queryInputDefinitionDefined.contains(queryInputDefinition)) {
+                        throw new IllegalStateException();
+                    }
+                    queryInputDefinitionDefined.add(queryInputDefinition);
+                    codeForQueryInputDefinition(
+                            traverseName,
+                            orderOfExecution,
+                            connectorToVariable,
+                            queryInputDefinitionToVariable,
+                            processorCallSB,
+                            finalI,
+                            queryInputDefinition,
+                            activatorToVariable
+                    );
+                }
 
                 processorCallSB.append("final var ")
                         .append(connectorVar)
@@ -416,6 +407,44 @@ public final class ExternalEntityJavaFileGenerator {
         return methodSpecBuilder.build();
     }
 
+    private static void codeForQueryInputDefinition(TraverseName traverseName,
+                                                    List<ActivatorAggregate> activatorAggregates,
+                                                    Map<Connector, String> connectorToVariable,
+                                                    Map<QueryInputDefinition, String> queryInputDefinitionToVariable,
+                                                    StringBuilder processorCallSB,
+                                                    int finalI,
+                                                    QueryInputDefinition queryInputDefinition,
+                                                    Map<ActivatorAggregate, String> activatorToVariable) {
+        ProcessActivatorAggregate queryInputDefinitionProcessActivatorAggregate = getActivatorAggregateByQueryInputDefinition(queryInputDefinition, traverseName, activatorAggregates);
+        String activatorReferenceVar = activatorToVariable.get(queryInputDefinitionProcessActivatorAggregate);
+        FlowThroughAggregate flowThrough = queryInputDefinitionProcessActivatorAggregate.flow(traverseName);
+        processorCallSB.append("final var ")
+                .append(queryInputDefinitionToVariable.get(queryInputDefinition))
+                .append(" = ")
+                .append("this.")
+                .append(activatorReferenceVar)
+                .append(".")
+                .append(queryInputDefinitionProcessActivatorAggregate.getQueryMethodNameForDatabase(queryInputDefinition.database(), flowThrough))
+                .append("(");
+
+        List<Connector> queryDefinitionInputs = flowThrough.inputs();
+        for (Connector queryDefinitionInputConnector : queryDefinitionInputs) {
+            ActivatorAggregate a = getActivatorAggregateByOutputConnector(queryDefinitionInputConnector, traverseName, activatorAggregates);
+            int j = activatorAggregates.indexOf(a);
+            if (j > finalI) {
+                continue;
+            }
+            processorCallSB.append(connectorToVariable.get(queryDefinitionInputConnector)).append(",");
+        }
+
+        //Removes the last , from the previous forEach, if there was any input to the query
+        if (queryDefinitionInputs.size() > 0) {
+            processorCallSB.setLength(processorCallSB.length() - 1);
+        }
+
+        processorCallSB.append(");\n");
+    }
+
     private static ActivatorAggregate getActivatorAggregateByOutputConnector(Connector connector, TraverseName traverseName, List<ActivatorAggregate> activatorAggregates) {
         for (ActivatorAggregate activatorAggregate : activatorAggregates) {
             if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
@@ -429,6 +458,22 @@ public final class ExternalEntityJavaFileGenerator {
             }
         }
         throw new IllegalStateException("Nope");
+    }
+
+    private static ProcessActivatorAggregate getActivatorAggregateByQueryInputDefinition(QueryInputDefinition queryInputDefinition,
+                                                                                         TraverseName traverseName,
+                                                                                         List<ActivatorAggregate> activatorAggregates) {
+        for (ActivatorAggregate activatorAggregate : activatorAggregates) {
+            if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                for (QueryInputDefinition possibleQueryInputDefinition : processActivatorAggregate.flow(traverseName).queryInputDefinitions()) {
+                    if (queryInputDefinition.equals(possibleQueryInputDefinition)) {
+                        return processActivatorAggregate;
+                    }
+                }
+            }
+        }
+
+        throw new IllegalStateException();
     }
 
 }

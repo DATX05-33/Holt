@@ -33,7 +33,8 @@ public class WordCounter implements WordCounterRequirements {
     }
 
     @Override
-    public NotesDatabaseToWordCounterCountWordsQuery queryNotesDatabaseCountWords(CountWordsAction input0, Collection<Note> input1) {
+    public NotesDatabaseToWordCounterCountWordsQuery queryNotesDatabaseCountWords(CountWordsAction input0) {
         return null;
     }
+
 }

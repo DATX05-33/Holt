@@ -5,12 +5,15 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import holt.activator.ActivatorAggregate;
 import holt.activator.Connector;
 import holt.activator.DatabaseActivatorAggregate;
-import holt.activator.FlowThroughAggregate;
+import holt.activator.Domain;
+import holt.activator.ExternalEntityActivatorAggregate;
 import holt.activator.ProcessActivatorAggregate;
 import holt.activator.QueryInput;
 import holt.activator.QueryInputDefinition;
+import holt.activator.TraverseName;
 
 import javax.lang.model.element.Modifier;
 import java.util.ArrayList;
@@ -23,14 +26,16 @@ public final class ProcessJavaFileGenerator {
 
     private ProcessJavaFileGenerator() { }
 
-    public static List<JavaFile> generate(ProcessActivatorAggregate processActivator, String dfdPackageName) {
+    public static List<JavaFile> generate(ProcessActivatorAggregate processActivator, String dfdPackageName, Domain domain) {
         List<JavaFile> newFiles = new ArrayList<>();
 
         TypeSpec.Builder interfaceBuilder = TypeSpec.interfaceBuilder(processActivator.requirementsName().value())
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(getGeneratedAnnotation());
 
-        for (FlowThroughAggregate flowThrough : processActivator.flows()) {
+        for (var flowThroughEntry : processActivator.flowsMap().entrySet()) {
+            var flowThrough = flowThroughEntry.getValue();
+            var traverseName = flowThroughEntry.getKey();
             MethodSpec.Builder methodSpecBuilder = MethodSpec
                     .methodBuilder(flowThrough.functionName().value())
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
@@ -85,10 +90,22 @@ public final class ProcessJavaFileGenerator {
                         .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                         .returns(returnClass);
 
-                // ??
+
+                var orderOfExecution = domain.traverses().get(traverseName);
+                ProcessActivatorAggregate p = getActivatorAggregateByQueryInput(queryInputDefinition, traverseName, orderOfExecution);
+                int finalI = orderOfExecution.indexOf(p);
                 List<Connector> inputsForQueryDefinition = flowThrough.inputs();
+                System.out.println("????");
+                System.out.println(p.name() + " - " + finalI);
+                System.out.println("====");
                 for (int j = 0; j < inputsForQueryDefinition.size(); j++) {
                     Connector connector = inputsForQueryDefinition.get(j);
+                    ActivatorAggregate a = getActivatorAggregateByOutputConnector(connector, traverseName, orderOfExecution);
+                    int finalJ = orderOfExecution.indexOf(a);
+                    System.out.println(a.name() + " - " + finalJ);
+                    if (finalJ > finalI) {
+                        continue;
+                    }
                     queryMethodSpecBuilder.addParameter(
                             toTypeName(connector),
                             "input" + j
@@ -102,6 +119,21 @@ public final class ProcessJavaFileGenerator {
         newFiles.add(JavaFile.builder(dfdPackageName, interfaceBuilder.build()).build());
 
         return newFiles;
+    }
+
+    private static ActivatorAggregate getActivatorAggregateByOutputConnector(Connector connector, TraverseName traverseName, List<ActivatorAggregate> activatorAggregates) {
+        for (ActivatorAggregate activatorAggregate : activatorAggregates) {
+            if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                if (processActivatorAggregate.flow(traverseName).output().equals(connector)) {
+                    return processActivatorAggregate;
+                }
+            } else if (activatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivatorAggregate) {
+                if (externalEntityActivatorAggregate.starts().get(traverseName).contains(connector)) {
+                    return externalEntityActivatorAggregate;
+                }
+            }
+        }
+        throw new IllegalStateException("Nope");
     }
 
     private static TypeSpec generateQuery(QueryInputDefinition queryInputDefinition, String queryInterfaceName, TypeName databaseTypeName) {
@@ -122,5 +154,20 @@ public final class ProcessJavaFileGenerator {
                 .build();
     }
 
+    private static ProcessActivatorAggregate getActivatorAggregateByQueryInput(QueryInputDefinition queryInputDefinition,
+                                                                               TraverseName traverseName,
+                                                                               List<ActivatorAggregate> activatorAggregates) {
+        for (ActivatorAggregate activatorAggregate : activatorAggregates) {
+            if (activatorAggregate instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                for (QueryInput query : processActivatorAggregate.flow(traverseName).queries()) {
+                    if (query.queryInputDefinition().equals(queryInputDefinition)) {
+                        return processActivatorAggregate;
+                    }
+                }
+            }
+        }
+
+        throw new IllegalStateException();
+    }
 
 }

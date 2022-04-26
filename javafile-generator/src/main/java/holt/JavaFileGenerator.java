@@ -73,7 +73,7 @@ public class JavaFileGenerator {
 
         domain
                 .processes()
-                .forEach(process -> javaFiles.addAll(generate(process, dfdPackageName)));
+                .forEach(process -> javaFiles.addAll(generate(process, dfdPackageName, domain)));
 
         return javaFiles;
     }
