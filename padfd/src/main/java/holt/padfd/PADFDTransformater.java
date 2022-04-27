@@ -13,6 +13,7 @@ import holt.padfd.metadata.RequestMetadata;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public final class PADFDTransformater {
 
@@ -35,7 +36,12 @@ public final class PADFDTransformater {
                 }
             }
         }
-        throw new IllegalStateException();
+
+        Random rnd = new Random();
+        int number = rnd.nextInt(999999);
+
+        // this will convert any number sequence into 6 character.
+        return flow.formattedId() + String.format("%06d", number);
     }
 
     public DFDOrderedRep internalEnhance() {
@@ -296,15 +302,18 @@ public final class PADFDTransformater {
         guardToDatabase.setPartner(requestToPolicyDB);
         requestToPolicyDB.setPartner(guardToDatabase);
 
+        // Process -> Guard
         var processToGuard = flow(f.id() + "8", s, e.guard);
+        // Process -> Log
+        var processToLog = flow(f.id() + "9", s, e.log);
 
         builder.addFlow(f,
                 List.of(
-//                        processToLimit,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,
                         e.requestToLog,
+                        processToLog,
                         e.logToLogDB,
                         e.limitToGuard,
                         processToGuard,
@@ -370,7 +379,7 @@ public final class PADFDTransformater {
     }
 
     private void addDeleteElements(DFDRep.Flow f) {
-        throw new UnsupportedOperationException();
+
     }
 
     private PADFDBuilder.Flow flow(String id, PADFDBuilder.Activator from, PADFDBuilder.Activator to) {

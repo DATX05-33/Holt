@@ -95,14 +95,10 @@ public final class ProcessJavaFileGenerator {
                 ProcessActivatorAggregate p = getActivatorAggregateByQueryInput(queryInputDefinition, traverseName, orderOfExecution);
                 int finalI = orderOfExecution.indexOf(p);
                 List<Connector> inputsForQueryDefinition = flowThrough.inputs();
-                System.out.println("????");
-                System.out.println(p.name() + " - " + finalI);
-                System.out.println("====");
                 for (int j = 0; j < inputsForQueryDefinition.size(); j++) {
                     Connector connector = inputsForQueryDefinition.get(j);
                     ActivatorAggregate a = getActivatorAggregateByOutputConnector(connector, traverseName, orderOfExecution);
                     int finalJ = orderOfExecution.indexOf(a);
-                    System.out.println(a.name() + " - " + finalJ);
                     if (finalJ > finalI) {
                         continue;
                     }

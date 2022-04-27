@@ -1,4 +1,4 @@
-package holt.test.minitest.padfd;
+package holt.test.minitest.stats_padfd;
 
 import holt.processor.annotation.Activator;
 import holt.processor.generation.minitest.StatsToWordCounterCWLimitLog;

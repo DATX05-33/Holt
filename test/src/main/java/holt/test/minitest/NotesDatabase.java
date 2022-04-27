@@ -4,6 +4,7 @@ package holt.test.minitest;
 import holt.processor.annotation.Activator;
 import holt.processor.generation.minitest.NotesDatabaseRequirements;
 import holt.test.minitest.data.Note;
+import holt.test.minitest.data.NoteInsertion;
 
 import java.util.List;
 
@@ -19,4 +20,8 @@ public class NotesDatabase implements NotesDatabaseRequirements {
         );
     }
 
+    @Override
+    public void AN(NoteInsertion input0) {
+
+    }
 }

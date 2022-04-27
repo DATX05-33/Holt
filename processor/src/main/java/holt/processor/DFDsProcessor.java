@@ -115,7 +115,11 @@ public class DFDsProcessor extends AbstractProcessor {
                 QueriesForApplier.applyQueriesFor(queriesForRepMap.get(dfdName));
             }
 
-            if (domain.privacyAware()) {
+            boolean validExternalEntities = domain.externalEntities()
+                    .map(activatorAggregates -> activatorAggregates.connectedClass().isPresent())
+                    .reduce(true, (b1, b2) -> b1 && b2);
+
+            if (validExternalEntities && domain.privacyAware()) {
                 PADFDEnhancer.enhance(domain, processingEnv);
             }
 
@@ -126,7 +130,7 @@ public class DFDsProcessor extends AbstractProcessor {
             //TODO:
 //            logUnannotatedActivators(elementToActivatorAggregateMap, allActivatorAggregates);
 
-            JavaFileGenerator.saveJavaFiles(domain, processingEnv);
+            JavaFileGenerator.saveJavaFiles(domain, processingEnv, validExternalEntities);
         }
 
         return true;

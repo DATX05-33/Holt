@@ -46,8 +46,8 @@ public class JavaFileGenerator {
         return outputMethods;
     }
 
-    public static void saveJavaFiles(Domain domain, ProcessingEnvironment processingEnv) {
-        List<JavaFile> javaFiles = convertToJavaFiles(domain, processingEnv);
+    public static void saveJavaFiles(Domain domain, ProcessingEnvironment processingEnv, boolean validExternalEntities) {
+        List<JavaFile> javaFiles = convertToJavaFiles(domain, processingEnv, validExternalEntities);
         for (JavaFile javaFile : javaFiles) {
             try {
                 javaFile.writeTo(processingEnv.getFiler());
@@ -57,11 +57,13 @@ public class JavaFileGenerator {
         }
     }
 
-    public static List<JavaFile> convertToJavaFiles(Domain domain, ProcessingEnvironment processingEnvironment) {
+    public static List<JavaFile> convertToJavaFiles(Domain domain, ProcessingEnvironment processingEnvironment, boolean validExternalEntities) {
         String dfdPackageName = packageOf(domain);
         List<JavaFile> javaFiles = new ArrayList<>();
 
-        javaFiles.addAll(PrivacyActivatorJavaFileGenerator.convertToJavaFiles(domain, processingEnvironment));
+        if (validExternalEntities) {
+            javaFiles.addAll(PrivacyActivatorJavaFileGenerator.convertToJavaFiles(domain, processingEnvironment));
+        }
 
         domain
                 .databases()

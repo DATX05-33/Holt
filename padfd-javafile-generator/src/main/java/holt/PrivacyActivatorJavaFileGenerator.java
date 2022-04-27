@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class PrivacyActivatorJavaFileGenerator {
 
@@ -237,6 +238,7 @@ public final class PrivacyActivatorJavaFileGenerator {
 
         FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
         if (flow.queries().size() == 0 && flow.inputs().size() != 3) {
+            System.out.println(flow.inputs().stream().map(connector -> connector.flowOutput().toString()).collect(Collectors.joining()));
             throw new IllegalStateException("Can only be three inputs for the log flow");
         }
 

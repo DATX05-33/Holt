@@ -1,8 +1,16 @@
-package holt.test.minitest.padfd;
+package holt.test.minitest;
 
 import holt.processor.annotation.Activator;
 import holt.processor.generation.minitest.NotesDatabasePolicyRequirements;
+import holt.test.minitest.data.NoteInsertion;
+import holt.test.minitest.data.NotePolicy;
+
+import java.util.Map;
 
 @Activator(instantiateWithReflection = true)
 public class NotesDatabasePolicy implements NotesDatabasePolicyRequirements {
+    @Override
+    public void AN(Map<NoteInsertion, NotePolicy> input0) {
+
+    }
 }

@@ -1,13 +1,10 @@
-package holt.test.minitest.padfd;
+package holt.test.minitest.stats_padfd;
 
 import holt.processor.annotation.Activator;
-import holt.processor.annotation.FlowThrough;
-import holt.processor.annotation.Output;
 import holt.processor.generation.minitest.NotesDatabaseToWordCounterCWLimitRequirements;
 import holt.test.minitest.data.Note;
 import holt.test.minitest.data.NotePolicy;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.function.Predicate;
 
