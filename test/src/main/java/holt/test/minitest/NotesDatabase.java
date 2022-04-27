@@ -21,6 +21,11 @@ public class NotesDatabase implements NotesDatabaseRequirements {
     }
 
     @Override
+    public void DN(Object input0) {
+
+    }
+
+    @Override
     public void AN(NoteInsertion input0) {
 
     }

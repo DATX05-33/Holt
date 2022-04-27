@@ -77,7 +77,8 @@ public final class PrivacyActivatorJavaFileGenerator {
      */
     private static List<JavaFile> generateCombine(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
         if (processActivatorAggregate.flows().size() != 1) {
-            throw new IllegalStateException("Can only be one flow for a Combine process");
+            System.err.println("Can only be one flow for a Combine process");
+            return new ArrayList<>();
         }
 
         FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
@@ -136,7 +137,8 @@ public final class PrivacyActivatorJavaFileGenerator {
 
     private static List<JavaFile> generateQuerier(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
         if (processActivatorAggregate.flows().size() != 1) {
-            throw new IllegalStateException("Can only be one flow for a Combine process");
+            System.err.println("Can only be one flow for a Combine process");
+            return new ArrayList<>();
         }
 
         FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
@@ -174,7 +176,8 @@ public final class PrivacyActivatorJavaFileGenerator {
 
     private static List<JavaFile> generateGuard(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
         if (processActivatorAggregate.flows().size() != 1) {
-            throw new IllegalStateException("Can only be one flow for a Guard process");
+            System.err.println("Can only be one flow for a Guard process");
+            return new ArrayList<>();
         }
 
         FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
@@ -233,12 +236,12 @@ public final class PrivacyActivatorJavaFileGenerator {
 
     private static List<JavaFile> generateLog(ProcessActivatorAggregate processActivatorAggregate, ProcessingEnvironment env, String dfdPackageName) {
         if (processActivatorAggregate.flows().size() != 1) {
-            throw new IllegalStateException("Can only be one flow for a Guard process");
+            System.err.println("Can only be one flow for a Guard process");
+            return new ArrayList<>();
         }
 
         FlowThroughAggregate flow = processActivatorAggregate.flows().get(0);
         if (flow.queries().size() == 0 && flow.inputs().size() != 3) {
-            System.out.println(flow.inputs().stream().map(connector -> connector.flowOutput().toString()).collect(Collectors.joining()));
             throw new IllegalStateException("Can only be three inputs for the log flow");
         }
 

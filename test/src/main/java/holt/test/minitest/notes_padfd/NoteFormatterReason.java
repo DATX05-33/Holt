@@ -8,6 +8,7 @@ import holt.test.minitest.data.Note;
 import holt.test.minitest.data.NotePolicy;
 
 import java.util.Map;
+import java.util.UUID;
 
 @FlowThrough(
         traverse = "AN",
@@ -17,7 +18,13 @@ import java.util.Map;
 @Activator(instantiateWithReflection = true)
 public class NoteFormatterReason implements NoteFormatterReasonRequirements {
     @Override
+    public Object DN(Map<UUID, Object> input0) {
+        return null;
+    }
+
+    @Override
     public NotePolicy AN(Map<Note, NotePolicy> input0) {
         return null;
+
     }
 }

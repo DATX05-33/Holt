@@ -110,14 +110,16 @@ public final class PADFDEnhancer {
             if (activator instanceof ProcessActivatorAggregate processActivatorAggregate) {
                 if (processActivatorAggregate.metadata() instanceof QuerierMetadata querierMetadata) {
                     if (processActivatorAggregate.flows().size() != 1) {
-                        throw new IllegalStateException("Querier process must only have one input");
+                        System.err.println("Querier process must only have one input");
+                        continue;
                     }
                     Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();
                     TraverseName traverseName = flowThroughEntry.getKey();
                     FlowThroughAggregate flow = flowThroughEntry.getValue();
 
                     if (flow.queries().size() != 1 && flow.inputs().size() == 0) {
-                        throw new IllegalStateException("Querier must only have one input from database");
+                        System.err.println("Querier must only have one input from database");
+                        continue;
                     }
 
                     DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) getActivatorAggregate(querierMetadata.database(), domain.activators());
@@ -126,7 +128,8 @@ public final class PADFDEnhancer {
                     flow.moveQueryInputDefinitionTo(databaseActivatorAggregate, placeForQueryDefinition.flow(traverseName), null);
                 } else if (processActivatorAggregate.metadata() instanceof LimitMetadata limitMetadata) {
                     if (processActivatorAggregate.flows().size() != 1) {
-                        throw new IllegalStateException("Limit can only have one flow");
+                        System.err.println("Limit can only have one flow");
+                        continue;
                     }
 
                     Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();
@@ -148,7 +151,8 @@ public final class PADFDEnhancer {
                     flow.setOutputType(QualifiedName.of(Predicate.class.getName(), List.of(sourceQualifiedName)), false);
                 } else if (processActivatorAggregate.metadata() instanceof GuardMetadata guardMetadata) {
                     if (processActivatorAggregate.flows().size() != 1) {
-                        throw new IllegalStateException("Guard can only have one flow");
+                        System.err.println("Guard can only have one flow; size: " + processActivatorAggregate.flows().size() +  " - " + processActivatorAggregate.flows().stream().map(FlowThroughAggregate::toString).collect(Collectors.joining()));
+                        continue;
                     }
 
                     Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();

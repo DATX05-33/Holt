@@ -379,7 +379,43 @@ public final class PADFDTransformater {
     }
 
     private void addDeleteElements(DFDRep.Flow f) {
+        PADFDBuilder.Activator s = a(f.from());
+        NewCommonElements e = addCommonElements(f, new ActivatorId(s.getId()));
+        PADFDBuilder.Activator t = a(f.to());
 
+        // Process -> Limit
+        var processToLimit = flow(f.id() + "3", s, e.limit);
+        // Reason -> Request
+        var reasonToRequest = flow(f.id() + "4", s.getPartner(), e.request);
+        processToLimit.setPartner(reasonToRequest);
+        reasonToRequest.setPartner(processToLimit);
+
+        // Guard -> Database
+        var guardToDatabase = flow(f.id() + "6", e.guard, t);
+        // Request -> Policy Database
+        var requestToPolicyDB = flow(f.id() + "7", e.request, t.getPartner());
+        guardToDatabase.setPartner(requestToPolicyDB);
+        requestToPolicyDB.setPartner(guardToDatabase);
+
+        // Process -> Guard
+        var processToGuard = flow(f.id() + "8", s, e.guard);
+        // Process -> Log
+        var processToLog = flow(f.id() + "9", s, e.log);
+
+        builder.addFlow(f,
+                List.of(
+                        reasonToRequest,
+                        e.requestToLimit,
+                        e.limitToLog,
+                        e.requestToLog,
+                        processToLog,
+                        e.logToLogDB,
+                        e.limitToGuard,
+                        processToGuard,
+                        guardToDatabase,
+                        requestToPolicyDB
+                )
+        );
     }
 
     private PADFDBuilder.Flow flow(String id, PADFDBuilder.Activator from, PADFDBuilder.Activator to) {

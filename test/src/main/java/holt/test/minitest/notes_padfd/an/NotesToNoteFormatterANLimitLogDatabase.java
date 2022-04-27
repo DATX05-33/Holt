@@ -1,4 +1,4 @@
-package holt.test.minitest.notes_padfd;
+package holt.test.minitest.notes_padfd.an;
 
 import holt.processor.annotation.Activator;
 import holt.processor.generation.minitest.NotesToNoteFormatterANLimitLog;
