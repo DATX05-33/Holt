@@ -14,6 +14,6 @@ import java.util.function.Predicate;
 public class NotesToNoteFormatterDNLimit implements NotesToNoteFormatterDNLimitRequirements {
     @Override
     public Predicate<UUID> DN(Map<UUID, NotePolicy> input0) {
-        return null;
+        return uuid -> true;
     }
 }

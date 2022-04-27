@@ -35,7 +35,7 @@ public class WordCounter implements WordCounterRequirements {
 
     @Override
     public NotesDatabaseToWordCounterCountWordsQuery queryNotesDatabaseCountWords(CountWordsAction input0) {
-        return NotesDatabase::getNotes;
+        return db -> db.getNotes();
     }
 
 }

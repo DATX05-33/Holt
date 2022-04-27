@@ -10,8 +10,11 @@ import holt.test.minitest.NotesDatabasePolicy;
 import holt.test.minitest.data.Note;
 import holt.test.minitest.data.NotePolicy;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 @FlowThrough(
@@ -21,20 +24,28 @@ import java.util.Map;
         queries = {
                 @Query(
                         db = NotesDatabasePolicy.class,
-                        output = @Output(type = NotePolicy.class)
+                        output = @Output(type = NotePolicy.class, collection = true)
                 )
         }
 )
 @Activator(instantiateWithReflection = true)
 public class NotesDatabaseToWordCounterCWRequest implements NotesDatabaseToWordCounterCWRequestRequirements {
 
+
     @Override
-    public Map<Note, NotePolicy> CW(Collection<Note> input0, NotePolicy dbInput1) {
-        return new HashMap<>();
+    public Map<Note, NotePolicy> CW(Collection<Note> input0, Collection<NotePolicy> dbInput1) {
+        HashMap<Note, NotePolicy> m = new HashMap<>();
+        List<Note> a1 = new ArrayList<>(input0);
+        List<NotePolicy> a2 = new ArrayList<>(dbInput1);
+        for (int i = 0; i < a1.size(); i++) {
+            m.put(a1.get(i), a2.get(i));
+        }
+
+        return m;
     }
 
     @Override
     public NotesDatabasePolicyToNotesDatabaseToWordCounterCWRequestCWQuery queryNotesDatabasePolicyCW(Collection<Note> input0) {
-        return db -> null;
+        return NotesDatabasePolicy::getPolicies;
     }
 }

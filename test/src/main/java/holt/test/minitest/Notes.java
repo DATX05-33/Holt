@@ -30,11 +30,11 @@ import java.util.UUID;
 public class Notes extends AbstractNotes {
 
         public void addNote(Note note) {
-                super.AN(note, new NotePolicy());
+//                super.AN(note, new NotePolicy());
         }
 
         public void deleteNote(UUID uuid) {
-                super.DN(uuid, new NotePolicy());
+//                super.DN(uuid, new NotePolicy());
         }
 
 }

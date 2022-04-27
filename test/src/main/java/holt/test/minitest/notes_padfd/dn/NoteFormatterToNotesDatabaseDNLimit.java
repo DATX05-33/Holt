@@ -7,13 +7,13 @@ import holt.processor.generation.minitest.NoteFormatterToNotesDatabaseDNLimitReq
 import holt.test.minitest.data.NotePolicy;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 @Activator(instantiateWithReflection = true)
 public class NoteFormatterToNotesDatabaseDNLimit implements NoteFormatterToNotesDatabaseDNLimitRequirements {
-
     @Override
-    public Predicate<Object> DN(Map<Object, NotePolicy> input0) {
-        return null;
+    public Predicate<UUID> DN(Map<UUID, NotePolicy> input0) {
+        return uuid -> true;
     }
 }

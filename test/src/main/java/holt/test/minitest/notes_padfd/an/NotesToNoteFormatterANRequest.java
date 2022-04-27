@@ -7,6 +7,7 @@ import holt.processor.generation.minitest.NotesToNoteFormatterANRequestRequireme
 import holt.test.minitest.data.Note;
 import holt.test.minitest.data.NotePolicy;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @FlowThrough(
@@ -18,6 +19,6 @@ import java.util.Map;
 public class NotesToNoteFormatterANRequest implements NotesToNoteFormatterANRequestRequirements {
     @Override
     public Map<Note, NotePolicy> AN(NotePolicy input0) {
-        return null;
+        return new HashMap<>();
     }
 }

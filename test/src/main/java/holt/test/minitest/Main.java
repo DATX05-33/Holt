@@ -10,6 +10,8 @@ import holt.processor.annotation.DFD;
 public class Main {
 
     public static void main(String[] args) {
+        Notes notes = new Notes();
+
         Stats stats = new Stats();
         System.out.println(stats.countAllWords());
     }

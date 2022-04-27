@@ -12,6 +12,6 @@ import java.util.function.Predicate;
 public class NotesDatabaseToWordCounterCWLimit implements NotesDatabaseToWordCounterCWLimitRequirements {
     @Override
     public Predicate<Note> CW(Map<Note, NotePolicy> input0) {
-        return note -> true;
+        return note -> input0.get(note).policies().contains("count");
     }
 }

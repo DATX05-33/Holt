@@ -1,4 +1,6 @@
 package holt.test.minitest.data;
 
-public record Note(String text) {
+import java.util.UUID;
+
+public record Note(String text, UUID id) {
 }

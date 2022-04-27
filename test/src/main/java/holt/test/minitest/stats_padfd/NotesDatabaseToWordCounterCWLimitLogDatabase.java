@@ -10,7 +10,7 @@ import java.util.Collection;
 public class NotesDatabaseToWordCounterCWLimitLogDatabase implements NotesDatabaseToWordCounterCWLimitLogDatabaseRequirements {
 
     @Override
-    public void CW(Collection<NotesDatabaseToWordCounterCWLimitLog.Row> logs) {
-        logs.forEach(System.out::println);
+    public void CW(Collection<NotesDatabaseToWordCounterCWLimitLog.Row> input0) {
+
     }
 }

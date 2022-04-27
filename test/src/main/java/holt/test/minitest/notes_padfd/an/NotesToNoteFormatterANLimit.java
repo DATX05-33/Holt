@@ -13,6 +13,6 @@ public class NotesToNoteFormatterANLimit implements NotesToNoteFormatterANLimitR
 
     @Override
     public Predicate<Note> AN(Map<Note, NotePolicy> input0) {
-        return null;
+        return note -> true;
     }
 }

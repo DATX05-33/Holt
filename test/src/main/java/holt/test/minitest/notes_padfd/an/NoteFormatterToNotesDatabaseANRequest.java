@@ -19,6 +19,6 @@ import java.util.Map;
 public class NoteFormatterToNotesDatabaseANRequest implements NoteFormatterToNotesDatabaseANRequestRequirements {
     @Override
     public Map<NoteInsertion, NotePolicy> AN(NotePolicy input0) {
-        return null;
+        return new HashMap<>();
     }
 }

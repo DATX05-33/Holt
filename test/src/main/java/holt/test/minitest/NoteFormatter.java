@@ -14,15 +14,21 @@ import java.util.UUID;
         functionName = "AN",
         output = @Output(type = NoteInsertion.class)
 )
+@FlowThrough(
+        traverse = "DN",
+        functionName = "DN",
+        output = @Output(type = UUID.class)
+)
 @Activator(instantiateWithReflection = true)
 public class NoteFormatter implements NoteFormatterRequirements {
+
     @Override
-    public Object DN(UUID input0) {
-        return null;
+    public UUID DN(UUID input0) {
+        return input0;
     }
 
     @Override
     public NoteInsertion AN(Note input0) {
-        return null;
+        return new NoteInsertion(input0);
     }
 }

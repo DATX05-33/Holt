@@ -6,6 +6,7 @@ import holt.processor.annotation.Output;
 import holt.processor.generation.minitest.NotesToNoteFormatterDNRequestRequirements;
 import holt.test.minitest.data.NotePolicy;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,6 +19,6 @@ import java.util.UUID;
 public class NotesToNoteFormatterDNRequest implements NotesToNoteFormatterDNRequestRequirements {
     @Override
     public Map<UUID, NotePolicy> DN(NotePolicy input0) {
-        return null;
+        return new HashMap<>();
     }
 }

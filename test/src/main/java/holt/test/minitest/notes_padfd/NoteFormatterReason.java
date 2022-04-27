@@ -15,17 +15,25 @@ import java.util.UUID;
         functionName = "AN",
         output = @Output(type = NotePolicy.class)
 )
+@FlowThrough(
+        traverse = "DN",
+        functionName = "DN",
+        output = @Output(type = NotePolicy.class)
+)
 @Activator(instantiateWithReflection = true)
 public class NoteFormatterReason implements NoteFormatterReasonRequirements {
 
     @Override
-    public Object DN(Map<UUID, NotePolicy> input0) {
+    public NotePolicy DN(Map<UUID, NotePolicy> input0) {
+        System.out.println("HELLO");
+        System.out.println(input0);
         return null;
     }
 
     @Override
     public NotePolicy AN(Map<Note, NotePolicy> input0) {
+        System.out.println("HELLO2");
+        System.out.println(input0);
         return null;
-
     }
 }
