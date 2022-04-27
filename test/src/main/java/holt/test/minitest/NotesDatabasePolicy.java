@@ -9,8 +9,10 @@ import java.util.Map;
 
 @Activator(instantiateWithReflection = true)
 public class NotesDatabasePolicy implements NotesDatabasePolicyRequirements {
+
+
     @Override
-    public void DN(Map<Object, Object> input0) {
+    public void DN(Map<Object, NotePolicy> input0) {
 
     }
 

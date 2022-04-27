@@ -17,8 +17,9 @@ import java.util.UUID;
 )
 @Activator(instantiateWithReflection = true)
 public class NoteFormatterReason implements NoteFormatterReasonRequirements {
+
     @Override
-    public Object DN(Map<UUID, Object> input0) {
+    public Object DN(Map<UUID, NotePolicy> input0) {
         return null;
     }
 
