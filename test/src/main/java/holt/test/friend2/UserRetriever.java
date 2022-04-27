@@ -6,7 +6,7 @@ import holt.processor.generation.friend2.AbstractUserRetriever;
 
 @Traverse(
         name = "fetchTraverse",                                  // -DB->
-        order = {"UR->UFe", "UDB->UFe", "UFe->UR"}) // UserRetriever --> UserFetcher --> UserRetriever
+        order = {"UR1", "UR2", "UR3"}) // UserRetriever --> UserFetcher --> UserRetriever
 @Activator
 public class UserRetriever extends AbstractUserRetriever {
 
@@ -20,7 +20,8 @@ public class UserRetriever extends AbstractUserRetriever {
     }
 
     public Object getUser(Object id) {
-        return super.fetchTraverse(id);
+//        return super.fetchTraverse(id);
+        return null;
     }
 
     @Override

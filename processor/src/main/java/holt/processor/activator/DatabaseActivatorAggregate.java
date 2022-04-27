@@ -4,6 +4,7 @@ import com.squareup.javapoet.ClassName;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public final class DatabaseActivatorAggregate extends ActivatorAggregate {
 
@@ -19,15 +20,22 @@ public final class DatabaseActivatorAggregate extends ActivatorAggregate {
     }
 
     public void addStore(TraverseName traverseName, Connector connector) {
+        Objects.requireNonNull(traverseName);
+        Objects.requireNonNull(connector);
         this.stores.put(traverseName, connector);
     }
 
     public void setQueriesClassName(ClassName queriesClassName) {
+        Objects.requireNonNull(queriesClassName);
         this.queriesClassName = queriesClassName;
     }
 
     public ClassName getQueriesClassName() {
         return queriesClassName;
+    }
+
+    public Connector getStore(TraverseName traverseName) {
+        return this.stores.get(traverseName);
     }
 
     public Map<TraverseName, Connector> stores() {

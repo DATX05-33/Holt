@@ -6,7 +6,7 @@ import holt.processor.generation.friend2.AbstractUserAdder;
 
 @Traverse(
         name = "storeTraverse",
-        order = {"UA->UFo", "UFo->UDB"}) // UserAdder --> UserFormatter --> UserDatabase
+        order = {"UA1", "UA2"}) // UserAdder --> UserFormatter --> UserDatabase
 @Activator(graphName = "UserAdder")
 public class UserAdderEntity extends AbstractUserAdder {
 

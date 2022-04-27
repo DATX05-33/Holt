@@ -8,5 +8,6 @@ import java.lang.annotation.Target;
 @Repeatable(DFDs.class)
 public @interface DFD {
     String name();
-    String csv();
+    String xml();
+    boolean privacyAware() default false;
 }
