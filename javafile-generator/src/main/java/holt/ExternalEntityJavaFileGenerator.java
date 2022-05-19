@@ -131,22 +131,10 @@ public final class ExternalEntityJavaFileGenerator {
 
         int connectorVariableIndex = 0;
 
+        List<ConnectedClass> classes = new ArrayList<>();
+
         boolean needToGenerateReflectionHelperMethod = false;
         for (ActivatorAggregate activatorAggregate : activatorsToInstantiate) {
-            if (!activatorAggregate.equals(state.externalEntityActivator)) {
-                var activatorCode = generateCodeForActivator(activatorAggregate, state);
-                fieldSpecs.addAll(activatorCode.fieldSpecs);
-                constructorSpecBuilder.addCode(activatorCode.instantiation);
-
-                // If true, then activatorcode.instantiation contains code that uses a reflection helper
-                // method to generate the instance for activators
-                if (activatorCode.getInstance == null) {
-                    needToGenerateReflectionHelperMethod = true;
-                } else {
-                    methods.add(activatorCode.getInstance);
-                }
-            }
-
             if (activatorAggregate instanceof ProcessActivatorAggregate processActivator) {
                 for (FlowThroughAggregate flowThroughAggregate : processActivator.flows()) {
                     if (!connectorToVariable.containsKey(flowThroughAggregate.output())) {
@@ -157,6 +145,30 @@ public final class ExternalEntityJavaFileGenerator {
                         queryInputDefinitionToVariable.put(queryInputDefinition, "qd" + connectorVariableIndex);
                         connectorVariableIndex++;
                     }
+                }
+            }
+
+            if (!activatorAggregate.equals(state.externalEntityActivator)) {
+                String activatorVariableRef = activatorAggregate.name().asVariableName();
+                String activatorReferenceVar = activatorVariableRef + "Ref";
+                state.activatorToVariable.put(activatorAggregate, activatorReferenceVar);
+
+                if (classes.contains(activatorAggregate.connectedClass().get())) {
+                    continue;
+                }
+
+                classes.add(activatorAggregate.connectedClass().get());
+
+                var activatorCode = generateCodeForActivator(activatorAggregate, state);
+                fieldSpecs.addAll(activatorCode.fieldSpecs);
+                constructorSpecBuilder.addCode(activatorCode.instantiation);
+
+                // If true, then activatorcode.instantiation contains code that uses a reflection helper
+                // method to generate the instance for activators
+                if (activatorCode.getInstance == null) {
+                    needToGenerateReflectionHelperMethod = true;
+                } else {
+                    methods.add(activatorCode.getInstance);
                 }
             }
         }
@@ -205,9 +217,7 @@ public final class ExternalEntityJavaFileGenerator {
         var activatorToVariable = state.activatorToVariable;
         List<FieldSpec> fieldSpecs = new ArrayList<>();
 
-        String activatorVariableRef = activatorAggregate.name().asVariableName();
-        String activatorReferenceVar = activatorVariableRef + "Ref";
-        activatorToVariable.put(activatorAggregate, activatorReferenceVar);
+        String activatorReferenceVar = activatorToVariable.get(activatorAggregate);
 
         TypeName activatorClassName = toTypeName(connectedClass.qualifiedName());
         FieldSpec fieldSpec = FieldSpec.builder(
@@ -218,7 +228,6 @@ public final class ExternalEntityJavaFileGenerator {
         ).build();
 
         CodeBlock.Builder codeBlockBuilder = CodeBlock.builder();
-
 
         MethodSpec getInstance = null;
 

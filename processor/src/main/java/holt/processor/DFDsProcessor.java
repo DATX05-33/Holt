@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -253,20 +254,25 @@ public class DFDsProcessor extends AbstractProcessor {
             Activator activator = element.getAnnotation(Activator.class);
 
             if (element instanceof TypeElement typeElement) {
-                String activatorFromGraphName = activator.graphName().equals("")
-                        ? typeElement.getSimpleName().toString()
-                        : activator.graphName();
+                List<String> possible = new ArrayList<>();
+                if (activator.graphName().length == 0) {
+                    possible.add(typeElement.getSimpleName().toString());
+                } else {
+                    possible.addAll(Arrays.asList(activator.graphName()));
+                }
+
                 for (ActivatorAggregate activatorAggregate : allActivatorAggregates) {
-                    if (activatorFromGraphName.equals(activatorAggregate.name().value())) {
-                        elementToActivatorAggregateMap.put(element, activatorAggregate);
-                        activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
-                        activatorAggregate.setConnectedClass(
-                                new ConnectedClass(
-                                        QualifiedName.of(typeElement.getQualifiedName().toString()),
-                                        activator.instantiateWithReflection()
-                                )
-                        );
-                        break;
+                    for (String activatorFromGraphName : possible) {
+                        if (activatorFromGraphName.equals(activatorAggregate.name().value())) {
+                            elementToActivatorAggregateMap.put(element, activatorAggregate);
+                            activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
+                            activatorAggregate.setConnectedClass(
+                                    new ConnectedClass(
+                                            QualifiedName.of(typeElement.getQualifiedName().toString()),
+                                            activator.instantiateWithReflection()
+                                    )
+                            );
+                        }
                     }
                 }
             }
