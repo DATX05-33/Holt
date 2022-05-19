@@ -172,7 +172,7 @@ public final class ExternalEntityJavaFileGenerator {
 
             CodeBlock.Builder codeBlockBuilder = CodeBlock.builder();
             codeBlockBuilder.add("  try {\n");
-            codeBlockBuilder.add("    return (T) t.newInstance();\n");
+            codeBlockBuilder.add("    return (T) t.getDeclaredConstructor().newInstance();\n");
             codeBlockBuilder.add("  } catch (Exception e) {\n");
             codeBlockBuilder.add("    e.printStackTrace();\n");
             codeBlockBuilder.add("    throw new IllegalStateException(\"Could not instantiate...\");\n");
