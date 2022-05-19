@@ -9,6 +9,7 @@ public abstract class ActivatorAggregate {
     private QualifiedName qualifiedName;
 
     protected ActivatorAggregate(ActivatorName activatorName) {
+        Objects.requireNonNull(activatorName);
         this.activatorName = activatorName;
     }
 
@@ -16,7 +17,7 @@ public abstract class ActivatorAggregate {
      * The name of the activator.
      * If the name of the class and the name from the graph differes,
      * then this name will be the name of the class instead.
-     * @return
+     * @return name of the activator aggregate.
      */
     public final ActivatorName name() {
         return this.activatorName;

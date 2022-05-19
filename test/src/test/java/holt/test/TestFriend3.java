@@ -8,7 +8,7 @@ import java.lang.reflect.Modifier;
 import static holt.test.utils.ClassUtils.findClass;
 
 /**
- * friend2.csv, no annotations
+ * friend2.xml, no annotations
  */
 public class TestFriend3 {
     private static final String FriendProcessRequirements3Interface = "holt.processor.generation.friend3.FriendProcess3Requirements";

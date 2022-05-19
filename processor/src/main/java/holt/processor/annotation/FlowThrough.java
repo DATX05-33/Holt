@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Repeatable(FlowThroughs.class)
 public @interface FlowThrough {
     Class<?> outputType() default Object.class;
-    String flow();
+    String traverse();
     String functionName();
     Query[] queries() default {};
 }

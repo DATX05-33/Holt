@@ -11,7 +11,7 @@ import static holt.test.utils.ClassUtils.findClass;
 import static holt.test.utils.MethodUtils.findMethod;
 
 /**
- * friend2.csv
+ * friend2.xml
  */
 public class TestFriend2 {
     private static final String UserFormatterRequirementsInterface = "holt.processor.generation.friend2.UserFormatterRequirements";

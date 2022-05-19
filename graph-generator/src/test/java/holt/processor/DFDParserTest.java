@@ -3,21 +3,43 @@ package holt.processor;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DFDParserTest {
 
     @Test
-    public void Given_FriendDFD_Expect_tableToDfd_To_Work() throws IOException {
-        String correctFriendDFDToString = "DFD[externalEntities=[Node[id=2, name=User, nodeType=EXTERNAL_ENTITY]], processes=[Node[id=3, name=FriendProcess, nodeType=PROCESS]], databases=[Node[id=4, name=FriendsDB, nodeType=DATA_BASE]], flowsMap={AF=[Dataflow[from=Node[id=2, name=User, nodeType=EXTERNAL_ENTITY], to=Node[id=3, name=FriendProcess, nodeType=PROCESS]], Dataflow[from=Node[id=3, name=FriendProcess, nodeType=PROCESS], to=Node[id=4, name=FriendsDB, nodeType=DATA_BASE]]], GF=[Dataflow[from=Node[id=2, name=User, nodeType=EXTERNAL_ENTITY], to=Node[id=3, name=FriendProcess, nodeType=PROCESS]], Dataflow[from=Node[id=4, name=FriendsDB, nodeType=DATA_BASE], to=Node[id=3, name=FriendProcess, nodeType=PROCESS]], Dataflow[from=Node[id=3, name=FriendProcess, nodeType=PROCESS], to=Node[id=2, name=User, nodeType=EXTERNAL_ENTITY]]]}]";
+    public void test_EmailBlast() throws IOException, DFDParser.NotWellFormedDFDException {
+        InputStream inputStream = ClassLoader.getSystemResource("email-blast.xml").openStream();
+        var dfd = DFDParser.fromDrawIO(inputStream);
 
-        DFDParser.DFD dfd = DFDParser.loadDfd(
-                ClassLoader.getSystemResource("friend.csv").openStream()
-        );
+        Map<String, List<String>> traverseOrders = new HashMap<>();
+        // Set Email
+        traverseOrders.put("SE", List.of("set_email", "insert_email_to_database"));
+        // Get Email Blast
+        traverseOrders.put("GEB", List.of("get_emails_for_email_blast", "emails_from_database", "emails"));
+        var orderedDFD = DFDParser.fromDrawIO(dfd, traverseOrders);
+        System.out.println(orderedDFD);
+        System.out.println("____________________________________________");
+        var padfd = PADFDEnhancer.enhance(orderedDFD);
+        System.out.println(padfd);
+    }
 
-        assertThat(dfd.toString())
-                .isEqualTo(correctFriendDFDToString);
+    @Test
+    public void test_Skatteverket() throws IOException, DFDParser.NotWellFormedDFDException {
+        InputStream inputStream = ClassLoader.getSystemResource("skatteverket.xml").openStream();
+        var dfd = DFDParser.fromDrawIO(inputStream);
+        Map<String, List<String>> traverseOrders = new HashMap<>();
+        // Calculate Tax
+        traverseOrders.put("CT", List.of("salary", "partial_tax_calculated", "fully_tax_calculated"));
+        var orderedDFD = DFDParser.fromDrawIO(dfd, traverseOrders);
+
+        System.out.println(orderedDFD);
+        System.out.println("____________________________________________");
+        var padfd = PADFDEnhancer.enhance(orderedDFD);
+        System.out.println(padfd);
     }
 
 }

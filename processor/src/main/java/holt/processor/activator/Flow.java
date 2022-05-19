@@ -17,6 +17,9 @@ public final class Flow {
     }
 
     public void addInput(Connector input) {
+        if (this.inputs.contains(input)) {
+            throw new IllegalArgumentException("Input is already added: " + input);
+        }
         this.inputs.add(input);
     }
 

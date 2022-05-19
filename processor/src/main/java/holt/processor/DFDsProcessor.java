@@ -23,7 +23,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static holt.processor.AnnotationValueUtils.getAnnotationClassValue;
-import static holt.processor.DFDParser.loadDfd;
 
 public class DFDsProcessor extends AbstractProcessor {
 
@@ -35,7 +34,7 @@ public class DFDsProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Set.of(
-                DFD.class.getName(),
+                DFDRep.class.getName(),
                 DFDs.class.getName(),
                 Activator.class.getName(),
                 FlowThrough.class.getName(),
@@ -58,7 +57,13 @@ public class DFDsProcessor extends AbstractProcessor {
         }
 
         // Converters that will convert DFD to Java Files
-        ConvertersResult convertersResult = getConverters(environment);
+        ConvertersResult convertersResult = null;
+        try {
+            convertersResult = getConverters(environment);
+        } catch (DFDParser.NotWellFormedDFDException e) {
+            e.printStackTrace();
+            throw new IllegalStateException();
+        }
 
         // Annotations that will be applied to the converters
         Map<DFDName, List<TraverseRep>> transverseRepMap = getTraverses(convertersResult, environment);
@@ -110,7 +115,9 @@ public class DFDsProcessor extends AbstractProcessor {
                 throw new IllegalStateException("Cannot find an activator aggregate for element: " +
                         element.toString() +
                         ", have you annotated the class with @Activator yet? " +
-                        "Is your class name the same name as in the DFD?");
+                        "Is your class name the same name as in the DFD?\n" +
+                        "Registered activators: " +
+                        elementToActivatorAggregate.keySet());
             }
             return activatorAggregate;
         }
@@ -131,111 +138,77 @@ public class DFDsProcessor extends AbstractProcessor {
 
     }
 
-    private ConvertersResult getConverters(RoundEnvironment environment) {
+    private ConvertersResult getConverters(RoundEnvironment environment) throws DFDParser.NotWellFormedDFDException {
         List<DFDToJavaFileConverter> converters = new ArrayList<>();
         List<ActivatorAggregate> allActivatorAggregates = new ArrayList<>();
+        Map<Element, ActivatorAggregate> elementToActivatorAggregateMap = new HashMap<>();
         Map<ActivatorName, DFDName> activatorToDFDMap = new HashMap<>();
         Map<DFDName, Map<TraverseName, List<ActivatorAggregate>>> traverses = new HashMap<>();
-        Map<Element, ActivatorAggregate> elementToActivatorAggregateMap = new HashMap<>();
 
+        record DFDData (DFDRep dfd, boolean privacyAware) { }
+
+        Map<DFDName, DFDData> dfdMap = new HashMap<>();
         for (var dfdPair : getRepeatableAnnotations(environment, DFD.class, DFDs.class, DFDs::value)) {
             DFD dfdAnnotation = dfdPair.annotation;
-            DFDParser.DFD dfd = loadDfd(toInputStream(dfdAnnotation.csv()));
-
+            InputStream inputStream = toInputStream(dfdAnnotation.xml());
+            var dfd = DFDParser.fromDrawIO(inputStream);
             DFDName dfdName = new DFDName(dfdAnnotation.name());
 
-            Map<Integer, ActivatorAggregate> idToActivator = new HashMap<>();
+            dfdMap.put(dfdName, new DFDData(dfd, dfdAnnotation.privacyAware()));
+        }
 
-            dfd.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivatorAggregate(new ActivatorName(node.name()))));
-            dfd.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorName(node.name()))));
-            dfd.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorName(node.name()))));
+        for (var dfdEntry : dfdMap.entrySet()) {
+            var dfdName = dfdEntry.getKey();
+            var dfdData = dfdEntry.getValue();
+            var dfd = dfdData.dfd;
+            // Ugh we don't have the privacy aware activators
+            Map<String, ActivatorAggregate> idToActivator = new HashMap<>();
 
-            traverses.put(dfdName, new HashMap<>());
+            var orderedDFD = DFDParser.fromDrawIO(dfd, getDFDTraverseOrders(dfd, environment));
 
-            Map<String, List<Dataflow>> dfdTraverseMap = createDFDFlowMap(dfd, environment);
-
-            for (Map.Entry<String, List<Dataflow>> entry : dfdTraverseMap.entrySet()) {
-                TraverseName traverseName = new TraverseName(entry.getKey());
-
-                traverses.get(dfdName).put(traverseName, new ArrayList<>());
-
-                // Create Flows
-                for (Dataflow dataflow : entry.getValue()) {
-                    ActivatorAggregate from = idToActivator.get(dataflow.from().id());
-
-                    // This is used to generate code. Databases are not needed,
-                    // since each processor has a reference to all relevant
-                    // databases through Connector
-                    if (!(from instanceof DatabaseActivatorAggregate)) {
-                        traverses.get(dfdName).get(traverseName).add(from);
-                    }
-
-                    // Add to traverses
-                    if (from instanceof ProcessActivatorAggregate fromProcessActivator) {
-                        fromProcessActivator.addFlow(traverseName);
-                    } else if (from instanceof ExternalEntityActivatorAggregate fromExternalEntityActivator) {
-                        fromExternalEntityActivator.addStartFlow(traverseName);
-                    }
-                }
-
-                // Adds the last Activator to traverses for the flowName, before it just adds the "to" for each dataflow
-                int dataflows = entry.getValue().size();
-                ActivatorAggregate lastActivatorAggregate = idToActivator.get(entry.getValue().get(dataflows - 1).to().id());
-                traverses.get(dfdName).get(traverseName).add(lastActivatorAggregate);
-
-                // Connect Flows as inputs
-                for (Dataflow dataflow : entry.getValue()) {
-                    ActivatorAggregate fromActivatorAggregate = idToActivator.get(dataflow.from().id());
-                    Connector connector = null;
-                    if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                        connector = externalEntityActivator.getOutput(traverseName);
-                    } else if (fromActivatorAggregate instanceof ProcessActivatorAggregate processActivator) {
-                        connector = processActivator.getOutput(traverseName);
-                    } else if (fromActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
-                        connector = new QueryConnector(databaseActivator);
-                    }
-
-                    ActivatorAggregate toActivatorAggregate = idToActivator.get(dataflow.to().id());
-                    if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
-                        toProcessActivator.addInputToFlow(traverseName, connector);
-                    } else if (toActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                        externalEntityActivator.addEnd(traverseName, connector);
-                    } else if (toActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
-                        databaseActivator.addStore(traverseName, connector);
-                    }
-                }
+            if (dfdData.privacyAware) {
+                orderedDFD = PADFDEnhancer.enhance(orderedDFD);
             }
 
-            List<DatabaseActivatorAggregate> databaseActivators = new ArrayList<>();
-            List<ProcessActivatorAggregate> processActivators = new ArrayList<>();
-            List<ExternalEntityActivatorAggregate> externalEntities = new ArrayList<>();
+            orderedDFD.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivatorAggregate(new ActivatorName(node.name()))));
+            orderedDFD.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorName(node.name()))));
+            orderedDFD.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorName(node.name()))));
 
             allActivatorAggregates.addAll(idToActivator.values());
             idToActivator.values().forEach(activator -> activatorToDFDMap.put(activator.name(), dfdName));
 
-            idToActivator.values().forEach(activator -> {
-                if (activator instanceof DatabaseActivatorAggregate databaseActivator) {
-                    databaseActivators.add(databaseActivator);
-                } else if (activator instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                    externalEntities.add(externalEntityActivator);
-                } else if (activator instanceof ProcessActivatorAggregate processActivator) {
-                    processActivators.add(processActivator);
-                }
-            });
+            elementToActivatorAggregateMap.putAll(
+                    connectAggregatesWithActivatorAnnotation(environment, idToActivator.values())
+            );
+
+            traverses.put(
+                    dfdName,
+                    connectAggregatesForDFD(orderedDFD, idToActivator)
+            );
 
             converters.add(
-                    new DFDToJavaFileConverter(
-                            dfdName,
-                            new Activators(
-                                    databaseActivators,
-                                    externalEntities,
-                                    processActivators,
-                                    traverses.get(dfdName)
-                            )
-                    )
-            );
+                        new DFDToJavaFileConverter(
+                                dfdName,
+                                new Activators(
+                                        new ArrayList<>(idToActivator.values()),
+                                        traverses.get(dfdName)
+                                )
+                        )
+                );
         }
 
+        logUnannotatedActivators(elementToActivatorAggregateMap, allActivatorAggregates);
+
+        return new ConvertersResult(
+                converters,
+                allActivatorAggregates,
+                activatorToDFDMap,
+                elementToActivatorAggregateMap
+        );
+    }
+
+    private Map<Element, ActivatorAggregate> connectAggregatesWithActivatorAnnotation(RoundEnvironment environment, Collection<ActivatorAggregate> allActivatorAggregates) {
+        Map<Element, ActivatorAggregate> elementToActivatorAggregateMap = new HashMap<>();
 
         for (Element element : environment.getElementsAnnotatedWith(Activator.class)) {
             Activator activator = element.getAnnotation(Activator.class);
@@ -254,22 +227,87 @@ public class DFDsProcessor extends AbstractProcessor {
             }
         }
 
+        return elementToActivatorAggregateMap;
+    }
+
+    private Map<TraverseName, List<ActivatorAggregate>> connectAggregatesForDFD(DFDOrderedRep orderedDFD, Map<String, ActivatorAggregate> idToActivator) {
+        Map<TraverseName, List<ActivatorAggregate>> traverses = new HashMap<>();
+
+        for (Map.Entry<String, List<DFDRep.Flow>> entry : orderedDFD.traverses().entrySet()) {
+            TraverseName traverseName = new TraverseName(entry.getKey());
+            List<ActivatorAggregate> order = new ArrayList<>();
+
+            traverses.put(traverseName, order);
+
+            // Create Flows
+            for (DFDRep.Flow dataflow : entry.getValue()) {
+                ActivatorAggregate from = idToActivator.get(dataflow.from().id());
+                ActivatorAggregate to = idToActivator.get(dataflow.to().id());
+
+                // This is used to generate code. Databases are not needed,
+                // since each processor has a reference to all relevant
+                // databases through Connector
+                if (!(from instanceof DatabaseActivatorAggregate)) {
+                    if (!order.contains(from)) {
+                        order.add(from);
+                    }
+                }
+
+                // Add to traverses
+                if (from instanceof ProcessActivatorAggregate fromProcessActivator) {
+                    fromProcessActivator.addFlow(traverseName);
+                } else if (from instanceof ExternalEntityActivatorAggregate fromExternalEntityActivator) {
+                    fromExternalEntityActivator.addStartFlow(traverseName);
+                }
+
+                if (to instanceof ExternalEntityActivatorAggregate || to instanceof DatabaseActivatorAggregate) {
+                    // If the last is not the same activator. This is done to make sure Joins work.
+                    if (!order.get(order.size() - 1).equals(to)) {
+                        order.add(to);
+                    }
+                }
+            }
+
+            // Connect Flows as inputs
+            for (DFDRep.Flow dataflow : entry.getValue()) {
+                ActivatorAggregate fromActivatorAggregate = idToActivator.get(dataflow.from().id());
+                Objects.requireNonNull(fromActivatorAggregate);
+
+                Connector connector = null;
+                if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
+                    connector = externalEntityActivator.getOutput(traverseName);
+                } else if (fromActivatorAggregate instanceof ProcessActivatorAggregate processActivator) {
+                    connector = processActivator.getOutput(traverseName);
+                } else if (fromActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
+                    connector = new QueryConnector(databaseActivator);
+                }
+
+                ActivatorAggregate toActivatorAggregate = idToActivator.get(dataflow.to().id());
+                if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
+                    toProcessActivator.addInputToFlow(traverseName, connector);
+                } else if (toActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
+                    externalEntityActivator.addEnd(traverseName, connector);
+                } else if (toActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
+                    databaseActivator.addStore(traverseName, connector);
+                }
+            }
+        }
+
+        return traverses;
+    }
+
+    private void logUnannotatedActivators(Map<Element, ActivatorAggregate> elementToActivatorAggregateMap, List<ActivatorAggregate> allActivatorAggregates) {
         // Not all activator aggregate have a class connected to them
         if (elementToActivatorAggregateMap.size() != allActivatorAggregates.size()) {
             System.out.println("************");
-            System.out.println("* Warning, the following activators from the DFD does not have a class connected to them:");
+            System.out.println("* Warning, the following activators from a DFD does not have a class connected to them:");
             allActivatorAggregates.stream()
                     .filter(activatorAggregate -> activatorAggregate.qualifiedName().isEmpty())
                     .forEach(activatorAggregate -> System.out.println("* - " + activatorAggregate.name()));
             System.out.println("************");
+        } else {
+            System.out.println("All activators have been annotated properly");
         }
-
-        return new ConvertersResult(
-                converters,
-                allActivatorAggregates,
-                activatorToDFDMap,
-                elementToActivatorAggregateMap
-        );
     }
 
     private Map<DFDName, List<FlowThroughRep>> getFlowThroughs(ConvertersResult convertersResult,
@@ -376,7 +414,7 @@ public class DFDsProcessor extends AbstractProcessor {
     }
 
     /**
-     * This works since gradle copies csv files to class output.
+     * This works since gradle copies xml files to class output.
      */
     private InputStream toInputStream(String dfdFile) {
         try {
@@ -396,45 +434,49 @@ public class DFDsProcessor extends AbstractProcessor {
         return this.processingEnv;
     }
 
-    private Map<String, List<Dataflow>> createDFDFlowMap(DFDParser.DFD dfd, RoundEnvironment environment) {
-        Map<String, List<Dataflow>> traverses = new HashMap<>();
+    // Traverse -> List of Flow
+    private Map<String, List<String>> getDFDTraverseOrders(DFDRep dfd, RoundEnvironment environment) {
+        Map<String, List<String>> traverseOrder = new HashMap<>();
 
         for (AnnotationWithTypeElement<Traverse> traversePair : getRepeatableAnnotations(environment, Traverse.class, Traverses.class, Traverses::value)) {
             Traverse annotation = traversePair.annotation;
+
+            // Check that the Traverse is a part of the DFD.
+            boolean found = false;
+            for (DFDRep.Flow flow : dfd.flows()) {
+                for (String traverseFlow : annotation.order()) {
+                    if (flow.id().equals(traverseFlow)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    break;
+                }
+            }
+
+            if (!found) {
+                continue;
+            }
 
             // name for the traverse
             String traverseName = annotation.name();
             // list of unique names for the flows in this traverse, in order
             String[] flowOrder = annotation.order();
 
-            // check if the flow names are for this dfd, this might not be a perfect solution
-            boolean correctDFD = true;
-            for (String flowName : flowOrder) {
-                if(dfd.dataflows().get(flowName) == null) {
-                    // data flow was not in dfd
-                    correctDFD = false;
-                }
-            }
-
-            if (!correctDFD) {
-                continue;
-            }
-
             // Add flows
-            traverses.put(traverseName, new ArrayList<>());
+            traverseOrder.put(traverseName, new ArrayList<>());
 
             for (String flowName : flowOrder) {
-                Dataflow dataflow = dfd.dataflows().get(flowName);
-
-                if (dataflow == null) {
+                if (flowName == null) {
                     throw new IllegalStateException("No dataflow for id " + flowName);
                 }
 
-                traverses.get(traverseName).add(dataflow);
+                traverseOrder.get(traverseName).add(flowName);
             }
         }
 
-        return traverses;
+        return traverseOrder;
     }
 
     private Map<DFDName, List<TraverseRep>> getTraverses(ConvertersResult convertersResult, RoundEnvironment environment) {

@@ -17,7 +17,7 @@ import static holt.test.utils.MethodUtils.findMethod;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * friend.csv, that uses annotations
+ * friend.xml, that uses annotations
  */
 public class TestFriend {
 
@@ -35,7 +35,7 @@ public class TestFriend {
 
         user.addFriend(new Name("Theodor"));
         assertThat(outputStreamCaptor.toString().trim())
-                .isEqualTo("Saving...NewFriend[name=Theodor]");
+                .isEqualTo("wow special NewFriend[name=Theodor]\nSaving...NewFriend[name=Theodor]");
 
         System.setOut(System.out);
 
