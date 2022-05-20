@@ -11,6 +11,7 @@ import holt.padfd.metadata.LogMetadata;
 import holt.padfd.metadata.QuerierMetadata;
 import holt.padfd.metadata.RequestMetadata;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -18,9 +19,14 @@ import java.util.Random;
 public final class PADFDTransformater {
 
     private final PADFDBuilder builder;
+    private static final PADFDBuilder.Activator cleanExternalEntity = new PADFDBuilder.Activator(
+            "clean-external-entity", "CleanManager", PADFDBuilder.Activator.Type.EXTERNAL_ENTITY
+    );
+    private final List<PADFDBuilder.Flow> cleanFlows;
 
     private PADFDTransformater(PADFDBuilder builder) {
         this.builder = builder;
+        this.cleanFlows = new ArrayList<>();
     }
 
     public static DFDOrderedRep enhance(DFDOrderedRep dfd) {
@@ -77,7 +83,7 @@ public final class PADFDTransformater {
             }
         }
 
-        return builder.toDFD();
+        return builder.toDFD(cleanFlows);
     }
 
     private record NewCommonElements(
@@ -282,7 +288,6 @@ public final class PADFDTransformater {
         );
     }
 
-    //TODO: Add clean node
     private void addStoreElements(DFDRep.Flow f) {
         PADFDBuilder.Activator s = a(f.from());
         NewCommonElements e = addCommonElements(f, new ActivatorId(s.getId()));
@@ -306,6 +311,23 @@ public final class PADFDTransformater {
         var processToGuard = flow(f.id() + "8", s, e.guard);
         // Process -> Log
         var processToLog = flow(f.id() + "9", s, e.log);
+
+        var clean = new PADFDBuilder.Activator(f.id() + "-clean", t.getName() + "Clean", PADFDBuilder.Activator.Type.CLEAN);
+        // Policy DB -> Clean
+        var policyDBToClean = flow(f.id() + "10", t.getPartner(), clean);
+        // Clean -> Policy DB
+        var cleanToPolicyDB = flow(f.id() + "11", clean, t.getPartner(), true);
+        // Clean -> DB
+        var cleanToDB = flow(f.id() + "12", clean, t, true);
+        // CleanExternalEntity -> Clean
+        var entityToClean = flow(f.id() + "13", cleanExternalEntity, clean);
+
+        int indexForFirst = cleanFlows.size() / 4;
+
+        cleanFlows.add(indexForFirst, entityToClean);
+        cleanFlows.add(policyDBToClean);
+        cleanFlows.add(cleanToPolicyDB);
+        cleanFlows.add(cleanToDB);
 
         builder.addFlow(f,
                 List.of(
@@ -391,7 +413,7 @@ public final class PADFDTransformater {
         reasonToRequest.setPartner(processToLimit);
 
         // Guard -> Database
-        var guardToDatabase = flow(f.id() + "6", e.guard, t);
+        var guardToDatabase = flow(f.id() + "6", e.guard, t, true);
         // Request -> Policy Database
         var requestToPolicyDB = flow(f.id() + "7", e.request, t.getPartner());
         guardToDatabase.setPartner(requestToPolicyDB);
@@ -419,7 +441,11 @@ public final class PADFDTransformater {
     }
 
     private PADFDBuilder.Flow flow(String id, PADFDBuilder.Activator from, PADFDBuilder.Activator to) {
-        return new PADFDBuilder.Flow(id, from, to);
+        return this.flow(id, from, to, false);
+    }
+
+    private PADFDBuilder.Flow flow(String id, PADFDBuilder.Activator from, PADFDBuilder.Activator to, boolean delete) {
+        return new PADFDBuilder.Flow(id, from, to, delete);
     }
 
     private PADFDBuilder.Activator a(DFDRep.Activator activator) {

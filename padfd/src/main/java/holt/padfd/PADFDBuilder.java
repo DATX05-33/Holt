@@ -44,7 +44,14 @@ public class PADFDBuilder {
     }
 
     //TODO: Right now, partner for both Activator and Flow are ignored. To start to automate certain things, this can't be
-    public DFDOrderedRep toDFD() {
+    public DFDOrderedRep toDFD(List<Flow> cleanFlows) {
+        cleanFlows.forEach(flow -> {
+            Activator a1 = flow.from;
+            Activator a2 = flow.to;
+            this.idToActivator.put(a1.id, a1);
+            this.idToActivator.put(a2.id, a2);
+        });
+
         Map<String, DFDRep.Activator> idToDFDActivator = this.idToActivator.entrySet()
                 .stream()
                 .collect(Collectors.toMap(
@@ -57,33 +64,33 @@ public class PADFDBuilder {
                         )
                 ));
 
+        Map<String, List<DFDRep.Flow>> newTraverses = new HashMap<>();
+
+        for (Map.Entry<String, List<DFDRep.Flow>> traverse : baseDFD.traverses().entrySet()) {
+            String traverseName = traverse.getKey();
+            List<DFDRep.Flow> newFlowOrder = new ArrayList<>();
+
+            for (DFDRep.Flow oldFlow : traverse.getValue()) {
+                var newFlows = toReplaceFlows.get(oldFlow);
+                if (newFlows != null) {
+                    newFlows.forEach(flow -> newFlowOrder.add(flow.toDFDFlow(idToDFDActivator)));
+                } else {
+                    throw new IllegalStateException("Nope");
+                }
+            }
+            newTraverses.put(traverseName, newFlowOrder);
+        }
+
+        if (newTraverses.containsKey("clean")) {
+            throw new IllegalStateException("ERROR: clean traverseName is reserved.");
+        }
+
+//        newTraverses.put("clean", cleanFlows.stream().map(flow -> flow.toDFDFlow(idToDFDActivator)).toList());
 
         return new DFDOrderedRep(
                 new ArrayList<>(idToDFDActivator.values()),
                 baseDFD.flows(),
-                // TODO: This could be redone as a map instead. Instead of doing hasNextFlow and nextFlow.
-                baseDFD.traverses().entrySet()
-                        .stream()
-                        .collect(
-                                Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        entry -> entry.getValue()
-                                                .stream()
-                                                .<DFDRep.Flow>mapMulti((flow, flowConsumer) -> {
-                                                    var lists = toReplaceFlows.get(flow);
-                                                    if (lists == null) {
-                                                        //TODO:Temp
-                                                        flowConsumer.accept(flow);
-//                                                        System.err.println(flow + " does not have any flows to replace it with");
-                                                    } else {
-                                                        lists.stream()
-                                                                .map(padfdFlow -> padfdFlow.toDFDFlow(idToDFDActivator))
-                                                                .forEach(flowConsumer);
-                                                    }
-                                                })
-                                                .toList()
-                                )
-                        )
+                newTraverses
         );
     }
 
@@ -219,19 +226,33 @@ public class PADFDBuilder {
         private final Activator from;
         private final Activator to;
         private Flow partner;
+        private boolean delete;
 
-        public Flow(String id, Activator from, Activator to) {
+        public Flow(String id, Activator from, Activator to, boolean delete) {
             this.id = id;
             this.from = from;
             this.to = to;
+            this.delete = delete;
         }
 
         public DFDRep.Flow toDFDFlow(Map<String, DFDRep.Activator> idToActivator) {
+            var f = idToActivator.get(from.id);
+            var t = idToActivator.get(to.id);
+
+            if (f == null) {
+                throw new IllegalStateException("Cannot find activator with id: " + from.id + " for from");
+            }
+
+            if (t == null) {
+                throw new IllegalStateException("Cannot find activator with id: " + to.id + " for to");
+            }
+
             return new DFDRep.Flow(
                     this.id,
-                    idToActivator.get(from.id),
-                    idToActivator.get(to.id),
-                    DFDRep.Flow.Type.DONT_CARE
+                    f,
+                    t,
+                    DFDRep.Flow.Type.DONT_CARE,
+                    this.delete
             );
         }
 

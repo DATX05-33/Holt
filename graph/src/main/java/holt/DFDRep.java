@@ -7,10 +7,14 @@ import java.util.regex.Pattern;
 public record DFDRep(List<Activator> activators,
                      List<Flow> flows) {
 
-    public record Flow(String id, Activator from, Activator to, Type type) {
+    public record Flow(String id, Activator from, Activator to, Type type, boolean delete) {
         public Flow {
             Objects.requireNonNull(from);
             Objects.requireNonNull(to);
+        }
+
+        public Flow(String id, Activator from, Activator to, Type type) {
+            this(id, from, to, type, false);
         }
 
         private static final Pattern snakeCasePattern = Pattern.compile("_([a-z])");

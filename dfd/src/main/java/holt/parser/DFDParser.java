@@ -112,7 +112,8 @@ public final class DFDParser {
                                 id,
                                 sourceActivator,
                                 targetActivator,
-                                type
+                                type,
+                                delete
                         )
                 );
             }
