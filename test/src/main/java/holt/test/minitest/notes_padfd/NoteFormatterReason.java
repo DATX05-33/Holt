@@ -25,15 +25,11 @@ public class NoteFormatterReason implements NoteFormatterReasonRequirements {
 
     @Override
     public NotePolicy DN(Map<UUID, NotePolicy> input0) {
-        System.out.println("HELLO");
-        System.out.println(input0);
         return null;
     }
 
     @Override
     public NotePolicy AN(Map<Note, NotePolicy> input0) {
-        System.out.println("HELLO2");
-        System.out.println(input0);
         return null;
     }
 }

@@ -41,6 +41,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.InputStream;
@@ -140,19 +141,19 @@ public class DFDsProcessor extends AbstractProcessor {
     public static final class ProcessorResults {
         private final List<Domain> domains;
         private final Map<ActivatorName, DFDName> activatorToDFDMap;
-        private final Map<Element, ActivatorAggregate> elementToActivatorAggregate;
+        private final Map<Element, List<ActivatorAggregate>> elementToActivatorAggregate;
 
         public ProcessorResults(List<Domain> domains,
                                 Map<ActivatorName, DFDName> activatorToDFDMap,
-                                Map<Element, ActivatorAggregate> elementToActivatorAggregate) {
+                                Map<Element, List<ActivatorAggregate>> elementToActivatorAggregate) {
             this.domains = domains;
             this.activatorToDFDMap = activatorToDFDMap;
             this.elementToActivatorAggregate = elementToActivatorAggregate;
         }
 
-        public ActivatorAggregate getActivatorAggregate(Element element) {
-            ActivatorAggregate activatorAggregate = elementToActivatorAggregate.get(element);
-            if (activatorAggregate == null) {
+        public List<ActivatorAggregate> getActivatorAggregate(Element element) {
+            List<ActivatorAggregate> activatorAggregates = elementToActivatorAggregate.get(element);
+            if (activatorAggregates == null) {
                 throw new IllegalStateException("Cannot find an activator aggregate for element: " +
                         element.toString() +
                         ", have you annotated the class with @Activator yet? " +
@@ -160,19 +161,36 @@ public class DFDsProcessor extends AbstractProcessor {
                         "Registered activators: " +
                         elementToActivatorAggregate.keySet());
             }
-            return activatorAggregate;
+            return activatorAggregates;
         }
+
+        public ActivatorAggregate getActivatorAggregateForceOne(Element element) {
+            List<ActivatorAggregate> activatorAggregates = elementToActivatorAggregate.get(element);
+            if (activatorAggregates == null) {
+                throw new IllegalStateException("Cannot find an activator aggregate for element: " +
+                        element.toString() +
+                        ", have you annotated the class with @Activator yet? " +
+                        "Is your class name the same name as in the DFD?\n" +
+                        "Registered activators: " +
+                        elementToActivatorAggregate.keySet());
+            } else if (activatorAggregates.size() != 1) {
+                throw new IllegalStateException("Must only be one activator aggregate");
+            }
+            return activatorAggregates.get(0);
+        }
+
 
         public ActivatorAggregate getActivatorAggregateByClassName(QualifiedName qualifiedName) {
             List<ActivatorAggregate> activatorAggregates = elementToActivatorAggregate
                     .values()
                     .stream()
+                    .flatMap(Collection::stream)
                     .filter(activatorAggregate -> activatorAggregate.name().value().equals(qualifiedName.simpleName()))
                     .toList();
 
             if (activatorAggregates.size() != 1) {
                 throw new IllegalStateException("Could not find one suiting ActivatorAggregate with the ClassName: " + qualifiedName.simpleName() +
-                        "\n Available: " + elementToActivatorAggregate.values().stream().map(ActivatorAggregate::name).map(ActivatorName::toString).collect(Collectors.joining(", ")));
+                        "\n Available: " + elementToActivatorAggregate.values().stream().flatMap(Collection::stream).map(ActivatorAggregate::name).map(ActivatorName::toString).collect(Collectors.joining(", ")));
             }
 
             return activatorAggregates.get(0);
@@ -182,7 +200,7 @@ public class DFDsProcessor extends AbstractProcessor {
 
     private ProcessorResults readBaseAnnotations(RoundEnvironment environment) throws DFDParser.NotWellFormedDFDException {
         List<Domain> domains = new ArrayList<>();
-        Map<Element, ActivatorAggregate> elementToActivatorAggregateMap = new HashMap<>();
+        Map<Element, List<ActivatorAggregate>> elementToActivatorAggregate = new HashMap<>();
         Map<ActivatorName, DFDName> activatorToDFDMap = new HashMap<>();
         Map<DFDName, Map<TraverseName, List<ActivatorAggregate>>> traverses = new HashMap<>();
 
@@ -219,7 +237,7 @@ public class DFDsProcessor extends AbstractProcessor {
                 throw new IllegalStateException("One or more of the ids are not unique");
             }
 
-            elementToActivatorAggregateMap.putAll(
+            elementToActivatorAggregate.putAll(
                     connectAggregatesWithActivatorAnnotation(environment, idToActivator.values())
             );
 
@@ -243,28 +261,31 @@ public class DFDsProcessor extends AbstractProcessor {
         return new ProcessorResults(
                 domains,
                 activatorToDFDMap,
-                elementToActivatorAggregateMap
+                elementToActivatorAggregate
         );
     }
 
-    private Map<Element, ActivatorAggregate> connectAggregatesWithActivatorAnnotation(RoundEnvironment environment, Collection<ActivatorAggregate> allActivatorAggregates) {
-        Map<Element, ActivatorAggregate> elementToActivatorAggregateMap = new HashMap<>();
+    private Map<Element, List<ActivatorAggregate>> connectAggregatesWithActivatorAnnotation(RoundEnvironment environment, Collection<ActivatorAggregate> allActivatorAggregates) {
+        Map<Element, List<ActivatorAggregate>> elementToActivatorAggregateMap = new HashMap<>();
 
         for (Element element : environment.getElementsAnnotatedWith(Activator.class)) {
             Activator activator = element.getAnnotation(Activator.class);
 
             if (element instanceof TypeElement typeElement) {
                 List<String> possible = new ArrayList<>();
-                if (activator.graphName().length == 0) {
-                    possible.add(typeElement.getSimpleName().toString());
-                } else {
-                    possible.addAll(Arrays.asList(activator.graphName()));
+                for (TypeMirror anInterface : typeElement.getInterfaces()) {
+                    possible.add(anInterface.toString());
                 }
+                possible.add(typeElement.getSuperclass().toString());
 
                 for (ActivatorAggregate activatorAggregate : allActivatorAggregates) {
-                    for (String activatorFromGraphName : possible) {
-                        if (activatorFromGraphName.equals(activatorAggregate.name().value())) {
-                            elementToActivatorAggregateMap.put(element, activatorAggregate);
+                    for (String activatorRequirementsName : possible) {
+                        if (activatorRequirementsName.equals(activatorAggregate.requirementsName().value())) {
+                            if (!elementToActivatorAggregateMap.containsKey(element)) {
+                                elementToActivatorAggregateMap.put(element, new ArrayList<>());
+                            }
+                            elementToActivatorAggregateMap.get(element).add(activatorAggregate);
+
                             activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
                             activatorAggregate.setConnectedClass(
                                     new ConnectedClass(
@@ -314,7 +335,6 @@ public class DFDsProcessor extends AbstractProcessor {
                     if (to.equals(order.get(0))) {
                         for (int i = 1; i < order.size(); i++) {
                             if (order.get(i).equals(to)) {
-                                System.out.println(order.stream().map(ActivatorAggregate::name).map(ActivatorName::toString).collect(Collectors.joining(", ")));
                                 throw new IllegalStateException("Cannot add the start external entity more than once. "
                                         + "There's is just one value that can be returned.");
                             }
@@ -383,6 +403,10 @@ public class DFDsProcessor extends AbstractProcessor {
         }
     }
 
+    private String temp(ActivatorAggregate activatorAggregate) {
+        return activatorAggregate.requirementsName().value().replaceAll("Requirements", "");
+    }
+
     private Map<DFDName, List<FlowThroughRep>> getFlowThroughs(ProcessorResults processorResults,
                                                                RoundEnvironment environment) {
         Map<ActivatorName, DFDName> activatorToDFDMap = processorResults.activatorToDFDMap;
@@ -392,7 +416,29 @@ public class DFDsProcessor extends AbstractProcessor {
             FlowThrough flowThrough = flowThroughPair.annotation;
             TypeElement typeElement = flowThroughPair.typeElement;
 
-            ProcessActivatorAggregate processActivator = (ProcessActivatorAggregate) processorResults.getActivatorAggregate(typeElement);
+            ProcessActivatorAggregate processActivator = null;
+            List<ActivatorAggregate> possibleActivatorAggregates = processorResults.getActivatorAggregate(typeElement);
+            if (possibleActivatorAggregates.size() > 1 && flowThrough.forActivator().equals("")) {
+                throw new IllegalArgumentException("Ambiguity!!");
+            } else if (possibleActivatorAggregates.size() > 1) {
+                for (ActivatorAggregate possibleActivatorAggregate : possibleActivatorAggregates) {
+                    if (temp(possibleActivatorAggregate).equals(flowThrough.forActivator())) {
+                        processActivator = (ProcessActivatorAggregate) possibleActivatorAggregate;
+                        break;
+                    }
+                }
+
+                if (processActivator == null) {
+                    throw new IllegalArgumentException("Cannot find activator with name: "
+                            + flowThrough.forActivator()
+                            + " - Available: "
+                            + possibleActivatorAggregates.stream().map(this::temp).collect(Collectors.joining(", ")));
+                }
+
+            } else {
+                // Must be at least one. Otherwise, it would have thrown earlier.
+                processActivator = (ProcessActivatorAggregate) possibleActivatorAggregates.get(0);
+            }
 
             DFDName dfdName = activatorToDFDMap.get(processActivator.name());
             if (dfdName == null) {
@@ -556,7 +602,7 @@ public class DFDsProcessor extends AbstractProcessor {
             Traverse annotation = traversePair.annotation;
             TypeElement typeElement = traversePair.typeElement;
 
-            ExternalEntityActivatorAggregate externalEntityActivator = (ExternalEntityActivatorAggregate) processorResults.getActivatorAggregate(typeElement);
+            ExternalEntityActivatorAggregate externalEntityActivator = (ExternalEntityActivatorAggregate) processorResults.getActivatorAggregateForceOne(typeElement);
             externalEntityActivator.setConnectedClass(
                     new ConnectedClass(
                             QualifiedName.of(typeElement.getQualifiedName().toString()),

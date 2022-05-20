@@ -11,11 +11,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 @Activator(
-        instantiateWithReflection = true,
-        graphName = {
-                "NotesToNoteFormatterANLimit",
-                "NotesToNoteFormatterDNLimit"
-        }
+        instantiateWithReflection = true
 )
 public class NotesToNoteFormatterLimit implements
         NotesToNoteFormatterANLimitRequirements,

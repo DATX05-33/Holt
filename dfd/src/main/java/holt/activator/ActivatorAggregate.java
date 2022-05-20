@@ -26,7 +26,6 @@ public abstract class ActivatorAggregate {
     }
 
 
-    // Only called when @Activator(graphName) is active
     public final void setActivatorName(ActivatorName activatorName) {
         this.activatorName = activatorName;
     }

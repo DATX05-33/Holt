@@ -18,7 +18,7 @@ import static holt.test.minitest.NotesDatabase.n2;
 @Activator(instantiateWithReflection = true)
 public class NotesDatabasePolicy implements NotesDatabasePolicyRequirements {
 
-    private static Map<UUID, NotePolicy> idToPolicy = new HashMap<>();
+    private static final Map<UUID, NotePolicy> idToPolicy = new HashMap<>();
 
     static {
         idToPolicy.put(n1, new NotePolicy(Collections.EMPTY_LIST));
@@ -27,7 +27,7 @@ public class NotesDatabasePolicy implements NotesDatabasePolicyRequirements {
 
     @Override
     public void DN(Map<UUID, NotePolicy> input0) {
-
+        
     }
 
     @Override

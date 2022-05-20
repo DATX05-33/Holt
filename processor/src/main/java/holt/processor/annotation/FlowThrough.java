@@ -14,4 +14,10 @@ public @interface FlowThrough {
     Query[] queries() default {};
 
     QueryDefinition[] overrideQueries() default {};
+
+    /**
+     * If the activator is responsible for more than one requirement,
+     * then you need to specify the forActivator to know which one this @FlowThrough is meant for.
+     */
+    String forActivator() default "";
 }
