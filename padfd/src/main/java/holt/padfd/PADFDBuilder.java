@@ -81,15 +81,19 @@ public class PADFDBuilder {
             newTraverses.put(traverseName, newFlowOrder);
         }
 
-        if (newTraverses.containsKey("clean")) {
-            throw new IllegalStateException("ERROR: clean traverseName is reserved.");
-        }
+        List<DFDRep.Flow> allFlows = new ArrayList<>(baseDFD.flows());
+        allFlows.addAll(cleanFlows.stream().map(flow -> flow.toDFDFlow(idToDFDActivator)).toList());
 
-//        newTraverses.put("clean", cleanFlows.stream().map(flow -> flow.toDFDFlow(idToDFDActivator)).toList());
+        if (allFlows.size() != baseDFD.flows().size()) {
+            System.out.println("Don't forget to use the clean flows:");
+            for (Flow cleanFlow : cleanFlows) {
+                System.out.println(cleanFlow.id);
+            }
+        }
 
         return new DFDOrderedRep(
                 new ArrayList<>(idToDFDActivator.values()),
-                baseDFD.flows(),
+                allFlows,
                 newTraverses
         );
     }

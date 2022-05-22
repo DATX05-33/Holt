@@ -26,6 +26,14 @@ import java.util.UUID;
         },
         order = {"remove_note_action", "delete_note"}
 )
+//@Traverse(
+//        name = "CN",
+//        startTypes = {
+//                @Output(type = String.class),
+//                @Output(type = Integer.class)
+//        },
+//        order = {"clean_note_database"} // should be a dfd that is extended or what ever.
+//)
 @Activator
 public class Notes extends AbstractNotes {
 

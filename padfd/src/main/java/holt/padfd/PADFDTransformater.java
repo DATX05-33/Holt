@@ -19,9 +19,6 @@ import java.util.Random;
 public final class PADFDTransformater {
 
     private final PADFDBuilder builder;
-    private static final PADFDBuilder.Activator cleanExternalEntity = new PADFDBuilder.Activator(
-            "clean-external-entity", "CleanManager", PADFDBuilder.Activator.Type.EXTERNAL_ENTITY
-    );
     private final List<PADFDBuilder.Flow> cleanFlows;
 
     private PADFDTransformater(PADFDBuilder builder) {
@@ -32,6 +29,19 @@ public final class PADFDTransformater {
     public static DFDOrderedRep enhance(DFDOrderedRep dfd) {
         PADFDBuilder builder = PADFDBuilder.fromDFD(dfd);
         return new PADFDTransformater(builder).internalEnhance();
+    }
+
+    private PADFDBuilder.Activator getFirstExternalEntityActivator(DFDRep.Flow flow) {
+        for (Map.Entry<String, List<DFDRep.Flow>> traverseEntry : this.builder.baseDFD.traverses().entrySet()) {
+            for (DFDRep.Flow flow1 : traverseEntry.getValue()) {
+                if (flow.equals(flow1)) {
+                    DFDRep.Activator a = this.builder.baseDFD.traverses().get(traverseEntry.getKey()).get(0).from();
+                    return a(a);
+                }
+            }
+        }
+
+        throw new IllegalStateException("Nope didnt find it");
     }
 
     private String getTraverseName(DFDRep.Flow flow) {
@@ -313,18 +323,17 @@ public final class PADFDTransformater {
         var processToLog = flow(f.id() + "9", s, e.log);
 
         var clean = new PADFDBuilder.Activator(f.id() + "-clean", t.getName() + "Clean", PADFDBuilder.Activator.Type.CLEAN);
+
+        // Original external entity -> Clean
+        var ogEntityToClean = flow(f.id() + "10", getFirstExternalEntityActivator(f), clean);
         // Policy DB -> Clean
-        var policyDBToClean = flow(f.id() + "10", t.getPartner(), clean);
+        var policyDBToClean = flow(f.id() + "11", t.getPartner(), clean);
         // Clean -> Policy DB
-        var cleanToPolicyDB = flow(f.id() + "11", clean, t.getPartner(), true);
+        var cleanToPolicyDB = flow(f.id() + "12", clean, t.getPartner(), true);
         // Clean -> DB
-        var cleanToDB = flow(f.id() + "12", clean, t, true);
-        // CleanExternalEntity -> Clean
-        var entityToClean = flow(f.id() + "13", cleanExternalEntity, clean);
+        var cleanToDB = flow(f.id() + "13", clean, t, true);
 
-        int indexForFirst = cleanFlows.size() / 4;
-
-        cleanFlows.add(indexForFirst, entityToClean);
+        cleanFlows.add(ogEntityToClean);
         cleanFlows.add(policyDBToClean);
         cleanFlows.add(cleanToPolicyDB);
         cleanFlows.add(cleanToDB);
