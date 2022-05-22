@@ -104,6 +104,7 @@ public final class ExternalEntityJavaFileGenerator {
         MethodSpec.Builder constructorSpecBuilder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);
+        List<ParameterSpec> parameterSpecs = new ArrayList<>();
         List<MethodSpec> methods = new ArrayList<>();
 
         // All the activators that need instantiation
@@ -165,10 +166,10 @@ public final class ExternalEntityJavaFileGenerator {
 
                 // If true, then activatorcode.instantiation contains code that uses a reflection helper
                 // method to generate the instance for activators
-                if (activatorCode.getInstance == null) {
+                if (activatorCode.parameterSpec == null) {
                     needToGenerateReflectionHelperMethod = true;
                 } else {
-                    methods.add(activatorCode.getInstance);
+                    parameterSpecs.add(activatorCode.parameterSpec);
                 }
             }
         }
@@ -196,6 +197,8 @@ public final class ExternalEntityJavaFileGenerator {
             methods.add(reflectionHelperMethodBuilder.build());
         }
 
+        constructorSpecBuilder.addParameters(parameterSpecs);
+
         return new ExternalEntityFieldsWithConstructor(
                 fieldSpecs,
                 constructorSpecBuilder.build(),
@@ -206,7 +209,7 @@ public final class ExternalEntityJavaFileGenerator {
     // fieldSpec needs to be a list to be able to handle the possibility of Querier for a database.
     private record FieldAndConstructorInstantiation(List<FieldSpec> fieldSpecs,
                                                     CodeBlock instantiation,
-                                                    MethodSpec getInstance) { }
+                                                    ParameterSpec parameterSpec) { }
 
     private static FieldAndConstructorInstantiation generateCodeForActivator(ActivatorAggregate activatorAggregate, State state) {
         if (activatorAggregate.connectedClass().isEmpty()) {
@@ -229,15 +232,12 @@ public final class ExternalEntityJavaFileGenerator {
 
         CodeBlock.Builder codeBlockBuilder = CodeBlock.builder();
 
-        MethodSpec getInstance = null;
-
+        ParameterSpec parameterSpec = null;
         if (!connectedClass.instantiateWithReflection()) {
-            getInstance = MethodSpec.methodBuilder("get" + activatorAggregate.name().value() + "Instance")
-                    .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
-                    .returns(activatorClassName)
+            parameterSpec = ParameterSpec.builder(activatorClassName, activatorAggregate.name().asVariableName())
                     .build();
 
-            codeBlockBuilder.add("  this." + activatorReferenceVar + " = get" + activatorAggregate.name().value() + "Instance()" + ";\n");
+            codeBlockBuilder.add("  this." + activatorReferenceVar + " = " + activatorAggregate.name().asVariableName() + ";\n");
         } else {
             codeBlockBuilder.add("  this." + activatorReferenceVar + " = reflect(" + activatorClassName + ".class)" + ";\n");
         }
@@ -263,7 +263,7 @@ public final class ExternalEntityJavaFileGenerator {
         return new FieldAndConstructorInstantiation(
                 fieldSpecs,
                 codeBlockBuilder.build(),
-                getInstance
+                parameterSpec
         );
     }
 

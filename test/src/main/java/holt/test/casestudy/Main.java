@@ -1,6 +1,11 @@
 package holt.test.casestudy;
 
 import holt.processor.annotation.DFD;
+import holt.test.casestudy.db.UserDB;
+import holt.test.casestudy.entitiy.CompanyEntity;
+import holt.test.casestudy.entitiy.MailSenderEntity;
+import holt.test.casestudy.entitiy.UserEntity;
+import holt.test.casestudy.model.User;
 import holt.test.casestudy.policy.AccountManagement;
 import holt.test.casestudy.policy.Agreement;
 import holt.test.casestudy.policy.DeleteBefore;
@@ -15,21 +20,21 @@ import java.util.Scanner;
 @DFD(name = "casestudy", xml = "casestudy.xml")
 public class Main {
 
-    private static User user;
-    private static Company company;
-    private static UserDB userDB = new UserDB();
+    private UserEntity userEntity;
+    private CompanyEntity companyEntity;
+    private UserDB userDB;
 
     public static void main(String[] args) {
-        user = new User();
-        company = new Company();
         new Main();
     }
 
-    public static UserDB getUserDB() {
-        return userDB;
-    }
-
     public Main() {
+        MailSenderEntity mailSenderEntity = new MailSenderEntity();
+
+        this.userDB = new UserDB();
+        this.userEntity = new UserEntity(this.userDB);
+        this.companyEntity = new CompanyEntity(this.userDB, mailSenderEntity);
+
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Cli started");
@@ -44,10 +49,11 @@ public class Main {
                 switch (command[0]) {
                     case "user" -> userCases(command);
                     case "company" -> companyCases(command);
-                    case "timeforward" -> Time.fastForward(command[1]);
-                    case "help" -> printHelp(true);
+                    case "time" -> printTime();
+                    case "timeforward" -> fastForwardTime(command);
+                    case "listusers" -> listUser();
+                    case "help" -> printHelp();
                     case "exit" -> System.exit(0);
-                    //case "helpPA" -> printHelp(true);
                     default -> System.out.println("Illegal first argument " + command[0]);
                 }
             } catch (NullPointerException e) {
@@ -56,14 +62,40 @@ public class Main {
         }
     }
 
-    private void printHelp(boolean b) {
+    private void fastForwardTime(String[] command) {
+        if (command.length == 1) {
+            System.out.println("Must specify how far to fast forward");
+        } else {
+            String t = command[1].substring(0, command[1].length() - 1);
+            try {
+                int h = Integer.parseInt(t);
+                Time.fastForward(h);
+                System.out.println("Time now: " + Time.getTime() + "h");
+            } catch (NumberFormatException e) {
+                System.out.println("Must be a whole number");
+            }
+        }
+    }
+
+    private void printTime() {
+        System.out.println(Time.getTime() + "h");
+    }
+
+    private void listUser() {
+        List<User> users = this.userDB.getUsers();
+        if (users.size() == 0) {
+            System.out.println("No users have been added");
+        } else {
+            users.forEach(System.out::println);
+        }
+    }
+
+    private void printHelp() {
         StringBuilder help = new StringBuilder();
 
-        help.append("example: > user add me@email.com");
-        help.append(b ? " \"login\" \"marketing\"\n" : "\n");
+        help.append("example: > user add me@email.com 25h \"login\" \"marketing\"\n");
 
-        help.append("example: > user add user@email.com");
-        help.append(b ? " 10h \"login\"\n" : "\n");
+        help.append("example: > user add user@email.com 10h \"login\"\n");
 
         help.append("example: > user remove me@email.com\n");
 
@@ -72,14 +104,18 @@ public class Main {
 
         help.append("example: > timeforward 3h\n");
 
-        System.out.println(help.toString());
+        System.out.println(help);
     }
 
     private void userCases(String[] args) {
-        switch (args[1]) {
-            case "add" -> addUser(args);
-            case "remove" -> removeUser(args);
-            default -> System.out.println("Illegal first argument " + args[1]);
+        if (args.length == 1) {
+            System.out.println("Missing args...");
+        } else {
+            switch (args[1]) {
+                case "add" -> addUser(args);
+                case "remove" -> removeUser(args);
+                default -> System.out.println("Illegal first argument " + args[1]);
+            }
         }
     }
 
@@ -93,37 +129,40 @@ public class Main {
 
     private void resetpwd(String[] args) {
         String email = args[2];
-        company.resetPassword(email);
+        companyEntity.resetPassword(email);
     }
 
     private void sendMarketing(String[] args) {
-        String email = args[2];
-
         List<String> argsList = new java.util.ArrayList<>(Arrays.stream(args).toList());
-        argsList.subList(0, 3).clear();
+        argsList.subList(0, 2).clear();
 
         StringBuilder content = new StringBuilder();
         for (String s : argsList) {
             content.append(s).append(" ");
         }
-        company.sendMarketing(email, content.toString());
+        companyEntity.sendMarketing(content.toString());
     }
 
     private void removeUser(String[] args) {
         String email = args[2];
 
-        user.deleteUser(email);
+        userEntity.deleteUser(email);
     }
 
     private void addUser(String[] args) {
+        if (args.length <= 2) {
+            System.out.println("Missing email...");
+        } else if (args.length <= 3) {
+            System.out.println("Missing deletion time");
+        }
+
         String email = args[2];
         String time = args[3].substring(0, args[3].length()-1);
-
 
         List<Agreement> agreements = new ArrayList<>();
         agreements.add(new DeleteBefore(Integer.parseInt(time)));
 
-        List<String> argsList = new java.util.ArrayList<>(Arrays.stream(args).toList());
+        List<String> argsList = new ArrayList<>(Arrays.stream(args).toList());
         argsList.subList(0, 4).clear();
 
         List<String> policies = new ArrayList<>(argsList);
@@ -135,6 +174,6 @@ public class Main {
             }
         }
 
-        user.addUser(email);
+        userEntity.addUser(email);
     }
 }
