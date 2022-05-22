@@ -122,25 +122,18 @@ public class Main {
     private void companyCases(String[] args) {
         switch (args[1]) {
             case "marketing" -> sendMarketing(args);
-            case "resetpwd" -> resetpwd(args);
+            case "resetpwd" -> resetPassword(args);
             default -> System.out.println("Illegal first argument " + args[1]);
         }
     }
 
-    private void resetpwd(String[] args) {
+    private void resetPassword(String[] args) {
         String email = args[2];
         companyEntity.resetPassword(email);
     }
 
     private void sendMarketing(String[] args) {
-        List<String> argsList = new java.util.ArrayList<>(Arrays.stream(args).toList());
-        argsList.subList(0, 2).clear();
-
-        StringBuilder content = new StringBuilder();
-        for (String s : argsList) {
-            content.append(s).append(" ");
-        }
-        companyEntity.sendMarketing(content.toString());
+        companyEntity.sendMarketing(args[2].replace("\"", ""));
     }
 
     private void removeUser(String[] args) {
@@ -150,9 +143,9 @@ public class Main {
     }
 
     private void addUser(String[] args) {
-        if (args.length <= 2) {
+        if (args.length < 2) {
             System.out.println("Missing email...");
-        } else if (args.length <= 3) {
+        } else if (args.length < 3) {
             System.out.println("Missing deletion time");
         }
 

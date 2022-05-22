@@ -12,10 +12,10 @@ public class MailSenderEntity extends AbstractMailSender {
 
     private void sendEmail(EmailAndContent emailAndContent) {
         StringBuilder email = new StringBuilder();
-        email.append("---------- NEW EMAIL SENT (Time: ").append(Time.getTime()).append("h) ----------\n");
-        email.append("To: ").append(emailAndContent.email().email()).append("\n");
-        email.append(emailAndContent.content().content());
-        email.append("\n----------------------------------------");
+        email.append("---------- NEW EMAIL SENT (Time: ").append(Time.getTime()).append("h) ----------\n")
+                .append("To: ").append(emailAndContent.email().email()).append("\n")
+                .append(emailAndContent.content().content())
+                .append("\n----------------------------------------");
 
 
         System.out.println(email);
