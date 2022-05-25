@@ -87,6 +87,8 @@ public class DFDsProcessor extends AbstractProcessor {
             return true;
         }
 
+        System.out.println("Running DFDsProcessor...");
+
         // Converters that will convert DFD to Java Files
         ProcessorResults processorResults;
         try {

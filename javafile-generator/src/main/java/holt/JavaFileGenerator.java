@@ -77,6 +77,8 @@ public class JavaFileGenerator {
                 .processes()
                 .forEach(process -> javaFiles.addAll(generate(process, dfdPackageName, domain)));
 
+        System.out.println("I'm generating " + javaFiles.size() + " number of files");
+
         return javaFiles;
     }
 
