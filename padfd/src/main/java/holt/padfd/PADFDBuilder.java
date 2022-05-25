@@ -44,14 +44,7 @@ public class PADFDBuilder {
     }
 
     //TODO: Right now, partner for both Activator and Flow are ignored. To start to automate certain things, this can't be
-    public DFDOrderedRep toDFD(List<Flow> cleanFlows) {
-        cleanFlows.forEach(flow -> {
-            Activator a1 = flow.from;
-            Activator a2 = flow.to;
-            this.idToActivator.put(a1.id, a1);
-            this.idToActivator.put(a2.id, a2);
-        });
-
+    public DFDOrderedRep toDFD() {
         Map<String, DFDRep.Activator> idToDFDActivator = this.idToActivator.entrySet()
                 .stream()
                 .collect(Collectors.toMap(
@@ -82,14 +75,6 @@ public class PADFDBuilder {
         }
 
         List<DFDRep.Flow> allFlows = new ArrayList<>(baseDFD.flows());
-        allFlows.addAll(cleanFlows.stream().map(flow -> flow.toDFDFlow(idToDFDActivator)).toList());
-
-        if (allFlows.size() != baseDFD.flows().size()) {
-            System.out.println("Don't forget to use the clean flows:");
-            for (Flow cleanFlow : cleanFlows) {
-                System.out.println(cleanFlow.id);
-            }
-        }
 
         return new DFDOrderedRep(
                 new ArrayList<>(idToDFDActivator.values()),

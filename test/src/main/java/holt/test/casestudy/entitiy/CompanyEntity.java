@@ -5,34 +5,36 @@ import holt.processor.annotation.Output;
 import holt.processor.annotation.Traverse;
 import holt.processor.generation.casestudy.AbstractCompany;
 import holt.test.casestudy.db.UserDB;
+import holt.test.casestudy.db.UserPolicyDB;
 import holt.test.casestudy.model.Email;
 import holt.test.casestudy.model.EmailAndContent;
 import holt.test.casestudy.model.EmailContent;
+import holt.test.casestudy.policy.AccessUserReason;
 
 
 @Traverse(
-        name = "marketing",
-        startTypes = {@Output(type = EmailContent.class)},
+        name = "M", //Marketing
+        startTypes = {@Output(type = EmailContent.class), @Output(type = AccessUserReason.class)},
         order = {"email_content", "get_marketing_emails", "blast_marketing"}
 )
 @Traverse(
-        name = "resetPassword",
-        startTypes = {@Output(type = Email.class)},
+        name = "RP", //Reset Password
+        startTypes = {@Output(type = Email.class), @Output(type = AccessUserReason.class)},
         order = {"reset_pwd", "get_reset_email", "send_otp"}
 )
 @Activator
 public class CompanyEntity extends AbstractCompany {
 
-    public CompanyEntity(UserDB userDB, MailSenderEntity mailSenderEntity) {
-        super(userDB, mailSenderEntity);
+    public CompanyEntity(UserPolicyDB userPolicyDB, UserDB userDB, MailSenderEntity mailSenderEntity) {
+        super(userPolicyDB, userDB, mailSenderEntity);
     }
 
     public void sendMarketing(String content) {
-        super.marketing(new EmailContent(content));
+        super.M(new EmailContent(content), AccessUserReason.MARKETING);
     }
 
     public void resetPassword(String email) {
-        super.resetPassword(new Email(email));
+        super.RP(new Email(email), AccessUserReason.RESET_PASSWORD);
     }
 
 }

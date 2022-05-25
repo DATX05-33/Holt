@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Objects;
 
 public final class TraverseOutput {
-    private final FunctionName functionName;
     private final List<Connector> inputs;
+    private FunctionName functionName;
 
     public TraverseOutput(FunctionName functionName) {
         this.functionName = functionName;
@@ -26,6 +26,10 @@ public final class TraverseOutput {
             throw new IllegalStateException("Input already exists " + input);
         }
         this.inputs.add(input);
+    }
+
+    public void setFunctionName(FunctionName functionName) {
+        this.functionName = functionName;
     }
 
     @Override

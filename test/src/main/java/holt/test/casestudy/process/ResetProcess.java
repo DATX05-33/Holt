@@ -4,6 +4,7 @@ import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Output;
 import holt.processor.annotation.Query;
+import holt.processor.generation.casestudy.ResetReasonRequirements;
 import holt.processor.generation.casestudy.ResetRequirements;
 import holt.processor.generation.casestudy.UserDBToResetProcessGenerateOTPAndEmailQuery;
 import holt.test.casestudy.db.UserDB;
@@ -11,9 +12,12 @@ import holt.test.casestudy.model.Email;
 import holt.test.casestudy.model.EmailAndContent;
 import holt.test.casestudy.model.EmailContent;
 import holt.test.casestudy.model.User;
+import holt.test.casestudy.policy.UserPolicy;
+
+import java.util.Map;
 
 @FlowThrough(
-        traverse = "resetPassword",
+        traverse = "RP",
         output = @Output(type = EmailAndContent.class),
         functionName = "generateOTPAndEmail",
         queries = {
@@ -43,4 +47,14 @@ public class ResetProcess implements ResetRequirements {
     public UserDBToResetProcessGenerateOTPAndEmailQuery queryUserDBGenerateOTPAndEmail(Email input0) {
         return db -> db.getUser(input0);
     }
+
+    @Activator(instantiateWithReflection = true)
+    public static class ResetProcessReason implements ResetReasonRequirements {
+        @Override
+        public Object RP(Map<Email, Object> input0, Map<User, UserPolicy> input1) {
+            return null;
+        }
+    }
+
+
 }

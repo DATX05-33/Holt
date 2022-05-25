@@ -14,6 +14,7 @@ public final class DatabaseActivatorAggregate extends ActivatorAggregate impleme
     // for this database, then the following QualifiedName is not null.
     private QualifiedName queriesClassName;
 
+
     public DatabaseActivatorAggregate(ActivatorId activatorId, ActivatorName activatorName, Metadata metadata) {
         super(activatorId, activatorName, new ActivatorName(activatorName + "Requirements"), metadata);
         this.stores = new HashMap<>();

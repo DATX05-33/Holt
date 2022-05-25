@@ -2,6 +2,8 @@ package holt.test.casestudy.entitiy;
 
 import holt.processor.annotation.Activator;
 import holt.processor.generation.casestudy.AbstractMailSender;
+import holt.processor.generation.casestudy.MailSenderMCombiner;
+import holt.processor.generation.casestudy.MailSenderRPCombiner;
 import holt.test.casestudy.Time;
 import holt.test.casestudy.model.EmailAndContent;
 
@@ -21,14 +23,13 @@ public class MailSenderEntity extends AbstractMailSender {
         System.out.println(email);
     }
 
-
     @Override
-    public void marketing(Collection<EmailAndContent> toSend) {
-        toSend.forEach(this::sendEmail);
+    public void M(MailSenderMCombiner.Combo input) {
+        input.v0.forEach(this::sendEmail);
     }
 
     @Override
-    public void resetPassword(EmailAndContent v) {
-        sendEmail(v);
+    public void RP(MailSenderRPCombiner.Combo input) {
+        sendEmail(input.v0);
     }
 }

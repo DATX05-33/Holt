@@ -7,6 +7,7 @@ import holt.activator.TraverseName;
 import holt.padfd.metadata.CombineMetadata;
 import holt.padfd.metadata.GuardMetadata;
 import holt.padfd.metadata.LimitMetadata;
+import holt.padfd.metadata.LogDatabaseMetadata;
 import holt.padfd.metadata.LogMetadata;
 import holt.padfd.metadata.QuerierMetadata;
 import holt.padfd.metadata.RequestMetadata;
@@ -19,11 +20,9 @@ import java.util.Random;
 public final class PADFDTransformater {
 
     private final PADFDBuilder builder;
-    private final List<PADFDBuilder.Flow> cleanFlows;
 
     private PADFDTransformater(PADFDBuilder builder) {
         this.builder = builder;
-        this.cleanFlows = new ArrayList<>();
     }
 
     public static DFDOrderedRep enhance(DFDOrderedRep dfd) {
@@ -93,7 +92,7 @@ public final class PADFDTransformater {
             }
         }
 
-        return builder.toDFD(cleanFlows);
+        return builder.toDFD();
     }
 
     private record NewCommonElements(
@@ -141,7 +140,9 @@ public final class PADFDTransformater {
         PADFDBuilder.Activator logDB = new PADFDBuilder.Activator(
                 flow.to().id() + "-log_db-" + flow.formattedId(),
                 log.getName() + "Database",
-                PADFDBuilder.Activator.Type.LOG_DATABASE);
+                PADFDBuilder.Activator.Type.LOG_DATABASE,
+                new LogDatabaseMetadata()
+        );
 
         // Request -> Limit
         var requestToLimit = flow(flow.formattedId() + "111", request, limit);
@@ -321,22 +322,6 @@ public final class PADFDTransformater {
         var processToGuard = flow(f.id() + "8", s, e.guard);
         // Process -> Log
         var processToLog = flow(f.id() + "9", s, e.log);
-
-        var clean = new PADFDBuilder.Activator(f.id() + "-clean", t.getName() + "Clean", PADFDBuilder.Activator.Type.CLEAN);
-
-        // Original external entity -> Clean
-        var ogEntityToClean = flow(f.id() + "10", getFirstExternalEntityActivator(f), clean);
-        // Policy DB -> Clean
-        var policyDBToClean = flow(f.id() + "11", t.getPartner(), clean);
-        // Clean -> Policy DB
-        var cleanToPolicyDB = flow(f.id() + "12", clean, t.getPartner(), true);
-        // Clean -> DB
-        var cleanToDB = flow(f.id() + "13", clean, t, true);
-
-        cleanFlows.add(ogEntityToClean);
-        cleanFlows.add(policyDBToClean);
-        cleanFlows.add(cleanToPolicyDB);
-        cleanFlows.add(cleanToDB);
 
         builder.addFlow(f,
                 List.of(

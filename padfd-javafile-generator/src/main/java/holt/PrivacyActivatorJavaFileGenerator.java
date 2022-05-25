@@ -18,12 +18,15 @@ import holt.activator.Domain;
 import holt.activator.ExternalEntityActivatorAggregate;
 import holt.activator.FlowOutput;
 import holt.activator.FlowThroughAggregate;
+import holt.activator.FunctionName;
 import holt.activator.ProcessActivatorAggregate;
 import holt.activator.QualifiedName;
 import holt.activator.QueryInput;
 import holt.activator.TraverseName;
+import holt.activator.TraverseOutput;
 import holt.padfd.metadata.CombineMetadata;
 import holt.padfd.metadata.GuardMetadata;
+import holt.padfd.metadata.LogDatabaseMetadata;
 import holt.padfd.metadata.LogMetadata;
 import holt.padfd.metadata.QuerierMetadata;
 
@@ -48,17 +51,31 @@ public final class PrivacyActivatorJavaFileGenerator {
 
         for (ActivatorAggregate activator : domain.activators()) {
             if (activator instanceof ProcessActivatorAggregate processActivatorAggregate) {
-                processActivatorAggregate.flows();
-                if (processActivatorAggregate.metadata() instanceof CombineMetadata) {
-                    files.addAll(generateCombine(processActivatorAggregate, processingEnvironment, dfdPackageName));
-                } else if (processActivatorAggregate.metadata() instanceof QuerierMetadata) {
+                if (activator.metadata() instanceof QuerierMetadata) {
                     Map.Entry<TraverseName, FlowThroughAggregate> flowThroughEntry = processActivatorAggregate.flowsMap().entrySet().stream().findFirst().orElseThrow();
                     FlowThroughAggregate flow = flowThroughEntry.getValue();
 
                     QueryInput queryInput = flow.queries().get(0);
                     flow.setOutputType(queryInput.queryInputDefinition().output().type(), queryInput.queryInputDefinition().output().isCollection());
+                }
+            } /*else if (activator instanceof DatabaseActivatorAggregate databaseActivatorAggregate) {
+                if (databaseActivatorAggregate.metadata() instanceof LogDatabaseMetadata) {
+                    var entry = databaseActivatorAggregate
+                            .outputs().entrySet().stream().findFirst().orElseThrow(IllegalStateException::new);
 
-                    files.addAll(generateQuerier(processActivatorAggregate, processingEnvironment, dfdPackageName));
+                    System.out.println("log" + activator.name().value());
+                    entry.getValue().setFunctionName(new FunctionName("LMAO"));
+                }
+            }*/
+        }
+
+        for (ActivatorAggregate activator : domain.activators()) {
+            if (activator instanceof ProcessActivatorAggregate processActivatorAggregate) {
+                processActivatorAggregate.flows();
+                if (processActivatorAggregate.metadata() instanceof CombineMetadata) {
+                    files.addAll(generateCombine(processActivatorAggregate, processingEnvironment, dfdPackageName));
+                } else if (processActivatorAggregate.metadata() instanceof QuerierMetadata) {
+                   files.addAll(generateQuerier(processActivatorAggregate, processingEnvironment, dfdPackageName));
                 } else if (processActivatorAggregate.metadata() instanceof GuardMetadata) {
                     files.addAll(generateGuard(processActivatorAggregate, processingEnvironment, dfdPackageName));
                 } else if (processActivatorAggregate.metadata() instanceof LogMetadata) {
@@ -201,6 +218,9 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .build();
 
         StringBuilder methodSB = new StringBuilder();
+        System.out.println("HELLO???");
+        System.out.println(processActivatorAggregate.name());
+        System.out.println(dataConnector.flowOutput());
         if (dataConnector.flowOutput().isCollection()) {
             methodSB.append("return data\n");
             methodSB.append("  .stream()\n");

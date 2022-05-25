@@ -44,8 +44,9 @@ public final class PADFDEnhancer {
 
             startConnectors.forEach(connector -> isPolicyMap.put(connector, isPolicyConnector(connector, processingEnvironment)));
 
-            if (startConnectors.size() != 2
-                    && (isPolicyMap.get(startConnectors.get(0)) ^ isPolicyMap.get(startConnectors.get(1)))) {
+            if ((startConnectors.size() != 2) || (isPolicyMap.get(startConnectors.get(0)) == isPolicyMap.get(startConnectors.get(1)))) {
+                System.out.println("start");
+                startConnectors.forEach(connector -> System.out.println(connector + "; " + isPolicyMap.get(connector)));
                 throw new IllegalStateException("External entity must have exactly two outputs. One policy and one data.");
             }
 

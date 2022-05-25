@@ -2,6 +2,7 @@ package holt.test.casestudy;
 
 import holt.processor.annotation.DFD;
 import holt.test.casestudy.db.UserDB;
+import holt.test.casestudy.db.UserPolicyDB;
 import holt.test.casestudy.entitiy.CompanyEntity;
 import holt.test.casestudy.entitiy.MailSenderEntity;
 import holt.test.casestudy.entitiy.UserEntity;
@@ -17,12 +18,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-@DFD(name = "casestudy", xml = "casestudy.xml")
+@DFD(name = "casestudy", xml = "casestudy.xml", privacyAware = true)
 public class Main {
 
     private UserEntity userEntity;
     private CompanyEntity companyEntity;
     private UserDB userDB;
+    private UserPolicyDB userPolicyDB;
 
     public static void main(String[] args) {
         new Main();
@@ -32,8 +34,9 @@ public class Main {
         MailSenderEntity mailSenderEntity = new MailSenderEntity();
 
         this.userDB = new UserDB();
-        this.userEntity = new UserEntity(this.userDB);
-        this.companyEntity = new CompanyEntity(this.userDB, mailSenderEntity);
+        this.userPolicyDB = new UserPolicyDB();
+        this.userEntity = new UserEntity(this.userDB, this.userPolicyDB);
+        this.companyEntity = new CompanyEntity(this.userPolicyDB, this.userDB, mailSenderEntity);
 
         Scanner scanner = new Scanner(System.in);
 
@@ -167,6 +170,6 @@ public class Main {
             }
         }
 
-        userEntity.addUser(email);
+        userEntity.addUser(email, agreements);
     }
 }
