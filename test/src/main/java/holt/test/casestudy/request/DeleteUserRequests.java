@@ -15,14 +15,14 @@ public class DeleteUserRequests {
 
     @FlowThrough(
             traverse = "DU",
-            output = @Output(type = UserPolicy.class),
+            output = @Output(type = AccessUserReason.class),
             functionName = "DU"
     )
     @Activator(instantiateWithReflection = true)
     public static class UserToDeleteUserDURequest implements UserToDeleteUserDURequestRequirements {
         @Override
-        public Map<Email, UserPolicy> DU(AccessUserReason input0) {
-            return new HashMap<>();
+        public Map<Email, AccessUserReason> DU(AccessUserReason input0) {
+            return new HashMap<>() {{ put(null, input0); }};
         }
     }
 

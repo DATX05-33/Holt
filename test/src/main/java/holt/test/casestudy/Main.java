@@ -83,10 +83,13 @@ public class Main {
 
     private void listUser() {
         List<User> users = this.userDB.getUsers();
+        List<UserPolicy> userPolicies = (List<UserPolicy>) this.userPolicyDB.getPolicies(users);
         if (users.size() == 0) {
             System.out.println("No users have been added");
         } else {
-            users.forEach(System.out::println);
+            for (int i = 0; i < users.size(); i++) {
+                System.out.println(users.get(i) + "; policy: " + userPolicies.get(i));
+            }
         }
     }
 

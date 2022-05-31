@@ -73,7 +73,7 @@ public class MarketingRequests {
     public static class CompanyToMarketingBlastMRequest implements CompanyToMarketingBlastMRequestRequirements {
         @Override
         public Map<EmailContent, MarketingType> M(MarketingType input0) {
-            return Map.of(null, input0);
+            return new HashMap<>() {{ put(null, input0); }};
         }
     }
 

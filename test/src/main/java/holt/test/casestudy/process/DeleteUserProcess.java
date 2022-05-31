@@ -6,6 +6,7 @@ import holt.processor.annotation.Output;
 import holt.processor.generation.casestudy.DeleteUserReasonRequirements;
 import holt.processor.generation.casestudy.DeleteUserRequirements;
 import holt.test.casestudy.model.Email;
+import holt.test.casestudy.policy.AccessUserReason;
 import holt.test.casestudy.policy.UserPolicy;
 
 import java.util.Map;
@@ -24,14 +25,14 @@ public class DeleteUserProcess implements DeleteUserRequirements {
 
     @FlowThrough(
             traverse = "DU",
-            output = @Output(type = UserPolicy.class),
+            output = @Output(type = AccessUserReason.class),
             functionName = "DU"
     )
     @Activator(instantiateWithReflection = true)
     public static class DeleteUserProcessReason implements DeleteUserReasonRequirements {
         @Override
-        public UserPolicy DU(Map<Email, UserPolicy> input0) {
-            return null;
+        public AccessUserReason DU(Map<Email, AccessUserReason> input0) {
+            return input0.get(null);
         }
     }
 

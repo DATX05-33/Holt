@@ -5,6 +5,7 @@ import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Output;
 import holt.processor.generation.casestudy.AddUserReasonRequirements;
 import holt.processor.generation.casestudy.AddUserRequirements;
+import holt.test.casestudy.db.UserPolicyDB;
 import holt.test.casestudy.model.Email;
 import holt.test.casestudy.model.User;
 import holt.test.casestudy.policy.UserPolicy;
@@ -23,16 +24,18 @@ public class AddUserProcess implements AddUserRequirements {
         return new User(email);
     }
 
+    public record EmailWithUserPolicy(Email email, UserPolicy userPolicy) { }
+
     @FlowThrough(
             traverse = "AU",
-            output = @Output(type = UserPolicy.class),
+            output = @Output(type = EmailWithUserPolicy.class),
             functionName = "AU"
     )
     @Activator(instantiateWithReflection = true)
     public static class AddUserProcessReason implements AddUserReasonRequirements {
         @Override
-        public UserPolicy AU(Map<Email, UserPolicy> input0) {
-            return null;
+        public EmailWithUserPolicy AU(Map<Email, UserPolicy> input0) {
+            return new EmailWithUserPolicy(null, null);
         }
     }
 
