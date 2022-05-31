@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @DFD(name = "casestudy", xml = "casestudy.xml", privacyAware = true)
 public class Main {
@@ -139,7 +141,8 @@ public class Main {
     }
 
     private void sendMarketing(String[] args) {
-        companyEntity.sendMarketing(args[2].replace("\"", ""));
+        String message = Stream.of(args).skip(2).collect(Collectors.joining(" ")).replace("\"", "");
+        companyEntity.sendMarketing(message);
     }
 
     private void removeUser(String[] args) {
