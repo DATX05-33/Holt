@@ -10,6 +10,10 @@ tasks.register("move-xml-files", Copy) {
 
 tasks.compileJava.dependsOn("move-xml-files")
 
+tasks.withType(Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 dependencies {
     implementation project(':padfd')
     implementation project(':processor')
