@@ -13,6 +13,7 @@ import holt.test.casestudy.model.User;
 import holt.test.casestudy.policy.AccessUserReason;
 import holt.test.casestudy.policy.UserPolicy;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class ResetPasswordRequests {
@@ -26,7 +27,7 @@ public class ResetPasswordRequests {
     public static class ResetToMailSenderRPRequest implements ResetToMailSenderRPRequestRequirements {
         @Override
         public Map<EmailAndContent, AccessUserReason> RP(Object input0) {
-            return null;
+            return new HashMap<>();
         }
     }
 
@@ -45,12 +46,12 @@ public class ResetPasswordRequests {
     public static class UserDBToResetRPRequest implements UserDBToResetRPRequestRequirements {
         @Override
         public Map<User, UserPolicy> RP(User input0, UserPolicy dbInput1) {
-            return null;
+            return new HashMap<>();
         }
 
         @Override
         public UserPolicyDBToUserDBToResetRPRequestRPQuery queryUserPolicyDBRP(User input0) {
-            return null;
+            return db -> db.getPolicy(input0);
         }
     }
 

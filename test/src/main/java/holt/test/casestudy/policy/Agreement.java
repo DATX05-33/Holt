@@ -1,5 +1,6 @@
 package holt.test.casestudy.policy;
 
-public abstract class Agreement {
-    String agreement;
+import holt.padfd.Policy;
+
+public interface Agreement extends Policy {
 }

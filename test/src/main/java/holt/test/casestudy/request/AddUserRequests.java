@@ -11,6 +11,7 @@ import holt.test.casestudy.model.Email;
 import holt.test.casestudy.model.User;
 import holt.test.casestudy.policy.UserPolicy;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class AddUserRequests {
@@ -25,7 +26,7 @@ public class AddUserRequests {
 
         @Override
         public Map<Email, UserPolicy> AU(UserPolicy input0) {
-            return null;
+            return new HashMap<>();
         }
     }
 
@@ -39,7 +40,7 @@ public class AddUserRequests {
 
         @Override
         public Map<User, UserPolicy> AU(UserPolicy input0) {
-            return null;
+            return new HashMap<>();
         }
     }
 

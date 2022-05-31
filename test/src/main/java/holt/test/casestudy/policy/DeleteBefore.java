@@ -1,10 +1,17 @@
 package holt.test.casestudy.policy;
 
-public class DeleteBefore extends Agreement {
+import holt.test.casestudy.Time;
 
-    private int hour;
+public class DeleteBefore implements Agreement {
+
+    private final int hour;
 
     public DeleteBefore(int hour) {
         this.hour = hour;
     }
+
+    public boolean shouldDelete() {
+        return Time.getTime() > hour;
+    }
+
 }

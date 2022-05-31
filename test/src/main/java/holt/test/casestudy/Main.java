@@ -99,7 +99,7 @@ public class Main {
 
         help.append("example: > user remove me@email.com\n");
 
-        help.append("example: > company marketing me@mail.com Buy Our Product\n");
+        help.append("example: > company marketing \"Buy Our Product\"\n");
         help.append("example: > company resetpwd user@email.com\n");
 
         help.append("example: > timeforward 3h\n");
@@ -152,8 +152,8 @@ public class Main {
         String email = args[2];
         String time = args[3].substring(0, args[3].length()-1);
 
-        List<AccessUserReason> agreements = new ArrayList<>();
-        //agreements.add(new DeleteBefore(Integer.parseInt(time)));
+        List<Agreement> agreements = new ArrayList<>();
+        agreements.add(new DeleteBefore(Integer.parseInt(time)));
 
         List<String> argsList = new ArrayList<>(Arrays.stream(args).toList());
         argsList.subList(0, 4).clear();
@@ -161,8 +161,8 @@ public class Main {
         List<String> policies = new ArrayList<>(argsList);
         for (String pol : policies) {
             switch (pol) {
-                case "\"login\"" -> agreements.add(AccessUserReason.RESET_PASSWORD);//new AccountManagement(true, true));
-                case "\"marketing\"" -> agreements.add(AccessUserReason.MARKETING);//new Marketing(true));
+                case "\"login\"" -> agreements.add(AccessUserReason.RESET_PASSWORD);
+                case "\"marketing\"" -> agreements.add(AccessUserReason.MARKETING);
                 default -> System.out.println("Policy " + pol + " not available");
             }
         }

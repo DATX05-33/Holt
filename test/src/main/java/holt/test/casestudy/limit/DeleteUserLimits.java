@@ -9,6 +9,7 @@ import holt.processor.generation.casestudy.UserToDeleteUserDULimitRequirements;
 import holt.test.casestudy.model.Email;
 import holt.test.casestudy.policy.UserPolicy;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -23,7 +24,7 @@ public class DeleteUserLimits {
     public static class UserToDeleteUserDULimit implements UserToDeleteUserDULimitRequirements {
         @Override
         public Predicate<Email> DU(Map<Email, UserPolicy> input0) {
-            return null;
+            return (email) -> true;
         }
     }
 
@@ -36,7 +37,7 @@ public class DeleteUserLimits {
     public static class DeleteUserToUserDBDURequest implements DeleteUserToUserDBDURequestRequirements {
         @Override
         public Map<Email, UserPolicy> DU(UserPolicy input0) {
-            return null;
+            return new HashMap<>();
         }
     }
 
@@ -50,7 +51,7 @@ public class DeleteUserLimits {
 
         @Override
         public Predicate<Email> DU(Map<Email, UserPolicy> input0) {
-            return null;
+            return (user) -> true;
         }
     }
 

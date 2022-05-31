@@ -1,6 +1,6 @@
 package holt.test.casestudy.policy;
 
-public class Marketing extends Agreement {
+public class Marketing implements Agreement {
 
     boolean marketing = false;
 

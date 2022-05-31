@@ -38,4 +38,8 @@ public class UserPolicyDB implements UserDBPolicyRequirements {
         }
         return result;
     }
+
+    public UserPolicy getPolicy(User input0) {
+        return policyMap.get(this.policyMap.get(input0));
+    }
 }

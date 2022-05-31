@@ -8,6 +8,7 @@ import holt.test.casestudy.model.Email;
 import holt.test.casestudy.policy.AccessUserReason;
 import holt.test.casestudy.policy.UserPolicy;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class DeleteUserRequests {
@@ -21,7 +22,7 @@ public class DeleteUserRequests {
     public static class UserToDeleteUserDURequest implements UserToDeleteUserDURequestRequirements {
         @Override
         public Map<Email, UserPolicy> DU(AccessUserReason input0) {
-            return null;
+            return new HashMap<>();
         }
     }
 

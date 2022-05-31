@@ -17,7 +17,7 @@ public class AddUserLimits {
     public static class UserToAddUserAULimit implements UserToAddUserAULimitRequirements {
         @Override
         public Predicate<Email> AU(Map<Email, UserPolicy> input0) {
-            return null;
+            return email -> true;
         }
     }
 
@@ -25,7 +25,7 @@ public class AddUserLimits {
     public static class AddUserToUserDBAULimit implements AddUserToUserDBAULimitRequirements {
         @Override
         public Predicate<User> AU(Map<User, UserPolicy> input0) {
-            return null;
+            return (user) -> true;
         }
     }
 
