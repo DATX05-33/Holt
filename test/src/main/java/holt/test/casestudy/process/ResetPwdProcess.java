@@ -39,7 +39,7 @@ public class ResetPwdProcess implements ResetPwdRequirements {
         return new EmailAndContent(
                 email,
                 new EmailContent(
-                        "New pwd for " + email.email() + " is XXXYYYAAABBB. Very secure."
+                        "New password for " + email.email() + " is " + password.password()
                 )
         );
     }

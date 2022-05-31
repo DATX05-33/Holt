@@ -303,7 +303,7 @@ public final class PrivacyActivatorJavaFileGenerator {
             logSB.append("   .map(d -> new Row(d, policyMap.get(d), tester.test(d), Instant.now()))\n");
             logSB.append("  .toList();\n");
         } else {
-            logSB.append("return new Row(data, policyMap.get(data), tester.test(data), Instant.now());");
+            logSB.append("return new Row(data, policyMap.get(null), tester.test(data), Instant.now());");
         }
 
         MethodSpec logMethodSpec = MethodSpec

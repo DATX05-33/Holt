@@ -1,4 +1,4 @@
 package holt.test.casestudy.model;
 
-public record Password(String value) {
+public record Password(String password) {
 }
