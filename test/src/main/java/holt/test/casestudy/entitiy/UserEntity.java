@@ -34,7 +34,7 @@ public class UserEntity extends AbstractUser {
         super.DU(new Email(email), AccessUserReason.DELETE);
     }
 
-    public void addUser(String email, List<Agreement> agreements) {
+    public void addUser(String email, List<AccessUserReason> agreements) {
         super.AU(new Email(email), new UserPolicy(agreements));
     }
 

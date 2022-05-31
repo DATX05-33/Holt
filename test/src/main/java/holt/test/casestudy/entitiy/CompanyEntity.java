@@ -10,11 +10,12 @@ import holt.test.casestudy.model.Email;
 import holt.test.casestudy.model.EmailAndContent;
 import holt.test.casestudy.model.EmailContent;
 import holt.test.casestudy.policy.AccessUserReason;
+import holt.test.casestudy.policy.MarketingType;
 
 
 @Traverse(
         name = "M", //Marketing
-        startTypes = {@Output(type = EmailContent.class), @Output(type = AccessUserReason.class)},
+        startTypes = {@Output(type = EmailContent.class), @Output(type = MarketingType.class)},
         order = {"email_content", "get_marketing_emails", "blast_marketing"}
 )
 @Traverse(
@@ -30,7 +31,7 @@ public class CompanyEntity extends AbstractCompany {
     }
 
     public void sendMarketing(String content) {
-        super.M(new EmailContent(content), AccessUserReason.MARKETING);
+        super.M(new EmailContent(content), MarketingType.PRODUCT_MARKETING);
     }
 
     public void resetPassword(String email) {

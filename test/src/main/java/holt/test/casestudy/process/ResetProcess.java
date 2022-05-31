@@ -38,7 +38,7 @@ public class ResetProcess implements ResetRequirements {
         return new EmailAndContent(
                 email,
                 new EmailContent(
-                        "New pwd for " + email + " is XXXYYYAAABBB. Very secure."
+                        "New pwd for " + email.email() + " is XXXYYYAAABBB. Very secure."
                 )
         );
     }

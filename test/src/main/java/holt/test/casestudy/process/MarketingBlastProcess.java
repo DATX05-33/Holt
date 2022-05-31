@@ -11,9 +11,13 @@ import holt.test.casestudy.db.UserDB;
 import holt.test.casestudy.model.EmailAndContent;
 import holt.test.casestudy.model.EmailContent;
 import holt.test.casestudy.model.User;
+import holt.test.casestudy.policy.ContentAndUserPolicy;
+import holt.test.casestudy.policy.MarketingType;
 import holt.test.casestudy.policy.UserPolicy;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 @FlowThrough(
@@ -41,13 +45,20 @@ public class MarketingBlastProcess implements MarketingBlastRequirements {
         return UserDB::getUsers;
     }
 
+    @FlowThrough(
+            traverse = "M",
+            output = @Output(type = ContentAndUserPolicy.class, collection = true),
+            functionName = "reason"
+    )
     @Activator(instantiateWithReflection = true)
     public static class MarketingBlastProcessReason implements MarketingBlastReasonRequirements {
         @Override
-        public Object M(Map<EmailContent, UserPolicy> input0, Map<User, UserPolicy> input1) {
-            return null;
+        public Collection<ContentAndUserPolicy> reason(Map<EmailContent, MarketingType> input0, Map<User, UserPolicy> input1) {
+            Collection<ContentAndUserPolicy> result = new ArrayList<>();
+            for (UserPolicy x : input1.values()) {
+                result.add(new ContentAndUserPolicy(input0.get(null), x));
+            }
+            return result;
         }
     }
-
-
 }

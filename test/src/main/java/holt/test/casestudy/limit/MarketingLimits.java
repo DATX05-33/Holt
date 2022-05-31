@@ -7,6 +7,9 @@ import holt.processor.generation.casestudy.UserDBToMarketingBlastMLimitRequireme
 import holt.test.casestudy.model.EmailAndContent;
 import holt.test.casestudy.model.EmailContent;
 import holt.test.casestudy.model.User;
+import holt.test.casestudy.policy.AccessUserReason;
+import holt.test.casestudy.policy.ContentAndUserPolicy;
+import holt.test.casestudy.policy.MarketingType;
 import holt.test.casestudy.policy.UserPolicy;
 
 import java.util.Map;
@@ -16,18 +19,17 @@ public class MarketingLimits {
 
     @Activator(instantiateWithReflection = true)
     public static class MarketingBlastToMailSenderMLimit implements MarketingBlastToMailSenderMLimitRequirements {
-
         @Override
-        public Predicate<EmailAndContent> M(Map<EmailAndContent, UserPolicy> input0) {
-            return null;
+        public Predicate<EmailAndContent> M(Map<EmailAndContent, ContentAndUserPolicy> input0) {
+            return emailAndContent -> true;
         }
     }
 
     @Activator(instantiateWithReflection = true)
     public static class CompanyToMarketingBlastMLimit implements CompanyToMarketingBlastMLimitRequirements {
         @Override
-        public Predicate<EmailContent> M(Map<EmailContent, UserPolicy> input0) {
-            return null;
+        public Predicate<EmailContent> M(Map<EmailContent, MarketingType> input0) {
+            return emailContent -> input0.get(null).equals(MarketingType.PRODUCT_MARKETING);
         }
     }
 
@@ -35,7 +37,7 @@ public class MarketingLimits {
     public static class UserDBToMarketingBlastMLimit implements UserDBToMarketingBlastMLimitRequirements {
         @Override
         public Predicate<User> M(Map<User, UserPolicy> input0) {
-            return null;
+            return user -> input0.get(user).agreements().contains(AccessUserReason.MARKETING);
         }
     }
 
