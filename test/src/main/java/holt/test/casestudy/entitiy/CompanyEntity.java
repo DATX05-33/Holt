@@ -21,7 +21,7 @@ import holt.test.casestudy.policy.MarketingType;
 @Traverse(
         name = "RP", //Reset Password
         startTypes = {@Output(type = Email.class), @Output(type = AccessUserReason.class)},
-        order = {"reset_pwd", "get_reset_email", "send_otp"}
+        order = {"reset_pwd", "get_reset_email", "password", "send_otp"}
 )
 @Activator
 public class CompanyEntity extends AbstractCompany {

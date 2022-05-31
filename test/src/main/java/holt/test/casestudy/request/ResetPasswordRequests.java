@@ -4,11 +4,13 @@ import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Output;
 import holt.processor.annotation.Query;
-import holt.processor.generation.casestudy.ResetToMailSenderRPRequestRequirements;
-import holt.processor.generation.casestudy.UserDBToResetRPRequestRequirements;
+import holt.processor.generation.casestudy.PwdGenToResetPwdRPRequestRequirements;
+import holt.processor.generation.casestudy.ResetPwdToMailSenderRPRequestRequirements;
+import holt.processor.generation.casestudy.UserDBToResetPwdRPRequestRequirements;
 import holt.processor.generation.casestudy.UserPolicyDBToUserDBToResetRPRequestRPQuery;
 import holt.test.casestudy.db.UserPolicyDB;
 import holt.test.casestudy.model.EmailAndContent;
+import holt.test.casestudy.model.Password;
 import holt.test.casestudy.model.User;
 import holt.test.casestudy.policy.AccessUserReason;
 import holt.test.casestudy.policy.UserPolicy;
@@ -24,7 +26,7 @@ public class ResetPasswordRequests {
             functionName = "RP"
     )
     @Activator(instantiateWithReflection = true)
-    public static class ResetToMailSenderRPRequest implements ResetToMailSenderRPRequestRequirements {
+    public static class ResetPwdToMailSenderRPRequest implements ResetPwdToMailSenderRPRequestRequirements {
         @Override
         public Map<EmailAndContent, AccessUserReason> RP(Object input0) {
             return new HashMap<>();
@@ -43,7 +45,7 @@ public class ResetPasswordRequests {
             }
     )
     @Activator(instantiateWithReflection = true)
-    public static class UserDBToResetRPRequest implements UserDBToResetRPRequestRequirements {
+    public static class UserDBToResetRPRequest implements UserDBToResetPwdRPRequestRequirements {
         @Override
         public Map<User, UserPolicy> RP(User input0, UserPolicy dbInput1) {
             return new HashMap<>();
@@ -53,7 +55,16 @@ public class ResetPasswordRequests {
         public UserPolicyDBToUserDBToResetRPRequestRPQuery queryUserPolicyDBRP(User input0) {
             return db -> db.getPolicy(input0);
         }
+
     }
 
+    @Activator(instantiateWithReflection = true)
+    public static class PasswordGenerateToResetPasswordRPRequest implements PwdGenToResetPwdRPRequestRequirements {
+
+        @Override
+        public Map<Password, Object> RP(Object input0) {
+            return new HashMap<>();
+        }
+    }
 
 }

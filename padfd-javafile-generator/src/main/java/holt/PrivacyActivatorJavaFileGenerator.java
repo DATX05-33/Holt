@@ -218,9 +218,6 @@ public final class PrivacyActivatorJavaFileGenerator {
                 .build();
 
         StringBuilder methodSB = new StringBuilder();
-        System.out.println("HELLO???");
-        System.out.println(processActivatorAggregate.name());
-        System.out.println(dataConnector.flowOutput());
         if (dataConnector.flowOutput().isCollection()) {
             methodSB.append("return data\n");
             methodSB.append("  .stream()\n");

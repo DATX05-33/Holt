@@ -36,7 +36,7 @@ public class DeleteUserProcess implements DeleteUserRequirements {
 
         @Override
         public AccessUserReason DU(Map<Email, AccessUserReason> input0, Email input1) {
-            return null;
+            return input0.get(null);
         }
     }
 

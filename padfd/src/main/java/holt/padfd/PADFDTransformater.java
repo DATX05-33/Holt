@@ -245,11 +245,11 @@ public final class PADFDTransformater {
 
         builder.addFlow(f,
                 List.of(
+                        processToReason,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,
                         e.requestToLog,
-                        processToReason,
                         processToLog,
                         e.logToLogDB,
                         e.limitToGuard,
@@ -285,15 +285,15 @@ public final class PADFDTransformater {
         var process1ToLog = flow(f.id() + "9", s, e.log);
 
         // Process -> Reason
-        var process1ToReason = flow(f.id() + "10", s, s.getPartner());
+        var process1ToReason1 = flow(f.id() + "10", s, s.getPartner());
 
         builder.addFlow(f,
                 List.of(
+                        process1ToReason1,
                         reason1ToRequest,
                         e.requestToLimit,
                         e.limitToLog,
                         e.requestToLog,
-                        process1ToReason,
                         process1ToLog,
                         e.logToLogDB,
                         e.limitToGuard,
@@ -333,11 +333,11 @@ public final class PADFDTransformater {
 
         builder.addFlow(f,
                 List.of(
+                        processToReason,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,
                         e.requestToLog,
-                        processToReason,
                         processToLog,
                         e.logToLogDB,
                         e.limitToGuard,
@@ -432,11 +432,11 @@ public final class PADFDTransformater {
 
         builder.addFlow(f,
                 List.of(
+                        processToReason,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,
                         e.requestToLog,
-                        processToReason,
                         processToLog,
                         e.logToLogDB,
                         e.limitToGuard,

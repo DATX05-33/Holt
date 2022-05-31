@@ -35,7 +35,7 @@ public class AddUserProcess implements AddUserRequirements {
     public static class AddUserProcessReason implements AddUserReasonRequirements {
         @Override
         public EmailWithUserPolicy AU(Map<Email, UserPolicy> input0, User input1) {
-            return null;
+            return new EmailWithUserPolicy(input1.email(), input0.get(null));
         }
     }
 

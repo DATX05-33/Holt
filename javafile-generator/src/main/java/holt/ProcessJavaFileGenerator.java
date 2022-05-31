@@ -56,10 +56,6 @@ public final class ProcessJavaFileGenerator {
                 i++;
             }
 
-            System.out.println("YES????");
-            System.out.println(processActivator.name());
-            System.out.println(flowThrough.output());
-
             TypeName returnClassName = JavaFileGenerator.toTypeName(flowThrough.output());
             methodSpecBuilder.returns(returnClassName);
 

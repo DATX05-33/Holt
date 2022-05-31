@@ -4,13 +4,14 @@ import holt.processor.annotation.Activator;
 import holt.processor.annotation.FlowThrough;
 import holt.processor.annotation.Output;
 import holt.processor.annotation.Query;
-import holt.processor.generation.casestudy.ResetReasonRequirements;
-import holt.processor.generation.casestudy.ResetRequirements;
-import holt.processor.generation.casestudy.UserDBToResetProcessGenerateOTPAndEmailQuery;
+import holt.processor.generation.casestudy.ResetPwdReasonRequirements;
+import holt.processor.generation.casestudy.ResetPwdRequirements;
+import holt.processor.generation.casestudy.UserDBToResetPwdProcessGenerateOTPAndEmailQuery;
 import holt.test.casestudy.db.UserDB;
 import holt.test.casestudy.model.Email;
 import holt.test.casestudy.model.EmailAndContent;
 import holt.test.casestudy.model.EmailContent;
+import holt.test.casestudy.model.Password;
 import holt.test.casestudy.model.User;
 import holt.test.casestudy.policy.UserPolicy;
 
@@ -28,9 +29,9 @@ import java.util.Map;
         }
 )
 @Activator(instantiateWithReflection = true)
-public class ResetProcess implements ResetRequirements {
+public class ResetPwdProcess implements ResetPwdRequirements {
     @Override
-    public EmailAndContent generateOTPAndEmail(Email email, User user) {
+    public EmailAndContent generateOTPAndEmail(Email email, User user, Password password) {
         if (user == null) {
             throw new NullPointerException("User not found");
         }
@@ -44,14 +45,14 @@ public class ResetProcess implements ResetRequirements {
     }
 
     @Override
-    public UserDBToResetProcessGenerateOTPAndEmailQuery queryUserDBGenerateOTPAndEmail(Email input0) {
+    public UserDBToResetPwdProcessGenerateOTPAndEmailQuery queryUserDBGenerateOTPAndEmail(Email input0) {
         return db -> db.getUser(input0);
     }
 
     @Activator(instantiateWithReflection = true)
-    public static class ResetProcessReason implements ResetReasonRequirements {
+    public static class ResetPwdProcessReason implements ResetPwdReasonRequirements {
         @Override
-        public Object RP(Map<Email, Object> input0, Map<User, UserPolicy> input1, EmailAndContent input2) {
+        public Object RP(Map<Email, Object> input0, Map<User, UserPolicy> input1, Map<Password, Object> input2, EmailAndContent input3) {
             return null;
         }
     }

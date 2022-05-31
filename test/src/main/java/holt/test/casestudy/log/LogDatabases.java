@@ -10,12 +10,13 @@ public class LogDatabases implements
         DeleteUserToUserDBDULimitLogDatabaseRequirements,
         UserToDeleteUserDULimitLogDatabaseRequirements,
         UserToAddUserAULimitLogDatabaseRequirements,
-        CompanyToResetRPLimitLogDatabaseRequirements,
+        CompanyToResetPwdRPLimitLogDatabaseRequirements,
         CompanyToMarketingBlastMLimitLogDatabaseRequirements,
-        ResetToMailSenderRPLimitLogDatabaseRequirements,
+        ResetPwdToMailSenderRPLimitLogDatabaseRequirements,
         MarketingBlastToMailSenderMLimitLogDatabaseRequirements,
         AddUserToUserDBAULimitLogDatabaseRequirements,
-        UserDBToResetRPLimitLogDatabaseRequirements {
+        UserDBToResetPwdRPLimitLogDatabaseRequirements,
+        PwdGenToResetPwdRPLimitLogDatabaseRequirements {
 
     @Override
     public void AU(AddUserToUserDBAULimitLog.Row logRow) {
@@ -28,7 +29,7 @@ public class LogDatabases implements
     }
 
     @Override
-    public void RP(CompanyToResetRPLimitLog.Row logRow) {
+    public void RP(CompanyToResetPwdRPLimitLog.Row logRow) {
         System.out.println(logRow);
     }
 
@@ -38,7 +39,7 @@ public class LogDatabases implements
     }
 
     @Override
-    public void RP(ResetToMailSenderRPLimitLog.Row logRow) {
+    public void RP(ResetPwdToMailSenderRPLimitLog.Row logRow) {
         System.out.println(logRow);
     }
 
@@ -58,7 +59,12 @@ public class LogDatabases implements
 
 
     @Override
-    public void RP(UserDBToResetRPLimitLog.Row logRow) {
+    public void RP(UserDBToResetPwdRPLimitLog.Row logRow) {
+        System.out.println(logRow);
+    }
+
+    @Override
+    public void RP(PwdGenToResetPwdRPLimitLog.Row logRow) {
         System.out.println(logRow);
     }
 }

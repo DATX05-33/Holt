@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="Electron" modified="2022-05-22T12:34:43.245Z" agent="5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/18.0.6 Chrome/100.0.4896.143 Electron/18.2.3 Safari/537.36" etag="plnZ6A7rRWOBfuQ5b-WW" version="18.0.6" type="device">
+<mxfile host="app.diagrams.net" modified="2022-05-31T15:20:12.700Z" agent="5.0 (X11)" etag="E8eC7Qn4vHaDXp_bYWfa" version="18.1.3" type="device">
   <diagram id="lNV4tixJFT3kVwnQ9Mi6" name="Page-1">
-    <mxGraphModel dx="782" dy="878" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1590" dy="780" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -68,7 +68,7 @@
             <mxPoint x="450" y="340" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="v7BmtpRKw2R6zpp6wgGj-17" value="Reset" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+        <mxCell id="v7BmtpRKw2R6zpp6wgGj-17" value="ResetPwd" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
           <mxGeometry x="290" y="380" width="80" height="80" as="geometry" />
         </mxCell>
         <mxCell id="v7BmtpRKw2R6zpp6wgGj-18" value="reset_pwd" style="endArrow=classic;html=1;fontColor=#FF3333;rounded=0;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="v7BmtpRKw2R6zpp6wgGj-1" target="v7BmtpRKw2R6zpp6wgGj-17" edge="1">
@@ -88,6 +88,15 @@
             <mxPoint x="400" y="390" as="sourcePoint" />
             <mxPoint x="450" y="340" as="targetPoint" />
             <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="K7gbfGUGoY3iXiLCTJjm-1" value="PwdGen" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="90" y="420" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="K7gbfGUGoY3iXiLCTJjm-2" value="password" style="endArrow=classic;html=1;fontColor=#FF3333;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="K7gbfGUGoY3iXiLCTJjm-1" target="v7BmtpRKw2R6zpp6wgGj-17">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="220" y="490" as="sourcePoint" />
+            <mxPoint x="270" y="440" as="targetPoint" />
           </mxGeometry>
         </mxCell>
       </root>
