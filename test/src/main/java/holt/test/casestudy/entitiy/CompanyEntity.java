@@ -27,7 +27,7 @@ import holt.test.casestudy.policy.MarketingType;
 public class CompanyEntity extends AbstractCompany {
 
     public CompanyEntity(UserPolicyDB userPolicyDB, UserDB userDB, MailSenderEntity mailSenderEntity) {
-        super(userPolicyDB, userDB, mailSenderEntity);
+        super(userDB, userPolicyDB, mailSenderEntity);
     }
 
     public void sendMarketing(String content) {

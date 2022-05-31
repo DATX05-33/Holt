@@ -28,10 +28,10 @@ public final class FlowThroughAggregate {
         if (input == null) {
             throw new IllegalArgumentException("Input connector cannot be null");
         }
-        if (this.inputs.contains(input)) {
-            throw new IllegalArgumentException("Input is already added: " + input);
+        if (!this.inputs.contains(input)) {
+            this.inputs.add(input);
         }
-        this.inputs.add(input);
+//            throw new IllegalArgumentException("Input is already added: " + input);
     }
 
     public List<Connector> inputs() {

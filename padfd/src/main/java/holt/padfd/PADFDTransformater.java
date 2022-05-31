@@ -193,9 +193,11 @@ public final class PADFDTransformater {
         // Entity -> Log
         var entityToLog = flow(f.id() + "8", s, e.log);
 
+        // Process -> Reason
+        var processToReason = flow(f.id() + "9", t, t.getPartner());
+
         builder.addFlow(f,
                 List.of(
-//                        entityToLimit,
                         entityToRequest,
                         e.requestToLimit,
                         e.limitToLog,
@@ -205,6 +207,7 @@ public final class PADFDTransformater {
                         e.limitToGuard,
                         entityToGuard,
                         guardToProcess,
+                        processToReason,
                         requestToReason
                 )
         );
@@ -241,9 +244,12 @@ public final class PADFDTransformater {
         // Process -> Log
         var processToLog = flow(f.id() + "10", s, e.log);
 
+        // Process -> Reason
+        var processToReason = flow(f.id() + "11", s, s.getPartner());
+
         builder.addFlow(f,
                 List.of(
-//                        processToLimit,
+                        processToReason,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,
@@ -282,6 +288,9 @@ public final class PADFDTransformater {
         var process1ToGuard = flow(f.id() + "8", s, e.guard);
         var process1ToLog = flow(f.id() + "9", s, e.log);
 
+        // Process -> Reason
+        var process2ToReason2 = flow(f.id() + "10", t, t.getPartner());
+
         builder.addFlow(f,
                 List.of(
 //                        process1ToLimit,
@@ -294,6 +303,7 @@ public final class PADFDTransformater {
                         e.limitToGuard,
                         process1ToGuard,
                         guardToProcess2,
+                        process2ToReason2,
                         requestToReason2
                 )
         );
@@ -323,8 +333,12 @@ public final class PADFDTransformater {
         // Process -> Log
         var processToLog = flow(f.id() + "9", s, e.log);
 
+        // Process -> Reason
+        var processToReason = flow(f.id() + "10", s, s.getPartner());
+
         builder.addFlow(f,
                 List.of(
+                        processToReason,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,
@@ -376,6 +390,9 @@ public final class PADFDTransformater {
         var querierToGuard = flow(f.id() + "9", querier, e.guard);
         var querierToLog = flow(f.id() + "10", querier, e.log);
 
+        // Process -> Reason
+        var processToReason = flow(f.id() + "11", t, t.getPartner());
+
         builder.addFlow(f,
                 List.of(
                         dbToQuerier,
@@ -389,6 +406,7 @@ public final class PADFDTransformater {
                         e.limitToGuard,
                         querierToGuard,
                         guardToProcess,
+                        processToReason,
                         requestToReason
                 )
         );
@@ -418,8 +436,12 @@ public final class PADFDTransformater {
         // Process -> Log
         var processToLog = flow(f.id() + "9", s, e.log);
 
+        // Process -> Reason
+        var processToReason = flow(f.id() + "10", s, s.getPartner());
+
         builder.addFlow(f,
                 List.of(
+                        processToReason,
                         reasonToRequest,
                         e.requestToLimit,
                         e.limitToLog,

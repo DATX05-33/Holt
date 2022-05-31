@@ -52,13 +52,17 @@ public class MarketingBlastProcess implements MarketingBlastRequirements {
     )
     @Activator(instantiateWithReflection = true)
     public static class MarketingBlastProcessReason implements MarketingBlastReasonRequirements {
-        @Override
         public Collection<ContentAndUserPolicy> reason(Map<EmailContent, MarketingType> input0, Map<User, UserPolicy> input1) {
             Collection<ContentAndUserPolicy> result = new ArrayList<>();
             for (UserPolicy x : input1.values()) {
                 result.add(new ContentAndUserPolicy(input0.get(null), x));
             }
             return result;
+        }
+
+        @Override
+        public Collection<ContentAndUserPolicy> reason(Collection<EmailAndContent> input0, Map<EmailContent, MarketingType> input1, Map<User, UserPolicy> input2) {
+            return null;
         }
     }
 }

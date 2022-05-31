@@ -33,9 +33,13 @@ public class AddUserProcess implements AddUserRequirements {
     )
     @Activator(instantiateWithReflection = true)
     public static class AddUserProcessReason implements AddUserReasonRequirements {
-        @Override
         public EmailWithUserPolicy AU(Map<Email, UserPolicy> input0) {
             return new EmailWithUserPolicy(null, null);
+        }
+
+        @Override
+        public EmailWithUserPolicy AU(User input0, Map<Email, UserPolicy> input1) {
+            return null;
         }
     }
 

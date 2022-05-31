@@ -30,9 +30,13 @@ public class DeleteUserProcess implements DeleteUserRequirements {
     )
     @Activator(instantiateWithReflection = true)
     public static class DeleteUserProcessReason implements DeleteUserReasonRequirements {
-        @Override
         public AccessUserReason DU(Map<Email, AccessUserReason> input0) {
             return input0.get(null);
+        }
+
+        @Override
+        public AccessUserReason DU(Email input0, Map<Email, AccessUserReason> input1) {
+            return null;
         }
     }
 
