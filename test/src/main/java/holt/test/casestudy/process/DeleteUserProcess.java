@@ -35,7 +35,7 @@ public class DeleteUserProcess implements DeleteUserRequirements {
         }
 
         @Override
-        public AccessUserReason DU(Email input0, Map<Email, AccessUserReason> input1) {
+        public AccessUserReason DU(Map<Email, AccessUserReason> input0, Email input1) {
             return null;
         }
     }

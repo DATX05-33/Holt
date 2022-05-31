@@ -61,7 +61,7 @@ public class MarketingBlastProcess implements MarketingBlastRequirements {
         }
 
         @Override
-        public Collection<ContentAndUserPolicy> reason(Collection<EmailAndContent> input0, Map<EmailContent, MarketingType> input1, Map<User, UserPolicy> input2) {
+        public Collection<ContentAndUserPolicy> reason(Map<EmailContent, MarketingType> input0, Map<User, UserPolicy> input1, Collection<EmailAndContent> input2) {
             return null;
         }
     }

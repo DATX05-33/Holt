@@ -50,12 +50,8 @@ public class ResetProcess implements ResetRequirements {
 
     @Activator(instantiateWithReflection = true)
     public static class ResetProcessReason implements ResetReasonRequirements {
-        public Object RP(Map<Email, Object> input0, Map<User, UserPolicy> input1) {
-            return null;
-        }
-
         @Override
-        public Object RP(EmailAndContent input0, Map<Email, Object> input1, Map<User, UserPolicy> input2) {
+        public Object RP(Map<Email, Object> input0, Map<User, UserPolicy> input1, EmailAndContent input2) {
             return null;
         }
     }
