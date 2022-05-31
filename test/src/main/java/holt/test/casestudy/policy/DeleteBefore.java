@@ -14,4 +14,8 @@ public class DeleteBefore implements Agreement {
         return Time.getTime() > hour;
     }
 
+    @Override
+    public String toString() {
+        return hour + "h";
+    }
 }

@@ -16,7 +16,7 @@ import java.util.Map;
 @Activator
 public class UserPolicyDB implements UserDBPolicyRequirements {
 
-    private Map<Email, UserPolicy> policyMap = new HashMap<>();
+    private final Map<Email, UserPolicy> policyMap = new HashMap<>();
 
 
     @Override
@@ -43,6 +43,6 @@ public class UserPolicyDB implements UserDBPolicyRequirements {
     }
 
     public UserPolicy getPolicy(User input0) {
-        return policyMap.get(this.policyMap.get(input0));
+        return policyMap.get(input0.email());
     }
 }

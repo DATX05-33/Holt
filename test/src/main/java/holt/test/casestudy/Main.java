@@ -13,6 +13,7 @@ import holt.test.casestudy.policy.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 @DFD(name = "casestudy", xml = "casestudy.xml", privacyAware = true)
@@ -38,6 +39,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Cli started");
+        printHelp();
 
         while (true) {
             System.out.print(">: ");
@@ -52,6 +54,7 @@ public class Main {
                     case "time" -> printTime();
                     case "timeforward" -> fastForwardTime(command);
                     case "listusers" -> listUser();
+                    case "clean" -> clean();
                     case "help" -> printHelp();
                     case "exit" -> System.exit(0);
                     default -> System.out.println("Illegal first argument " + command[0]);
@@ -83,12 +86,11 @@ public class Main {
 
     private void listUser() {
         List<User> users = this.userDB.getUsers();
-        List<UserPolicy> userPolicies = (List<UserPolicy>) this.userPolicyDB.getPolicies(users);
         if (users.size() == 0) {
             System.out.println("No users have been added");
         } else {
-            for (int i = 0; i < users.size(); i++) {
-                System.out.println(users.get(i) + "; policy: " + userPolicies.get(i));
+            for (User user : users) {
+                System.out.println(user + "; policy: " + this.userPolicyDB.getPolicy(user));
             }
         }
     }
@@ -105,6 +107,7 @@ public class Main {
         help.append("example: > company marketing \"Buy Our Product\"\n");
         help.append("example: > company resetpwd user@email.com\n");
 
+        help.append("example: > clean\n");
         help.append("example: > timeforward 3h\n");
 
         System.out.println(help);
@@ -172,4 +175,18 @@ public class Main {
 
         userEntity.addUser(email, agreements);
     }
+
+    public void clean() {
+        this.userDB.getUsers().forEach(user -> {
+            UserPolicy userPolicy = this.userPolicyDB.getPolicy(user);
+            userPolicy.getDeleteBefore().ifPresent(deleteBefore -> {
+                if (deleteBefore.shouldDelete()) {
+                    System.out.println("Removing " + user.email());
+                    this.userDB.DU(user.email());
+                    this.userPolicyDB.DU(Map.of(user.email(), AccessUserReason.DELETE));
+                }
+            });
+        });
+    }
+
 }
