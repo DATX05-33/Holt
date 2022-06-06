@@ -14,6 +14,7 @@ import holt.test.casestudy.model.Password;
 import holt.test.casestudy.model.User;
 
 import java.util.Map;
+import java.util.Random;
 
 @FlowThrough(
         traverse = "RP",
@@ -29,7 +30,7 @@ import java.util.Map;
 @Activator(instantiateWithReflection = true)
 public class ResetPwdProcess implements ResetPwdRequirements {
     @Override
-    public EmailAndContent generateOTPAndEmail(Password password, Email email, User user) {
+    public EmailAndContent generateOTPAndEmail(Email email, User user) {
         if (user == null) {
             throw new NullPointerException("User not found");
         }
@@ -37,13 +38,13 @@ public class ResetPwdProcess implements ResetPwdRequirements {
         return new EmailAndContent(
                 email,
                 new EmailContent(
-                        "New password for " + email.email() + " is " + password.password()
+                        "New password for " + email.email() + " is " + new Random().nextInt()
                 )
         );
     }
 
     @Override
-    public UserDBToResetPwdProcessGenerateOTPAndEmailQuery queryUserDBGenerateOTPAndEmail(Password input0, Email input1) {
+    public UserDBToResetPwdProcessGenerateOTPAndEmailQuery queryUserDBGenerateOTPAndEmail(Email input1) {
         return db -> db.getUser(input1);
     }
 

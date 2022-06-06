@@ -14,9 +14,9 @@ import java.util.stream.Stream;
 @DFD(name = "casestudy", xml = "casestudy.xml")
 public class Main {
 
-    private UserEntity userEntity;
-    private CompanyEntity companyEntity;
-    private UserDB userDB;
+    private final UserEntity userEntity;
+    private final CompanyEntity companyEntity;
+    private final UserDB userDB;
 
     public static void main(String[] args) {
         new Main();

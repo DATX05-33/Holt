@@ -16,7 +16,7 @@ import holt.test.casestudy.model.EmailContent;
 @Traverse(
         name = "RP", //Reset Password
         startTypes = {@Output(type = Email.class)},
-        order = {"reset_pwd", "get_reset_email", "password", "send_otp"}
+        order = {"reset_pwd", "get_reset_email", "send_otp"}
 )
 @Activator
 public class CompanyEntity extends AbstractCompany {

@@ -31,7 +31,6 @@ import java.util.Map;
 @Activator(instantiateWithReflection = true)
 public class MarketingBlastProcess implements MarketingBlastRequirements {
 
-
     @Override
     public Collection<EmailAndContent> createEmailAndContent(EmailContent content, Collection<User> users) {
         return users.stream().map(user -> new EmailAndContent(user.email(), content)).toList();

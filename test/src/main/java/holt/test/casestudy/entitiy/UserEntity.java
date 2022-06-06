@@ -7,8 +7,6 @@ import holt.processor.generation.casestudy.AbstractUser;
 import holt.test.casestudy.db.UserDB;
 import holt.test.casestudy.model.Email;
 
-import java.util.List;
-
 @Traverse(
         name = "AU", //Add User
         startTypes = {@Output(type = Email.class)},

@@ -98,6 +98,7 @@ public class JavaFileGenerator {
                 QualifiedName type = qualifiedNames.get(i);
                 types[i] = ClassName.bestGuess(type.value());
             }
+
             return ParameterizedTypeName.get(
                     ClassName.bestGuess(qualifiedName.value()),
                     types
