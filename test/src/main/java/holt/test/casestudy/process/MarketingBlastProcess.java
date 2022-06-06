@@ -8,6 +8,7 @@ import holt.processor.generation.casestudy.MarketingBlastReasonRequirements;
 import holt.processor.generation.casestudy.MarketingBlastRequirements;
 import holt.processor.generation.casestudy.UserDBToMarketingBlastProcessCreateEmailAndContentQuery;
 import holt.test.casestudy.db.UserDB;
+import holt.test.casestudy.model.Email;
 import holt.test.casestudy.model.EmailAndContent;
 import holt.test.casestudy.model.EmailContent;
 import holt.test.casestudy.model.User;
@@ -61,8 +62,18 @@ public class MarketingBlastProcess implements MarketingBlastRequirements {
         }
 
         @Override
-        public Collection<ContentAndUserPolicy> reason(Map<EmailContent, MarketingType> input0, Map<User, UserPolicy> input1, Collection<EmailAndContent> input2) {
-            return null;
+        public Collection<ContentAndUserPolicy> reason(Map<EmailContent, MarketingType> input0,
+                                                       Map<User, UserPolicy> input1,
+                                                       Collection<EmailAndContent> input2) {
+            Collection<ContentAndUserPolicy> result = new ArrayList<>();
+            for (EmailAndContent eac: input2) {
+                // This is kinda bad. We need the User here, not the email :(
+                result.add(new ContentAndUserPolicy(input0.get(eac.content()), input1.get(eac.email())));
+            }
+
+
+
+            return result;
         }
     }
 }

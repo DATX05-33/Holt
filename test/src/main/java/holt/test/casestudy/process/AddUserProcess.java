@@ -8,9 +8,11 @@ import holt.processor.generation.casestudy.AddUserRequirements;
 import holt.test.casestudy.db.UserPolicyDB;
 import holt.test.casestudy.model.Email;
 import holt.test.casestudy.model.User;
+import holt.test.casestudy.policy.AccessUserReason;
 import holt.test.casestudy.policy.UserPolicy;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
 @FlowThrough(
         traverse = "AU",
@@ -21,6 +23,9 @@ import java.util.Map;
 public class AddUserProcess implements AddUserRequirements {
     @Override
     public User addUser(Email email) {
+        if (email == null) {
+            throw new IllegalArgumentException();
+        }
         return new User(email);
     }
 

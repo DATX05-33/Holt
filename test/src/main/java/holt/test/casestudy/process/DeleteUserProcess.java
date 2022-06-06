@@ -20,6 +20,9 @@ import java.util.Map;
 public class DeleteUserProcess implements DeleteUserRequirements {
     @Override
     public Email deleteUser(Email email) {
+        if (email == null) {
+            throw new IllegalArgumentException();
+        }
         return email;
     }
 
