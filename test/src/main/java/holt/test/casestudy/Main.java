@@ -100,9 +100,9 @@ public class Main {
     private void printHelp() {
         StringBuilder help = new StringBuilder();
 
-        help.append("example: > user add me@email.com 25h \"login\" \"marketing\"\n");
+        help.append("example: > user add me@email.com 25h \"store\" \"login\" \"marketing\"\n");
 
-        help.append("example: > user add user@email.com 10h \"login\"\n");
+        help.append("example: > user add user@email.com 10h \"store\" \"login\"\n");
 
         help.append("example: > user remove me@email.com\n");
 
@@ -170,6 +170,7 @@ public class Main {
         List<String> policies = new ArrayList<>(argsList);
         for (String pol : policies) {
             switch (pol) {
+                case "\"store\"" -> agreements.add(AccessUserReason.STORE);
                 case "\"login\"" -> agreements.add(AccessUserReason.RESET_PASSWORD);
                 case "\"marketing\"" -> agreements.add(AccessUserReason.MARKETING);
                 default -> System.out.println("Policy " + pol + " not available");

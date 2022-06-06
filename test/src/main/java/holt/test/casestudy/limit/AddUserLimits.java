@@ -27,7 +27,7 @@ public class AddUserLimits {
     public static class AddUserToUserDBAULimit implements AddUserToUserDBAULimitRequirements {
         @Override
         public Predicate<User> AU(Map<User, AddUserProcess.EmailWithUserPolicy> input0) {
-            return user -> input0.get(user).userPolicy().agreements().contains(AccessUserReason.STORE);
+            return user -> input0.get(null).userPolicy().agreements().contains(AccessUserReason.STORE);
         }
     }
 

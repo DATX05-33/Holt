@@ -28,6 +28,7 @@ public class UserDB implements UserDBRequirements {
         return userMap.get(email);
     }
 
+    // #4
     public List<User> getUsers() {
         return this.userMap.values().stream().toList();
     }
