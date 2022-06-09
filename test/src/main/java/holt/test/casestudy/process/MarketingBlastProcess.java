@@ -36,13 +36,11 @@ import java.util.Map;
 public class MarketingBlastProcess implements MarketingBlastRequirements {
 
 
-    // #5
     @Override
     public Collection<EmailAndContent> createEmailAndContent(EmailContent content, Collection<User> users) {
         return users.stream().map(user -> new EmailAndContent(user.email(), content)).toList();
     }
 
-    // #3
     @Override
     public UserDBToMarketingBlastProcessCreateEmailAndContentQuery queryUserDBCreateEmailAndContent(EmailContent input0) {
         return userDB -> userDB.getUsers();

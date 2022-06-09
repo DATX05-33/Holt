@@ -33,7 +33,6 @@ public class MarketingLimits {
         }
     }
 
-    // #1
     @Activator(instantiateWithReflection = true)
     public static class UserDBToMarketingBlastMLimit implements UserDBToMarketingBlastMLimitRequirements {
         @Override
