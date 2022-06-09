@@ -45,7 +45,7 @@ public class MarketingBlastProcess implements MarketingBlastRequirements {
     // #3
     @Override
     public UserDBToMarketingBlastProcessCreateEmailAndContentQuery queryUserDBCreateEmailAndContent(EmailContent input0) {
-        return UserDB::getUsers;
+        return userDB -> userDB.getUsers();
     }
 
     @FlowThrough(
