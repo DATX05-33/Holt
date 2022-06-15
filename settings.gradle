@@ -8,4 +8,12 @@
  */
 
 rootProject.name = 'Holt'
-include('test', 'core', 'processor', 'graph-generator')
+include(
+        'test',
+        'processor',
+        'dfd',
+        'graph',
+        'padfd',
+        'javafile-generator',
+        'padfd-javafile-generator'
+)

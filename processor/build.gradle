@@ -8,8 +8,11 @@ plugins {
 
 dependencies {
     implementation (
-            project(':graph-generator'),
-            'com.squareup:javapoet:1.13.0'
+            project(':dfd'),
+            project(':padfd'),
+            project(':graph'),
+            project(':javafile-generator'),
+            project(':padfd-javafile-generator')
     )
 }
 

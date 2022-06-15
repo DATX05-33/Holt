@@ -8,8 +8,16 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Repeatable(FlowThroughs.class)
 public @interface FlowThrough {
-    Class<?> outputType() default Object.class;
-    String flow();
+    Output output();
+    String traverse();
     String functionName();
     Query[] queries() default {};
+
+    QueryDefinition[] overrideQueries() default {};
+
+    /**
+     * If the activator is responsible for more than one requirement,
+     * then you need to specify the forActivator to know which one this @FlowThrough is meant for.
+     */
+    String forActivator() default "";
 }

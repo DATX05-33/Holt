@@ -1,12 +1,39 @@
 package holt.processor;
 
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.JavaFile;
-import holt.processor.activator.*;
-import holt.processor.annotation.*;
-import holt.processor.annotation.representation.FlowThroughRep;
-import holt.processor.annotation.representation.QueriesForRep;
-import holt.processor.annotation.representation.TraverseRep;
+import holt.DFDOrderedRep;
+import holt.DFDRep;
+import holt.JavaFileGenerator;
+import holt.activator.FlowThroughAggregate;
+import holt.padfd.PADFDEnhancer;
+import holt.activator.ActivatorAggregate;
+import holt.activator.ActivatorId;
+import holt.activator.ActivatorName;
+import holt.activator.ConnectedClass;
+import holt.activator.Connector;
+import holt.activator.DFDName;
+import holt.activator.DatabaseActivatorAggregate;
+import holt.activator.Domain;
+import holt.activator.ExternalEntityActivatorAggregate;
+import holt.activator.OutputActivator;
+import holt.activator.ProcessActivatorAggregate;
+import holt.activator.QualifiedName;
+import holt.activator.TraverseName;
+import holt.applier.FlowThroughApplier;
+import holt.applier.FlowThroughRep;
+import holt.applier.QueriesForApplier;
+import holt.applier.QueriesForRep;
+import holt.applier.TraverseApplier;
+import holt.applier.TraverseRep;
+import holt.padfd.PADFDTransformater;
+import holt.parser.DFDParser;
+import holt.processor.annotation.Activator;
+import holt.processor.annotation.DFD;
+import holt.processor.annotation.DFDs;
+import holt.processor.annotation.FlowThrough;
+import holt.processor.annotation.FlowThroughs;
+import holt.processor.annotation.QueriesFor;
+import holt.processor.annotation.Traverse;
+import holt.processor.annotation.Traverses;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -14,28 +41,31 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static holt.processor.AnnotationValueUtils.getAnnotationClassValue;
-import static holt.processor.DFDParser.loadDfd;
 
 public class DFDsProcessor extends AbstractProcessor {
-
-    public static final String PACKAGE_NAME = "holt.processor.generation";
-    public static final String EXTERNAL_ENTITY_PREFIX = "Abstract";
-    public static final String PROCESS_SUFFIX = "Requirements";
-    public static final String DATABASE_SUFFIX = "Requirements";
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Set.of(
-                DFD.class.getName(),
+                DFDRep.class.getName(),
                 DFDs.class.getName(),
                 Activator.class.getName(),
                 FlowThrough.class.getName(),
@@ -57,73 +87,112 @@ public class DFDsProcessor extends AbstractProcessor {
             return true;
         }
 
+        System.out.println("Running DFDsProcessor...");
+
         // Converters that will convert DFD to Java Files
-        ConvertersResult convertersResult = getConverters(environment);
+        ProcessorResults processorResults;
+        try {
+            processorResults = readBaseAnnotations(environment);
+        } catch (DFDParser.NotWellFormedDFDException e) {
+            e.printStackTrace();
+            throw new IllegalStateException();
+        }
 
         // Annotations that will be applied to the converters
-        Map<DFDName, List<TraverseRep>> transverseRepMap = getTraverses(convertersResult, environment);
-        Map<DFDName, List<FlowThroughRep>> flowThroughRepMap = getFlowThroughs(convertersResult, environment);
-        Map<DFDName, List<QueriesForRep>> queriesForRepMap = getQueriesFor(convertersResult, environment);
+        Map<DFDName, List<TraverseRep>> transverseRepMap = getTraverses(processorResults, environment);
+        Map<DFDName, List<FlowThroughRep>> flowThroughRepMap = getFlowThroughs(processorResults, environment);
+        Map<DFDName, List<QueriesForRep>> queriesForRepMap = getQueriesFor(processorResults, environment);
 
-        for (DFDToJavaFileConverter converter : convertersResult.converters) {
-            DFDName dfdName = converter.getDFDName();
+        for (Domain domain : processorResults.domains) {
+            DFDName dfdName = domain.name();
 
             // Apply annotations to dfd
             if (transverseRepMap.containsKey(dfdName)) {
-                converter.applyTraverses(transverseRepMap.get(dfdName));
+                TraverseApplier.applyTraverseRep(transverseRepMap.get(dfdName));
             }
 
             if (flowThroughRepMap.containsKey(dfdName)) {
-                converter.applyFlowThrough(flowThroughRepMap.get(dfdName));
+                FlowThroughApplier.applyFlowThrough(flowThroughRepMap.get(dfdName));
             }
 
             if (queriesForRepMap.containsKey(dfdName)) {
-                converter.applyQueriesFor(queriesForRepMap.get(dfdName));
+                QueriesForApplier.applyQueriesFor(queriesForRepMap.get(dfdName));
             }
 
-            // Convert to java files for each dfd
-            saveJavaFiles(converter.convertToJavaFiles());
+            boolean validExternalEntities = domain.externalEntities()
+                    .map(activatorAggregates -> activatorAggregates.connectedClass().isPresent())
+                    .reduce(true, (b1, b2) -> b1 && b2);
+
+            if (validExternalEntities && domain.privacyAware()) {
+                PADFDEnhancer.enhance(domain, processingEnv);
+            }
+
+            domain.processes().forEach(processActivatorAggregate ->
+                    processActivatorAggregate.flows().forEach(FlowThroughAggregate::runLaterQuerySetup)
+            );
+
+            //TODO:
+//            logUnannotatedActivators(elementToActivatorAggregateMap, allActivatorAggregates);
+
+            JavaFileGenerator.saveJavaFiles(domain, processingEnv, validExternalEntities);
         }
 
         return true;
     }
 
-    private static final class ConvertersResult {
-        private final List<DFDToJavaFileConverter> converters;
-        private final List<ActivatorAggregate> activatorAggregates;
+    public static final class ProcessorResults {
+        private final List<Domain> domains;
         private final Map<ActivatorName, DFDName> activatorToDFDMap;
-        private final Map<Element, ActivatorAggregate> elementToActivatorAggregate;
+        private final Map<Element, List<ActivatorAggregate>> elementToActivatorAggregate;
 
-        private ConvertersResult(List<DFDToJavaFileConverter> converters,
-                                 List<ActivatorAggregate> activatorAggregates,
-                                 Map<ActivatorName, DFDName> activatorToDFDMap,
-                                 Map<Element, ActivatorAggregate> elementToActivatorAggregate) {
-            this.converters = converters;
-            this.activatorAggregates = activatorAggregates;
+        public ProcessorResults(List<Domain> domains,
+                                Map<ActivatorName, DFDName> activatorToDFDMap,
+                                Map<Element, List<ActivatorAggregate>> elementToActivatorAggregate) {
+            this.domains = domains;
             this.activatorToDFDMap = activatorToDFDMap;
             this.elementToActivatorAggregate = elementToActivatorAggregate;
         }
 
-        public ActivatorAggregate getActivatorAggregate(Element element) {
-            ActivatorAggregate activatorAggregate = elementToActivatorAggregate.get(element);
-            if (activatorAggregate == null) {
+        public List<ActivatorAggregate> getActivatorAggregate(Element element) {
+            List<ActivatorAggregate> activatorAggregates = elementToActivatorAggregate.get(element);
+            if (activatorAggregates == null) {
                 throw new IllegalStateException("Cannot find an activator aggregate for element: " +
                         element.toString() +
                         ", have you annotated the class with @Activator yet? " +
-                        "Is your class name the same name as in the DFD?");
+                        "Is your class name the same name as in the DFD?\n" +
+                        "Registered activators: " +
+                        elementToActivatorAggregate.keySet());
             }
-            return activatorAggregate;
+            return activatorAggregates;
         }
 
-        public ActivatorAggregate getActivatorAggregateByClassName(ClassName className) {
+        public ActivatorAggregate getActivatorAggregateForceOne(Element element) {
+            List<ActivatorAggregate> activatorAggregates = elementToActivatorAggregate.get(element);
+            if (activatorAggregates == null) {
+                throw new IllegalStateException("Cannot find an activator aggregate for element: " +
+                        element.toString() +
+                        ", have you annotated the class with @Activator yet? " +
+                        "Is your class name the same name as in the DFD?\n" +
+                        "Registered activators: " +
+                        elementToActivatorAggregate.keySet());
+            } else if (activatorAggregates.size() != 1) {
+                throw new IllegalStateException("Must only be one activator aggregate");
+            }
+            return activatorAggregates.get(0);
+        }
+
+
+        public ActivatorAggregate getActivatorAggregateByClassName(QualifiedName qualifiedName) {
             List<ActivatorAggregate> activatorAggregates = elementToActivatorAggregate
                     .values()
                     .stream()
-                    .filter(activatorAggregate -> activatorAggregate.name().value().equals(className.simpleName().toString()))
+                    .flatMap(Collection::stream)
+                    .filter(activatorAggregate -> activatorAggregate.name().value().equals(qualifiedName.simpleName()))
                     .toList();
 
             if (activatorAggregates.size() != 1) {
-                throw new IllegalStateException("Could not find a suiting ActivatorAggregate with the ClassName: " + className.simpleName());
+                throw new IllegalStateException("Could not find one suiting ActivatorAggregate with the ClassName: " + qualifiedName.simpleName() +
+                        "\n Available: " + elementToActivatorAggregate.values().stream().flatMap(Collection::stream).map(ActivatorAggregate::name).map(ActivatorName::toString).collect(Collectors.joining(", ")));
             }
 
             return activatorAggregates.get(0);
@@ -131,160 +200,252 @@ public class DFDsProcessor extends AbstractProcessor {
 
     }
 
-    private ConvertersResult getConverters(RoundEnvironment environment) {
-        List<DFDToJavaFileConverter> converters = new ArrayList<>();
-        List<ActivatorAggregate> allActivatorAggregates = new ArrayList<>();
+    private ProcessorResults readBaseAnnotations(RoundEnvironment environment) throws DFDParser.NotWellFormedDFDException {
+        List<Domain> domains = new ArrayList<>();
+        Map<Element, List<ActivatorAggregate>> elementToActivatorAggregate = new HashMap<>();
         Map<ActivatorName, DFDName> activatorToDFDMap = new HashMap<>();
         Map<DFDName, Map<TraverseName, List<ActivatorAggregate>>> traverses = new HashMap<>();
-        Map<Element, ActivatorAggregate> elementToActivatorAggregateMap = new HashMap<>();
 
+        record DFDData (DFDRep dfd, boolean privacyAware) { }
+
+        Map<DFDName, DFDData> dfdMap = new HashMap<>();
         for (var dfdPair : getRepeatableAnnotations(environment, DFD.class, DFDs.class, DFDs::value)) {
             DFD dfdAnnotation = dfdPair.annotation;
-            DFDParser.DFD dfd = loadDfd(toInputStream(dfdAnnotation.csv()));
-
+            InputStream inputStream = toInputStream(dfdAnnotation.xml());
+            var dfd = DFDParser.fromDrawIO(inputStream);
             DFDName dfdName = new DFDName(dfdAnnotation.name());
 
-            Map<Integer, ActivatorAggregate> idToActivator = new HashMap<>();
+            dfdMap.put(dfdName, new DFDData(dfd, dfdAnnotation.privacyAware()));
+        }
 
-            dfd.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivatorAggregate(new ActivatorName(node.name()))));
-            dfd.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorName(node.name()))));
-            dfd.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorName(node.name()))));
+        for (var dfdEntry : dfdMap.entrySet()) {
+            var dfdName = dfdEntry.getKey();
+            var dfdData = dfdEntry.getValue();
+            var dfd = dfdData.dfd;
+            // Ugh we don't have the privacy aware activators
+            Map<String, ActivatorAggregate> idToActivator = new HashMap<>();
 
-            traverses.put(dfdName, new HashMap<>());
+            var orderedDFD = DFDParser.fromDrawIO(dfd, getDFDTraverseOrders(dfd, environment));
 
-            Map<String, List<Dataflow>> dfdTraverseMap = createDFDFlowMap(dfd, environment);
-
-            for (Map.Entry<String, List<Dataflow>> entry : dfdTraverseMap.entrySet()) {
-                TraverseName traverseName = new TraverseName(entry.getKey());
-
-                traverses.get(dfdName).put(traverseName, new ArrayList<>());
-
-                // Create Flows
-                for (Dataflow dataflow : entry.getValue()) {
-                    ActivatorAggregate from = idToActivator.get(dataflow.from().id());
-
-                    // This is used to generate code. Databases are not needed,
-                    // since each processor has a reference to all relevant
-                    // databases through Connector
-                    if (!(from instanceof DatabaseActivatorAggregate)) {
-                        traverses.get(dfdName).get(traverseName).add(from);
-                    }
-
-                    // Add to traverses
-                    if (from instanceof ProcessActivatorAggregate fromProcessActivator) {
-                        fromProcessActivator.addFlow(traverseName);
-                    } else if (from instanceof ExternalEntityActivatorAggregate fromExternalEntityActivator) {
-                        fromExternalEntityActivator.addStartFlow(traverseName);
-                    }
-                }
-
-                // Adds the last Activator to traverses for the flowName, before it just adds the "to" for each dataflow
-                int dataflows = entry.getValue().size();
-                ActivatorAggregate lastActivatorAggregate = idToActivator.get(entry.getValue().get(dataflows - 1).to().id());
-                traverses.get(dfdName).get(traverseName).add(lastActivatorAggregate);
-
-                // Connect Flows as inputs
-                for (Dataflow dataflow : entry.getValue()) {
-                    ActivatorAggregate fromActivatorAggregate = idToActivator.get(dataflow.from().id());
-                    Connector connector = null;
-                    if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                        connector = externalEntityActivator.getOutput(traverseName);
-                    } else if (fromActivatorAggregate instanceof ProcessActivatorAggregate processActivator) {
-                        connector = processActivator.getOutput(traverseName);
-                    } else if (fromActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
-                        connector = new QueryConnector(databaseActivator);
-                    }
-
-                    ActivatorAggregate toActivatorAggregate = idToActivator.get(dataflow.to().id());
-                    if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
-                        toProcessActivator.addInputToFlow(traverseName, connector);
-                    } else if (toActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                        externalEntityActivator.addEnd(traverseName, connector);
-                    } else if (toActivatorAggregate instanceof DatabaseActivatorAggregate databaseActivator) {
-                        databaseActivator.addStore(traverseName, connector);
-                    }
-                }
+            if (dfdData.privacyAware) {
+                orderedDFD = PADFDTransformater.enhance(orderedDFD);
             }
 
-            List<DatabaseActivatorAggregate> databaseActivators = new ArrayList<>();
-            List<ProcessActivatorAggregate> processActivators = new ArrayList<>();
-            List<ExternalEntityActivatorAggregate> externalEntities = new ArrayList<>();
+            orderedDFD.processes().forEach(node -> idToActivator.put(node.id(), new ProcessActivatorAggregate(new ActivatorId(node.id()), new ActivatorName(node.name()), node.metadata())));
+            orderedDFD.databases().forEach(node -> idToActivator.put(node.id(), new DatabaseActivatorAggregate(new ActivatorId(node.id()), new ActivatorName(node.name()), node.metadata())));
+            orderedDFD.externalEntities().forEach(node -> idToActivator.put(node.id(), new ExternalEntityActivatorAggregate(new ActivatorId(node.id()), new ActivatorName(node.name()), node.metadata())));
 
-            allActivatorAggregates.addAll(idToActivator.values());
+            if (orderedDFD.activators().size() != idToActivator.size()) {
+                throw new IllegalStateException("One or more of the ids are not unique");
+            }
+
+            elementToActivatorAggregate.putAll(
+                    connectAggregatesWithActivatorAnnotation(environment, idToActivator.values())
+            );
+
             idToActivator.values().forEach(activator -> activatorToDFDMap.put(activator.name(), dfdName));
 
-            idToActivator.values().forEach(activator -> {
-                if (activator instanceof DatabaseActivatorAggregate databaseActivator) {
-                    databaseActivators.add(databaseActivator);
-                } else if (activator instanceof ExternalEntityActivatorAggregate externalEntityActivator) {
-                    externalEntities.add(externalEntityActivator);
-                } else if (activator instanceof ProcessActivatorAggregate processActivator) {
-                    processActivators.add(processActivator);
-                }
-            });
+            traverses.put(
+                    dfdName,
+                    connectAggregatesForDFD(orderedDFD, idToActivator)
+            );
 
-            converters.add(
-                    new DFDToJavaFileConverter(
+            domains.add(
+                    new Domain(
                             dfdName,
-                            new Activators(
-                                    databaseActivators,
-                                    externalEntities,
-                                    processActivators,
-                                    traverses.get(dfdName)
-                            )
+                            new ArrayList<>(idToActivator.values()),
+                            traverses.get(dfdName),
+                            dfdData.privacyAware
                     )
             );
         }
 
+        return new ProcessorResults(
+                domains,
+                activatorToDFDMap,
+                elementToActivatorAggregate
+        );
+    }
+
+    private Map<Element, List<ActivatorAggregate>> connectAggregatesWithActivatorAnnotation(RoundEnvironment environment, Collection<ActivatorAggregate> allActivatorAggregates) {
+        Map<Element, List<ActivatorAggregate>> elementToActivatorAggregateMap = new HashMap<>();
 
         for (Element element : environment.getElementsAnnotatedWith(Activator.class)) {
             Activator activator = element.getAnnotation(Activator.class);
 
             if (element instanceof TypeElement typeElement) {
-                String activatorFromGraphName = activator.graphName().equals("")
-                        ? typeElement.getSimpleName().toString()
-                        : activator.graphName();
+                List<String> possible = new ArrayList<>();
+                for (TypeMirror anInterface : typeElement.getInterfaces()) {
+                    possible.add(anInterface.toString());
+                }
+                possible.add(typeElement.getSuperclass().toString());
+
                 for (ActivatorAggregate activatorAggregate : allActivatorAggregates) {
-                    if (activatorFromGraphName.equals(activatorAggregate.name().value())) {
-                        elementToActivatorAggregateMap.put(element, activatorAggregate);
-                        activatorAggregate.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
-                        break;
+                    for (String activatorRequirementsName : possible) {
+                        if (activatorRequirementsName.equals(activatorAggregate.requirementsName().value())) {
+                            if (!elementToActivatorAggregateMap.containsKey(element)) {
+                                elementToActivatorAggregateMap.put(element, new ArrayList<>());
+                            }
+                            elementToActivatorAggregateMap.get(element).add(activatorAggregate);
+
+                            activatorAggregate.setActivatorName(new ActivatorName(typeElement.getSimpleName().toString()));
+                            activatorAggregate.setConnectedClass(
+                                    new ConnectedClass(
+                                            QualifiedName.of(typeElement.getQualifiedName().toString()),
+                                            activator.instantiateWithReflection()
+                                    )
+                            );
+                        }
                     }
                 }
             }
         }
 
+        return elementToActivatorAggregateMap;
+    }
+
+    private Map<TraverseName, List<ActivatorAggregate>> connectAggregatesForDFD(DFDOrderedRep orderedDFD, Map<String, ActivatorAggregate> idToActivator) {
+        Map<TraverseName, List<ActivatorAggregate>> traverses = new HashMap<>();
+
+        for (Map.Entry<String, List<DFDRep.Flow>> entry : orderedDFD.traverses().entrySet()) {
+            TraverseName traverseName = new TraverseName(entry.getKey());
+            List<ActivatorAggregate> order = new ArrayList<>();
+
+            traverses.put(traverseName, order);
+
+            // Create Flows
+            for (DFDRep.Flow dataflow : entry.getValue()) {
+                ActivatorAggregate from = idToActivator.get(dataflow.from().id());
+                ActivatorAggregate to = idToActivator.get(dataflow.to().id());
+
+                // This is used to generate code. Databases are not needed,
+                // since each processor has a reference to all relevant
+                // databases through Connector
+                if (from instanceof ExternalEntityActivatorAggregate || from instanceof ProcessActivatorAggregate) {
+                    if (!order.contains(from)) {
+                        order.add(from);
+                    }
+                }
+
+                // Add to traverses
+                if (from instanceof ProcessActivatorAggregate fromProcessActivator) {
+                    fromProcessActivator.createFlowThrough(traverseName);
+                }
+
+                if (to instanceof OutputActivator outputActivator) {
+                    // if it is going back to the start, then it can only be added one more.
+                    if (to.equals(order.get(0))) {
+                        for (int i = 1; i < order.size(); i++) {
+                            if (order.get(i).equals(to)) {
+                                throw new IllegalStateException("Cannot add the start external entity more than once. "
+                                        + "There's is just one value that can be returned.");
+                            }
+                        }
+                        order.add(to);
+                        outputActivator.addOutput(traverseName);
+                    }
+                    // If it already exists, move it the back to ensure it's called only when all inputs have been defined.
+                    else if (order.contains(to)) {
+                        order.remove(to);
+                        order.add(to);
+                    } else {
+                        order.add(to);
+                        outputActivator.addOutput(traverseName);
+                    }
+                }
+            }
+
+            // Connect Flows as inputs
+            for (DFDRep.Flow dataflow : entry.getValue()) {
+                ActivatorAggregate fromActivatorAggregate = idToActivator.get(dataflow.from().id());
+                ActivatorAggregate toActivatorAggregate = idToActivator.get(dataflow.to().id());
+                Objects.requireNonNull(fromActivatorAggregate);
+
+                if (fromActivatorAggregate instanceof ProcessActivatorAggregate fromProcessActivator) {
+                    Connector connector = fromProcessActivator.getOutput(traverseName);
+                    if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
+                        toProcessActivator.addInputToFlow(traverseName, connector);
+                    } else if (toActivatorAggregate instanceof OutputActivator outputActivator) {
+                        outputActivator.addInputToTraverseOutput(traverseName, connector);
+                    }
+                } else if (fromActivatorAggregate instanceof DatabaseActivatorAggregate fromDatabaseActivator) {
+                    // If fromActivatorAggregate is a database, then the 'to' must be a Process.
+                    ProcessActivatorAggregate toProcessActivator = (ProcessActivatorAggregate) toActivatorAggregate;
+                    toProcessActivator.addQueryInputToFlow(traverseName, fromDatabaseActivator);
+                } else if (fromActivatorAggregate instanceof ExternalEntityActivatorAggregate externalEntityActivatorAggregate) {
+                    externalEntityActivatorAggregate.addLateConnector(traverseName, connectors -> {
+                        if (toActivatorAggregate instanceof ProcessActivatorAggregate toProcessActivator) {
+                            for (Connector connector : connectors) {
+                                toProcessActivator.addInputToFlow(traverseName, connector);
+                            }
+                        } else if (toActivatorAggregate instanceof OutputActivator outputActivator) {
+                            for (Connector connector : connectors) {
+                                outputActivator.addInputToTraverseOutput(traverseName, connector);
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        return traverses;
+    }
+
+    private void logUnannotatedActivators(Map<Element, ActivatorAggregate> elementToActivatorAggregateMap, List<ActivatorAggregate> allActivatorAggregates) {
         // Not all activator aggregate have a class connected to them
         if (elementToActivatorAggregateMap.size() != allActivatorAggregates.size()) {
             System.out.println("************");
-            System.out.println("* Warning, the following activators from the DFD does not have a class connected to them:");
+            System.out.println("* Warning, the following activators from a DFD does not have a class connected to them:");
             allActivatorAggregates.stream()
-                    .filter(activatorAggregate -> activatorAggregate.qualifiedName().isEmpty())
+                    .filter(activatorAggregate -> activatorAggregate.connectedClass().isEmpty())
                     .forEach(activatorAggregate -> System.out.println("* - " + activatorAggregate.name()));
             System.out.println("************");
+        } else {
+            System.out.println("All activators have been annotated properly");
         }
-
-        return new ConvertersResult(
-                converters,
-                allActivatorAggregates,
-                activatorToDFDMap,
-                elementToActivatorAggregateMap
-        );
     }
 
-    private Map<DFDName, List<FlowThroughRep>> getFlowThroughs(ConvertersResult convertersResult,
+    private String temp(ActivatorAggregate activatorAggregate) {
+        return activatorAggregate.requirementsName().value().replaceAll("Requirements", "");
+    }
+
+    private Map<DFDName, List<FlowThroughRep>> getFlowThroughs(ProcessorResults processorResults,
                                                                RoundEnvironment environment) {
-        Map<ActivatorName, DFDName> activatorToDFDMap = convertersResult.activatorToDFDMap;
+        Map<ActivatorName, DFDName> activatorToDFDMap = processorResults.activatorToDFDMap;
 
         Map<DFDName, List<FlowThroughRep>> dfdToFlowThroughRepMap = new HashMap<>();
         for (var flowThroughPair : getRepeatableAnnotations(environment, FlowThrough.class, FlowThroughs.class, FlowThroughs::value)) {
             FlowThrough flowThrough = flowThroughPair.annotation;
             TypeElement typeElement = flowThroughPair.typeElement;
 
-            ProcessActivatorAggregate processActivator = (ProcessActivatorAggregate) convertersResult.getActivatorAggregate(typeElement);
-            processActivator.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
+            ProcessActivatorAggregate processActivator = null;
+            List<ActivatorAggregate> possibleActivatorAggregates = processorResults.getActivatorAggregate(typeElement);
+            if (possibleActivatorAggregates.size() > 1 && flowThrough.forActivator().equals("")) {
+                throw new IllegalArgumentException("Ambiguity!!");
+            } else if (possibleActivatorAggregates.size() > 1) {
+                for (ActivatorAggregate possibleActivatorAggregate : possibleActivatorAggregates) {
+                    if (temp(possibleActivatorAggregate).equals(flowThrough.forActivator())) {
+                        processActivator = (ProcessActivatorAggregate) possibleActivatorAggregate;
+                        break;
+                    }
+                }
+
+                if (processActivator == null) {
+                    throw new IllegalArgumentException("Cannot find activator with name: "
+                            + flowThrough.forActivator()
+                            + " - Available: "
+                            + possibleActivatorAggregates.stream().map(this::temp).collect(Collectors.joining(", ")));
+                }
+
+            } else {
+                // Must be at least one. Otherwise, it would have thrown earlier.
+                processActivator = (ProcessActivatorAggregate) possibleActivatorAggregates.get(0);
+            }
 
             DFDName dfdName = activatorToDFDMap.get(processActivator.name());
+            if (dfdName == null) {
+                throw new IllegalStateException("DFDName cannot be null");
+            }
 
             if (!dfdToFlowThroughRepMap.containsKey(dfdName)) {
                 dfdToFlowThroughRepMap.put(dfdName, new ArrayList<>());
@@ -292,31 +453,35 @@ public class DFDsProcessor extends AbstractProcessor {
 
             dfdToFlowThroughRepMap
                     .get(dfdName)
-                    .add(FlowThroughRep
-                            .of(processActivator, flowThrough)
-                            .with(this)
+                    .add(
+                            RepBuilder.createFlowThroughRep(
+                                    processActivator,
+                                    processorResults,
+                                    flowThrough,
+                                    this
+                            )
                     );
         }
 
         return dfdToFlowThroughRepMap;
     }
 
-    private Map<DFDName, List<QueriesForRep>> getQueriesFor(ConvertersResult convertersResult,
+    private Map<DFDName, List<QueriesForRep>> getQueriesFor(ProcessorResults processorResults,
                                                             RoundEnvironment environment) {
         Map<DFDName, List<QueriesForRep>> queriesForRepMap = new HashMap<>();
-        var activatorToDFDMap = convertersResult.activatorToDFDMap;
+        var activatorToDFDMap = processorResults.activatorToDFDMap;
 
         for (Element element : environment.getElementsAnnotatedWith(QueriesFor.class)) {
             TypeElement typeElement = (TypeElement) element;
             QueriesFor queriesFor = element.getAnnotation(QueriesFor.class);
-            ClassName queriesForClassName = ClassName.bestGuess(
+            QualifiedName queriesForClassName = QualifiedName.of(
                     getAnnotationClassValue(
                             this, queriesFor, QueriesFor::value
                     ).toString()
             );
 
-            DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) convertersResult.getActivatorAggregateByClassName(queriesForClassName);
-            QueriesForRep queriesForRep = new QueriesForRep(databaseActivatorAggregate, ClassName.bestGuess(typeElement.getQualifiedName().toString()));
+            DatabaseActivatorAggregate databaseActivatorAggregate = (DatabaseActivatorAggregate) processorResults.getActivatorAggregateByClassName(queriesForClassName);
+            QueriesForRep queriesForRep = new QueriesForRep(databaseActivatorAggregate, QualifiedName.of(typeElement.getQualifiedName().toString()));
 
             DFDName dfdName = activatorToDFDMap.get(databaseActivatorAggregate.name());
 
@@ -365,18 +530,8 @@ public class DFDsProcessor extends AbstractProcessor {
                 .toList();
     }
 
-    private void saveJavaFiles(List<JavaFile> javaFiles) {
-        javaFiles.forEach(javaFile -> {
-            try {
-                javaFile.writeTo(processingEnv.getFiler());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
     /**
-     * This works since gradle copies csv files to class output.
+     * This works since gradle copies xml files to class output.
      */
     private InputStream toInputStream(String dfdFile) {
         try {
@@ -396,57 +551,66 @@ public class DFDsProcessor extends AbstractProcessor {
         return this.processingEnv;
     }
 
-    private Map<String, List<Dataflow>> createDFDFlowMap(DFDParser.DFD dfd, RoundEnvironment environment) {
-        Map<String, List<Dataflow>> traverses = new HashMap<>();
+    // Traverse -> List of Flow
+    private Map<String, List<String>> getDFDTraverseOrders(DFDRep dfd, RoundEnvironment environment) {
+        Map<String, List<String>> traverseOrder = new HashMap<>();
 
         for (AnnotationWithTypeElement<Traverse> traversePair : getRepeatableAnnotations(environment, Traverse.class, Traverses.class, Traverses::value)) {
             Traverse annotation = traversePair.annotation;
+
+            // Check that the Traverse is a part of the DFD.
+            boolean found = false;
+            for (DFDRep.Flow flow : dfd.flows()) {
+                for (String traverseFlow : annotation.order()) {
+                    if (flow.id().equals(traverseFlow)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    break;
+                }
+            }
+
+            if (!found) {
+                continue;
+            }
 
             // name for the traverse
             String traverseName = annotation.name();
             // list of unique names for the flows in this traverse, in order
             String[] flowOrder = annotation.order();
 
-            // check if the flow names are for this dfd, this might not be a perfect solution
-            boolean correctDFD = true;
-            for (String flowName : flowOrder) {
-                if(dfd.dataflows().get(flowName) == null) {
-                    // data flow was not in dfd
-                    correctDFD = false;
-                }
-            }
-
-            if (!correctDFD) {
-                continue;
-            }
-
             // Add flows
-            traverses.put(traverseName, new ArrayList<>());
+            traverseOrder.put(traverseName, new ArrayList<>());
 
             for (String flowName : flowOrder) {
-                Dataflow dataflow = dfd.dataflows().get(flowName);
-
-                if (dataflow == null) {
+                if (flowName == null) {
                     throw new IllegalStateException("No dataflow for id " + flowName);
                 }
 
-                traverses.get(traverseName).add(dataflow);
+                traverseOrder.get(traverseName).add(flowName);
             }
         }
 
-        return traverses;
+        return traverseOrder;
     }
 
-    private Map<DFDName, List<TraverseRep>> getTraverses(ConvertersResult convertersResult, RoundEnvironment environment) {
-        Map<ActivatorName, DFDName> activatorToDFDMap = convertersResult.activatorToDFDMap;
+    private Map<DFDName, List<TraverseRep>> getTraverses(ProcessorResults processorResults, RoundEnvironment environment) {
+        Map<ActivatorName, DFDName> activatorToDFDMap = processorResults.activatorToDFDMap;
 
         Map<DFDName, List<TraverseRep>> dfdTraverseRepMap = new HashMap<>();
         for (var traversePair : getRepeatableAnnotations(environment, Traverse.class, Traverses.class, Traverses::value)) {
             Traverse annotation = traversePair.annotation;
             TypeElement typeElement = traversePair.typeElement;
 
-            ExternalEntityActivatorAggregate externalEntityActivator = (ExternalEntityActivatorAggregate) convertersResult.getActivatorAggregate(typeElement);
-            externalEntityActivator.setQualifiedName(new QualifiedName(typeElement.getQualifiedName().toString()));
+            ExternalEntityActivatorAggregate externalEntityActivator = (ExternalEntityActivatorAggregate) processorResults.getActivatorAggregateForceOne(typeElement);
+            externalEntityActivator.setConnectedClass(
+                    new ConnectedClass(
+                            QualifiedName.of(typeElement.getQualifiedName().toString()),
+                            false
+                    )
+            );
 
             DFDName dfdName = activatorToDFDMap.get(externalEntityActivator.name());
             if (!dfdTraverseRepMap.containsKey(dfdName)) {
@@ -456,9 +620,11 @@ public class DFDsProcessor extends AbstractProcessor {
             dfdTraverseRepMap
                     .get(dfdName)
                     .add(
-                            TraverseRep
-                                    .of(annotation, externalEntityActivator)
-                                    .with(this)
+                            RepBuilder.createTraverseRep(
+                                    annotation,
+                                    externalEntityActivator,
+                                    this
+                            )
                     );
         }
 
