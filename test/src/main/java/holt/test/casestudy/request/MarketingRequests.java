@@ -19,6 +19,7 @@ import holt.test.casestudy.policy.UserPolicy;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class MarketingRequests {
@@ -39,8 +40,10 @@ public class MarketingRequests {
         @Override
         public Map<User, UserPolicy> M(Collection<User> input0, Collection<UserPolicy> dbInput1) {
             Map<User, UserPolicy> result = new HashMap<>();
-            for (int i = 0; i < input0.size(); i++) {
-                result.put(input0.stream().toList().get(i), dbInput1.stream().toList().get(i));
+            Iterator<User> iterator0 = input0.iterator();
+            Iterator<UserPolicy> iterator1 = dbInput1.iterator();
+            while (iterator0.hasNext() && iterator1.hasNext()) {
+                result.put(iterator0.next(), iterator1.next());
             }
             return result;
         }
